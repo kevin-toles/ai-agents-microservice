@@ -170,56 +170,24 @@ async def _traverse_from_node(
             break
         
         # Find best unvisited neighbor
-        best_neighbor = None
-        best_similarity = -1.0
-        
-        for neighbor in neighbors:
-            neighbor_key = (neighbor.get("book", ""), neighbor.get("chapter", 0))
-            if neighbor_key not in visited:
-                sim = neighbor.get("similarity", 0.0)
-                if sim > best_similarity:
-                    best_similarity = sim
-                    best_neighbor = neighbor
+        best_neighbor = _find_best_neighbor(neighbors, visited)
         
         if best_neighbor is None:
             break
         
-        # Add to path
-        neighbor_key = (best_neighbor["book"], best_neighbor["chapter"])
-        visited.add(neighbor_key)
-        
-        neighbor_node = GraphNode(
-            book=best_neighbor.get("book", ""),
-            chapter=best_neighbor.get("chapter", 0),
-            title=best_neighbor.get("title", ""),
-            tier=best_neighbor.get("tier", 1),
+        # Process neighbor
+        neighbor_node, rel_type, neighbor_match = _process_neighbor(
+            best_neighbor, visited
         )
         nodes.append(neighbor_node)
-        
-        # Determine relationship type
-        rel_type_str = best_neighbor.get("relationship_type", "PARALLEL")
-        try:
-            rel_type = RelationshipType(rel_type_str)
-        except ValueError:
-            rel_type = RelationshipType.PARALLEL
         relationships.append(rel_type)
         
-        total_similarity += best_similarity
-        
-        # Move to neighbor
-        current_match = ChapterMatch(
-            book=best_neighbor.get("book", ""),
-            chapter=best_neighbor.get("chapter", 0),
-            title=best_neighbor.get("title", ""),
-            tier=best_neighbor.get("tier", 1),
-            similarity=best_similarity,
-        )
+        total_similarity += best_neighbor.get("similarity", 0.0)
+        current_match = neighbor_match
         hops_remaining -= 1
     
     # Determine path type
-    path_type = "linear"
-    if len(set(relationships)) > 1:
-        path_type = "non_linear"
+    path_type = "non_linear" if len(set(relationships)) > 1 else "linear"
     
     return TraversalPath(
         nodes=nodes,
@@ -227,3 +195,74 @@ async def _traverse_from_node(
         total_similarity=total_similarity,
         path_type=path_type,
     )
+
+
+def _find_best_neighbor(
+    neighbors: list[dict],
+    visited: set[tuple[str, int]],
+) -> dict | None:
+    """Find the best unvisited neighbor by similarity.
+    
+    Args:
+        neighbors: List of neighbor dicts
+        visited: Set of visited (book, chapter) tuples
+        
+    Returns:
+        Best neighbor dict or None if all visited
+    """
+    best_neighbor = None
+    best_similarity = -1.0
+    
+    for neighbor in neighbors:
+        neighbor_key = (neighbor.get("book", ""), neighbor.get("chapter", 0))
+        if neighbor_key not in visited:
+            sim = neighbor.get("similarity", 0.0)
+            if sim > best_similarity:
+                best_similarity = sim
+                best_neighbor = neighbor
+    
+    return best_neighbor
+
+
+def _process_neighbor(
+    neighbor: dict,
+    visited: set[tuple[str, int]],
+) -> tuple[GraphNode, RelationshipType, ChapterMatch]:
+    """Process a neighbor into node, relationship, and match.
+    
+    Args:
+        neighbor: Neighbor dict from graph
+        visited: Set of visited (book, chapter) tuples (will be updated)
+        
+    Returns:
+        Tuple of (GraphNode, RelationshipType, ChapterMatch)
+    """
+    # Mark as visited
+    neighbor_key = (neighbor["book"], neighbor["chapter"])
+    visited.add(neighbor_key)
+    
+    # Create node
+    neighbor_node = GraphNode(
+        book=neighbor.get("book", ""),
+        chapter=neighbor.get("chapter", 0),
+        title=neighbor.get("title", ""),
+        tier=neighbor.get("tier", 1),
+    )
+    
+    # Parse relationship type
+    rel_type_str = neighbor.get("relationship_type", "PARALLEL")
+    try:
+        rel_type = RelationshipType(rel_type_str)
+    except ValueError:
+        rel_type = RelationshipType.PARALLEL
+    
+    # Create match for next iteration
+    neighbor_match = ChapterMatch(
+        book=neighbor.get("book", ""),
+        chapter=neighbor.get("chapter", 0),
+        title=neighbor.get("title", ""),
+        tier=neighbor.get("tier", 1),
+        similarity=neighbor.get("similarity", 0.0),
+    )
+    
+    return neighbor_node, rel_type, neighbor_match

@@ -7,11 +7,16 @@ Pattern: Pydantic State Models for LangGraph
 Source: ARCHITECTURE.md (ai-agents), Generative AI with LangChain Ch. "MessagesState"
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field
+
+# Constants for Field descriptions (SonarQube S1192 - duplicated literals)
+_DESC_CHAPTER_TITLE = "Chapter title"
+_DESC_CHAPTER_NUMBER = "Chapter number"
+_DESC_TIER_LEVEL = "Tier level"
 
 
 class RelationshipType(str, Enum):
@@ -33,9 +38,9 @@ class SourceChapter(BaseModel):
     """
     
     book: str = Field(..., description="Source book title")
-    chapter: int = Field(..., ge=1, description="Chapter number (1-indexed)")
-    title: str = Field(..., description="Chapter title")
-    tier: int = Field(..., ge=1, le=3, description="Tier level (1=Architecture, 2=Implementation, 3=Practices)")
+    chapter: int = Field(..., ge=1, description=f"{_DESC_CHAPTER_NUMBER} (1-indexed)")
+    title: str = Field(..., description=_DESC_CHAPTER_TITLE)
+    tier: int = Field(..., ge=1, le=3, description=f"{_DESC_TIER_LEVEL} (1=Architecture, 2=Implementation, 3=Practices)")
     content: str | None = Field(default=None, description="Chapter content (optional, can be retrieved)")
     keywords: list[str] = Field(default_factory=list, description="Extracted keywords")
     concepts: list[str] = Field(default_factory=list, description="Key concepts")
@@ -69,9 +74,9 @@ class GraphNode(BaseModel):
     """A node in the traversal path (book + chapter)."""
     
     book: str = Field(..., description="Book title")
-    chapter: int = Field(..., ge=1, description="Chapter number")
-    tier: int = Field(..., ge=1, le=3, description="Tier level")
-    title: str = Field(default="", description="Chapter title")
+    chapter: int = Field(..., ge=1, description=_DESC_CHAPTER_NUMBER)
+    tier: int = Field(..., ge=1, le=3, description=_DESC_TIER_LEVEL)
+    title: str = Field(default="", description=_DESC_CHAPTER_TITLE)
     relationship: RelationshipType | None = Field(default=None, description="Relationship from previous node")
     similarity_score: float = Field(default=0.0, ge=0.0, le=1.0, description="Similarity to source")
 
@@ -88,9 +93,9 @@ class ChapterMatch(BaseModel):
     """A matched chapter from search/traversal."""
     
     book: str = Field(..., description="Book title")
-    chapter: int = Field(..., description="Chapter number")
-    title: str = Field(..., description="Chapter title")
-    tier: int = Field(..., ge=1, le=3, description="Tier level")
+    chapter: int = Field(..., description=_DESC_CHAPTER_NUMBER)
+    title: str = Field(..., description=_DESC_CHAPTER_TITLE)
+    tier: int = Field(..., ge=1, le=3, description=_DESC_TIER_LEVEL)
     similarity: float = Field(..., ge=0.0, le=1.0, description="Similarity score")
     keywords: list[str] = Field(default_factory=list, description="Matched keywords")
     relevance_reason: str = Field(default="", description="Why this chapter is relevant")
@@ -106,10 +111,10 @@ class Citation(BaseModel):
     
     author: str | None = Field(default=None, description="Author name(s)")
     book: str = Field(..., description="Book title (italicized in output)")
-    chapter: int = Field(..., description="Chapter number")
-    chapter_title: str = Field(default="", description="Chapter title")
+    chapter: int = Field(..., description=_DESC_CHAPTER_NUMBER)
+    chapter_title: str = Field(default="", description=_DESC_CHAPTER_TITLE)
     pages: str | None = Field(default=None, description="Page range (e.g., '33-58')")
-    tier: int = Field(..., ge=1, le=3, description="Tier level for ordering")
+    tier: int = Field(..., ge=1, le=3, description=f"{_DESC_TIER_LEVEL} for ordering")
     
     def to_chicago_format(self, footnote_number: int) -> str:
         """Format citation in Chicago style.
@@ -137,7 +142,7 @@ class Citation(BaseModel):
 class TierCoverage(BaseModel):
     """Coverage statistics for each tier in the cross-reference."""
     
-    tier: int = Field(..., ge=1, le=3, description="Tier level")
+    tier: int = Field(..., ge=1, le=3, description=_DESC_TIER_LEVEL)
     tier_name: str = Field(..., description="Tier name (e.g., 'Architecture Spine')")
     books_referenced: int = Field(default=0, ge=0, description="Number of books referenced")
     chapters_referenced: int = Field(default=0, ge=0, description="Number of chapters referenced")
@@ -186,7 +191,7 @@ class CrossReferenceState(BaseModel):
     result: CrossReferenceResult | None = Field(default=None, description="Final result")
     
     # Metadata
-    started_at: datetime = Field(default_factory=datetime.utcnow, description="Workflow start time")
+    started_at: datetime = Field(default_factory=lambda: datetime.now(UTC), description="Workflow start time")
     current_node: str = Field(default="", description="Current workflow node")
     errors: list[str] = Field(default_factory=list, description="Errors encountered during processing")
     

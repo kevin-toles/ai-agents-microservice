@@ -6,7 +6,7 @@ Pattern: LangGraph workflow node
 Source: TIER_RELATIONSHIP_DIAGRAM.md Steps 7-9
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Protocol
 
 from src.agents.cross_reference.state import (
@@ -218,7 +218,7 @@ def _calculate_processing_time(started_at: datetime) -> float:
     Returns:
         Processing time in milliseconds
     """
-    delta = datetime.utcnow() - started_at
+    delta = datetime.now(UTC) - started_at
     return delta.total_seconds() * 1000
 
 
