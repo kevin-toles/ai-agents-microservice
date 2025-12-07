@@ -650,6 +650,54 @@ class CrossReferenceAgent:
 
 ---
 
+## Integration Points
+
+> **Important for WBS Planning**: These are the integration points that require coordination with other services.
+
+### Inbound (Services/Apps calling ai-agents)
+
+| Consumer | Endpoint | Purpose | Priority |
+|----------|----------|---------|----------|
+| llm-gateway | `POST /v1/agents/cross-reference` | Tool execution for cross-referencing | P0 |
+| llm-gateway | `POST /v1/agents/code-review` | Tool execution for code review | P0 |
+| llm-document-enhancer | `POST /v1/agents/cross-reference` | Batch cross-referencing | P0 |
+| llm-document-enhancer | `POST /v1/agents/code-review` | Code review in documents | P1 |
+| VS Code Copilot | `POST /v1/agents/*` | Interactive agent invocation | P1 |
+| CI/CD Pipelines | `POST /v1/agents/architecture` | Automated architecture review | P2 |
+
+### Outbound (ai-agents calling other services)
+
+| Target | Protocol | Purpose | Priority |
+|--------|----------|---------|----------|
+| llm-gateway | HTTP (8080) | LLM inference for agent reasoning | P0 |
+| semantic-search | HTTP (8081) | Hybrid search, graph traversal | P0 |
+| Neo4j | Bolt (7687) | Direct taxonomy graph queries | P0 |
+| HuggingFace Hub | HTTPS | CodeBERT/CodeT5 model downloads | P1 |
+
+### Data Dependencies
+
+| Data | Source | Required For |
+|------|--------|--------------|
+| Taxonomy graph | Neo4j | Cross-Reference Agent traversal |
+| Chapter embeddings | semantic-search (Qdrant) | Similarity search |
+| Chapter metadata | semantic-search | Metadata retrieval tool |
+| CodeBERT models | HuggingFace Hub | Code Review Agent |
+
+---
+
+## Communication Matrix
+
+| From | To | Protocol | Endpoint/Method |
+|------|----|----------|-----------------|
+| llm-gateway | ai-agents | HTTP | `POST /v1/agents/*` |
+| llm-doc-enhancer | ai-agents | HTTP | `POST /v1/agents/cross-reference` |
+| ai-agents | llm-gateway | HTTP | `POST /v1/chat/completions` |
+| ai-agents | semantic-search | HTTP | `POST /v1/search/hybrid` |
+| ai-agents | semantic-search | HTTP | `POST /v1/graph/traverse` |
+| ai-agents | Neo4j | Bolt | Cypher queries |
+
+---
+
 ## Deployment
 
 ```yaml
