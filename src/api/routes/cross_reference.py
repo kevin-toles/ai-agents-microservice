@@ -161,12 +161,27 @@ async def create_cross_reference(request: CrossReferenceRequest) -> CrossReferen
     try:
         agent = get_agent()
         
+        # Build input dict for agent (per agent.run() signature)
+        input_data = {
+            "book": request.source.book,
+            "chapter": request.source.chapter,
+            "title": request.source.title,
+            "tier": request.source.tier,
+            "content": request.source.content,
+            "keywords": request.source.keywords,
+            "concepts": request.source.concepts,
+            "config": {
+                "max_hops": request.config.max_hops,
+                "min_similarity": request.config.min_similarity,
+                "include_tier1": request.config.include_tier1,
+                "include_tier2": request.config.include_tier2,
+                "include_tier3": request.config.include_tier3,
+            },
+            "taxonomy_id": request.taxonomy_id,
+        }
+        
         # Run the agent workflow
-        result: CrossReferenceResult = await agent.run(
-            source=request.source,
-            config=request.config,
-            taxonomy_id=request.taxonomy_id,
-        )
+        result: CrossReferenceResult = await agent.run(input_data)
         
         # Convert to response model
         return CrossReferenceResponse(
