@@ -1,0 +1,9 @@
+# Core dependencies
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+langgraph>=0.0.40
+langchain-core>=0.1.0
+httpx>=0.26.0
+structlog>=24.1.0
+tenacity>=8.2.0
+asyncio-throttle>=1.0.0
