@@ -60,6 +60,9 @@ class TraversalConfig(BaseModel):
     allow_cycles: bool = Field(default=True, description="Allow revisiting tiers")
     min_similarity: float = Field(default=0.7, ge=0.0, le=1.0, description="Minimum similarity threshold")
     max_results_per_tier: int = Field(default=10, ge=1, description="Max results per tier")
+    include_tier1: bool = Field(default=True, description="Include Tier 1 (Architecture Spine)")
+    include_tier2: bool = Field(default=True, description="Include Tier 2 (Implementation)")
+    include_tier3: bool = Field(default=True, description="Include Tier 3 (Engineering Practices)")
 
 
 class GraphNode(BaseModel):
