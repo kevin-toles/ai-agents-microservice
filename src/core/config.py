@@ -65,9 +65,9 @@ class Settings(BaseSettings):
         description="Allow revisiting tiers during traversal"
     )
     
-    # Feature flags (per GRAPH_RAG_POC_PLAN.md)
+    # Feature flags - Phase 6 Production Ready (WBS 6.7)
     enable_cross_reference_agent: bool = Field(
-        default=False,
+        default=True,  # Enabled after WBS 6.1-6.3 validation
         description="Enable Cross-Reference Agent endpoint"
     )
     

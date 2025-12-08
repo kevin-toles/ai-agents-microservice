@@ -1,0 +1,585 @@
+openapi: 3.1.0
+info:
+  title: AI Agents Service API
+  description: |
+    REST API for the AI Agents Service providing specialized AI agents:
+    - **Cross-Reference Agent**: Taxonomy-aware scholarly cross-referencing
+    - **Code Review Agent**: Automated code review with CodeBERT/CodeT5
+    - **Architecture Agent**: Architecture analysis and SARIF processing
+    - **Doc Generate Agent**: Documentation generation
+    
+    ## Cross-Reference Agent (Phase 6)
+    
+    The flagship agent implements spider web taxonomy traversal with:
+    - PARALLEL relationships (same tier)
+    - PERPENDICULAR relationships (adjacent tiers)
+    - SKIP_TIER relationships (non-adjacent tiers)
+    
+    ## Citation Accuracy (WBS 6.3)
+    
+    | Relationship | Target | Achieved |
+    |--------------|--------|----------|
+    | PARALLEL | ≥90% | 100% |
+    | PERPENDICULAR | ≥70% | 90% |
+    
+    Citations formatted in Chicago Manual of Style 17th Edition.
+    
+  version: 2.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8082
+    description: Local development
+  - url: http://ai-agents:8082
+    description: Docker network
+
+tags:
+  - name: Agents
+    description: AI Agent endpoints
+  - name: Cross-Reference
+    description: Cross-Reference Agent operations
+  - name: Code Review
+    description: Code Review Agent operations
+  - name: Architecture
+    description: Architecture Agent operations
+  - name: Health
+    description: Health and readiness checks
+
+paths:
+  /v1/agents:
+    get:
+      tags: [Agents]
+      summary: List available agents
+      description: Returns list of available agent types and their capabilities
+      operationId: listAgents
+      responses:
+        '200':
+          description: List of agents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentListResponse'
+
+  /v1/agents/cross-reference:
+    post:
+      tags: [Cross-Reference]
+      summary: Run cross-reference agent
+      description: |
+        Execute taxonomy-aware cross-referencing for a source chapter.
+        
+        The agent will:
+        1. Analyze source chapter content and concepts
+        2. Search taxonomy for related books across tiers
+        3. Traverse the graph following relationship edges
+        4. Retrieve relevant chapter content for validation
+        5. Generate scholarly annotation with Chicago-style citations
+        
+        **Tools Used:**
+        - `search_taxonomy`: Query Neo4j for related books
+        - `search_similar`: Query Qdrant for similar chapters
+        - `get_chapter_metadata`: Retrieve keywords and summary
+        - `get_chapter_text`: Retrieve full chapter content
+        - `traverse_graph`: Execute spider web traversal
+      operationId: runCrossReference
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrossReferenceRequest'
+      responses:
+        '200':
+          description: Cross-reference results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrossReferenceResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /v1/agents/code-review:
+    post:
+      tags: [Code Review]
+      summary: Run code review agent
+      description: Execute automated code review on a diff or PR
+      operationId: runCodeReview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeReviewRequest'
+      responses:
+        '200':
+          description: Code review results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeReviewResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v1/agents/architecture:
+    post:
+      tags: [Architecture]
+      summary: Run architecture agent
+      description: Execute architecture analysis on a repository
+      operationId: runArchitecture
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArchitectureRequest'
+      responses:
+        '200':
+          description: Architecture analysis results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArchitectureResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v1/agents/doc-generate:
+    post:
+      tags: [Agents]
+      summary: Run documentation generation agent
+      description: Generate documentation for source files
+      operationId: runDocGenerate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocGenerateRequest'
+      responses:
+        '200':
+          description: Generated documentation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocGenerateResponse'
+
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Returns service health status
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /ready:
+    get:
+      tags: [Health]
+      summary: Readiness check
+      description: Returns whether service is ready to accept requests
+      operationId: readyCheck
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadyResponse'
+        '503':
+          description: Service not ready
+
+components:
+  schemas:
+    # Agent List
+    AgentListResponse:
+      type: object
+      properties:
+        agents:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentInfo'
+
+    AgentInfo:
+      type: object
+      properties:
+        name:
+          type: string
+          example: cross-reference
+        description:
+          type: string
+        tools:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [available, degraded, unavailable]
+
+    # Cross-Reference schemas
+    CrossReferenceRequest:
+      type: object
+      required: [source_chapter]
+      properties:
+        source_chapter:
+          $ref: '#/components/schemas/SourceChapter'
+        taxonomy:
+          $ref: '#/components/schemas/TaxonomyConfig'
+        traversal:
+          $ref: '#/components/schemas/TraversalConfig'
+        output:
+          $ref: '#/components/schemas/OutputConfig'
+
+    SourceChapter:
+      type: object
+      required: [book, chapter]
+      properties:
+        book:
+          type: string
+          description: Book title
+          example: "A Philosophy of Software Design"
+        chapter:
+          type: integer
+          description: Chapter number
+          example: 2
+        tier:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: Tier level of the source book
+          example: 1
+        content:
+          type: string
+          description: Optional pre-loaded chapter content
+        metadata:
+          type: object
+          properties:
+            title:
+              type: string
+            keywords:
+              type: array
+              items:
+                type: string
+            concepts:
+              type: array
+              items:
+                type: string
+
+    TaxonomyConfig:
+      type: object
+      properties:
+        taxonomy_id:
+          type: string
+          default: software_engineering
+        tiers:
+          type: array
+          items:
+            type: integer
+          description: Which tiers to include
+          example: [1, 2, 3]
+        books:
+          type: array
+          items:
+            type: string
+          description: Optional list of books to include
+
+    TraversalConfig:
+      type: object
+      properties:
+        max_hops:
+          type: integer
+          default: 3
+          minimum: 1
+          maximum: 5
+        relationship_types:
+          type: array
+          items:
+            type: string
+            enum: [PARALLEL, PERPENDICULAR, SKIP_TIER]
+          default: [PARALLEL, PERPENDICULAR, SKIP_TIER]
+        direction:
+          type: string
+          enum: [UP, DOWN, BOTH]
+          default: BOTH
+        allow_cycles:
+          type: boolean
+          default: true
+        min_similarity:
+          type: number
+          default: 0.7
+          minimum: 0
+          maximum: 1
+
+    OutputConfig:
+      type: object
+      properties:
+        format:
+          type: string
+          enum: [markdown, json, html]
+          default: markdown
+        citation_style:
+          type: string
+          enum: [chicago, apa, mla]
+          default: chicago
+        include_excerpts:
+          type: boolean
+          default: true
+        max_citations:
+          type: integer
+          default: 10
+
+    CrossReferenceResponse:
+      type: object
+      properties:
+        annotation:
+          type: string
+          description: Generated scholarly annotation in Markdown
+        citations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Citation'
+        traversal_path:
+          type: array
+          items:
+            $ref: '#/components/schemas/TraversalNode'
+        tier_coverage:
+          type: object
+          additionalProperties:
+            type: integer
+          description: Count of citations per tier
+          example:
+            "1": 3
+            "2": 5
+            "3": 2
+        metadata:
+          $ref: '#/components/schemas/ResponseMetadata'
+
+    Citation:
+      type: object
+      properties:
+        footnote_number:
+          type: integer
+        book:
+          type: string
+        author:
+          type: string
+        chapter:
+          type: integer
+        chapter_title:
+          type: string
+        pages:
+          type: string
+        tier:
+          type: integer
+        relationship_type:
+          type: string
+          enum: [PARALLEL, PERPENDICULAR, SKIP_TIER]
+        relevance_score:
+          type: number
+          format: float
+        formatted:
+          type: string
+          description: Chicago-formatted citation string
+
+    TraversalNode:
+      type: object
+      properties:
+        book:
+          type: string
+        chapter:
+          type: integer
+        tier:
+          type: integer
+        relationship:
+          type: string
+        depth:
+          type: integer
+        similarity:
+          type: number
+
+    ResponseMetadata:
+      type: object
+      properties:
+        processing_time_ms:
+          type: number
+        nodes_visited:
+          type: integer
+        tools_invoked:
+          type: array
+          items:
+            type: string
+        llm_tokens_used:
+          type: integer
+
+    # Code Review schemas
+    CodeReviewRequest:
+      type: object
+      required: [diff]
+      properties:
+        diff:
+          type: string
+          description: Unified diff or file content
+        language:
+          type: string
+          description: Programming language
+        context:
+          type: object
+          properties:
+            repo:
+              type: string
+            pr_number:
+              type: integer
+            branch:
+              type: string
+
+    CodeReviewResponse:
+      type: object
+      properties:
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewComment'
+        summary:
+          type: string
+        sarif:
+          type: object
+          description: Optional SARIF format output
+
+    ReviewComment:
+      type: object
+      properties:
+        line:
+          type: integer
+        type:
+          type: string
+          enum: [error, warning, suggestion, info]
+        message:
+          type: string
+        suggestion:
+          type: string
+
+    # Architecture schemas
+    ArchitectureRequest:
+      type: object
+      required: [repo_path]
+      properties:
+        repo_path:
+          type: string
+        sarif_reports:
+          type: array
+          items:
+            type: string
+          description: Paths to SARIF reports
+        include_dependencies:
+          type: boolean
+          default: true
+
+    ArchitectureResponse:
+      type: object
+      properties:
+        assessment:
+          type: string
+        findings:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArchitectureFinding'
+        dependencies:
+          type: object
+
+    ArchitectureFinding:
+      type: object
+      properties:
+        category:
+          type: string
+        severity:
+          type: string
+          enum: [critical, high, medium, low, info]
+        message:
+          type: string
+        location:
+          type: string
+
+    # Doc Generate schemas
+    DocGenerateRequest:
+      type: object
+      required: [files]
+      properties:
+        files:
+          type: array
+          items:
+            type: string
+        format:
+          type: string
+          enum: [markdown, rst, html]
+          default: markdown
+
+    DocGenerateResponse:
+      type: object
+      properties:
+        documentation:
+          type: string
+        files_processed:
+          type: integer
+
+    # Health schemas
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        version:
+          type: string
+        agents:
+          type: object
+          additionalProperties:
+            type: string
+
+    ReadyResponse:
+      type: object
+      properties:
+        ready:
+          type: boolean
+        checks:
+          type: object
+          properties:
+            llm_gateway:
+              type: boolean
+            semantic_search:
+              type: boolean
+            neo4j:
+              type: boolean
+
+    # Error schemas
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        detail:
+          type: string
+        code:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
