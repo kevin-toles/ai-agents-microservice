@@ -115,11 +115,11 @@ def get_agent() -> CrossReferenceAgent:
     return _agent
 
 
-def set_agent(agent: CrossReferenceAgent) -> None:
+def set_agent(agent: CrossReferenceAgent | None) -> None:
     """Set the agent instance for testing.
     
     Args:
-        agent: Agent instance to use
+        agent: Agent instance to use, or None to reset
     """
     global _agent
     _agent = agent

@@ -117,8 +117,8 @@ class TestAgentExecutionError:
             cause=original,
         )
         
-        # Should be able to access the chain
-        assert error.__cause__ is original or error.cause is original
+        # Should be able to access the chain via cause attribute
+        assert error.cause is original
 
 
 class TestAgentValidationError:
@@ -186,7 +186,7 @@ class TestAgentTimeoutError:
             timeout_seconds=30.0,
         )
         
-        assert error.timeout_seconds == 30.0
+        assert error.timeout_seconds == pytest.approx(30.0)
     
     def test_timeout_error_stores_elapsed(self) -> None:
         """Test that AgentTimeoutError can store elapsed time."""
@@ -197,7 +197,7 @@ class TestAgentTimeoutError:
             elapsed_seconds=62.5,
         )
         
-        assert error.elapsed_seconds == 62.5
+        assert error.elapsed_seconds == pytest.approx(62.5)
 
 
 class TestExceptionHierarchy:

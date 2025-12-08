@@ -23,11 +23,11 @@ class LLMClient(Protocol):
 _llm_client: LLMClient | None = None
 
 
-def set_llm_client(client: LLMClient) -> None:
+def set_llm_client(client: LLMClient | None) -> None:
     """Set the LLM client for concept extraction.
     
     Args:
-        client: LLM client implementing extract_concepts
+        client: LLM client implementing extract_concepts, or None to reset
     """
     global _llm_client
     _llm_client = client

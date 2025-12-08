@@ -44,11 +44,11 @@ class GraphClient(Protocol):
 _graph_client: GraphClient | None = None
 
 
-def set_graph_client(client: GraphClient) -> None:
+def set_graph_client(client: GraphClient | None) -> None:
     """Set the graph client for traversal.
     
     Args:
-        client: Graph client implementing get_neighbors
+        client: Graph client implementing get_neighbors, or None to reset
     """
     global _graph_client
     _graph_client = client

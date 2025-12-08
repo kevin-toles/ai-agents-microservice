@@ -35,11 +35,11 @@ class ContentClient(Protocol):
 _content_client: ContentClient | None = None
 
 
-def set_content_client(client: ContentClient) -> None:
+def set_content_client(client: ContentClient | None) -> None:
     """Set the content client for content retrieval.
     
     Args:
-        client: Content client implementing get_chapter_content
+        client: Content client implementing get_chapter_content, or None to reset
     """
     global _content_client
     _content_client = client

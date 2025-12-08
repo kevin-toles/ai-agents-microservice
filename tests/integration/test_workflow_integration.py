@@ -29,18 +29,18 @@ from src.agents.cross_reference.nodes import (
 @pytest.fixture(autouse=True)
 def reset_all_clients():
     """Reset all clients before each test."""
-    set_llm_client(None)  # type: ignore
-    set_neo4j_client(None)  # type: ignore
-    set_graph_client(None)  # type: ignore
-    set_content_client(None)  # type: ignore
-    set_synthesis_client(None)  # type: ignore
+    set_llm_client(None)
+    set_neo4j_client(None)
+    set_graph_client(None)
+    set_content_client(None)
+    set_synthesis_client(None)
     yield
     # Cleanup after test
-    set_llm_client(None)  # type: ignore
-    set_neo4j_client(None)  # type: ignore
-    set_graph_client(None)  # type: ignore
-    set_content_client(None)  # type: ignore
-    set_synthesis_client(None)  # type: ignore
+    set_llm_client(None)
+    set_neo4j_client(None)
+    set_graph_client(None)
+    set_content_client(None)
+    set_synthesis_client(None)
 
 
 class TestFullWorkflowIntegration:

@@ -43,11 +43,11 @@ _synthesis_client: SynthesisLLMClient | None = None
 _model_name: str = "gpt-4"
 
 
-def set_synthesis_client(client: SynthesisLLMClient, model_name: str = "gpt-4") -> None:
+def set_synthesis_client(client: SynthesisLLMClient | None, model_name: str = "gpt-4") -> None:
     """Set the synthesis LLM client.
     
     Args:
-        client: LLM client implementing generate_annotation
+        client: LLM client implementing generate_annotation, or None to reset
         model_name: Name of the LLM model being used
     """
     global _synthesis_client, _model_name

@@ -59,7 +59,6 @@ class TestBaseAgent:
                 return True
         
         agent = ConcreteAgent(name="test-agent")
-        assert agent is not None
         assert agent.name == "test-agent"
     
     def test_base_agent_inherits_from_abc(self) -> None:

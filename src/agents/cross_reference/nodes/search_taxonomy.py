@@ -37,11 +37,11 @@ class Neo4jClient(Protocol):
 _neo4j_client: Neo4jClient | None = None
 
 
-def set_neo4j_client(client: Neo4jClient) -> None:
+def set_neo4j_client(client: Neo4jClient | None) -> None:
     """Set the Neo4j client for taxonomy search.
     
     Args:
-        client: Neo4j client implementing search_chapters
+        client: Neo4j client implementing search_chapters, or None to reset
     """
     global _neo4j_client
     _neo4j_client = client

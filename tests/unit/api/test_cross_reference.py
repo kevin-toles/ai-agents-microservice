@@ -288,7 +288,7 @@ class TestCrossReferenceRequestModel:
             }
         )
         assert request.config.max_hops == 5
-        assert request.config.min_similarity == 0.8
+        assert request.config.min_similarity == pytest.approx(0.8)
         assert request.config.include_tier2 is False
     
     def test_request_model_uses_defaults_for_config(self):
@@ -309,7 +309,7 @@ class TestCrossReferenceRequestModel:
         # Default config should be applied
         assert request.config is not None
         assert request.config.max_hops == 3  # Default
-        assert request.config.min_similarity == 0.7  # Default
+        assert request.config.min_similarity == pytest.approx(0.7)  # Default
 
 
 # ============================================================================

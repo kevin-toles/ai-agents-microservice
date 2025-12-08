@@ -8,6 +8,8 @@ LangGraph nodes return dicts that get merged into state.
 Tests use dependency injection pattern for external clients.
 """
 
+import asyncio
+
 import pytest
 from unittest.mock import AsyncMock
 
@@ -164,7 +166,7 @@ class TestAnalyzeSourceNode:
     @pytest.fixture(autouse=True)
     def reset_client(self) -> None:
         """Reset LLM client before each test."""
-        set_llm_client(None)  # type: ignore
+        set_llm_client(None)
     
     @pytest.mark.asyncio
     async def test_analyze_source_extracts_concepts(
@@ -255,7 +257,7 @@ class TestSearchTaxonomyNode:
     @pytest.fixture(autouse=True)
     def reset_client(self) -> None:
         """Reset Neo4j client before each test."""
-        set_neo4j_client(None)  # type: ignore
+        set_neo4j_client(None)
     
     @pytest.mark.asyncio
     async def test_search_taxonomy_finds_matches(
@@ -339,7 +341,7 @@ class TestTraverseGraphNode:
     @pytest.fixture(autouse=True)
     def reset_client(self) -> None:
         """Reset graph client before each test."""
-        set_graph_client(None)  # type: ignore
+        set_graph_client(None)
     
     @pytest.mark.asyncio
     async def test_traverse_graph_creates_paths(
@@ -373,6 +375,7 @@ class TestTraverseGraphNode:
         call_count = 0
         async def mock_neighbors(book: str, chapter: int, **kwargs):
             nonlocal call_count
+            await asyncio.sleep(0)  # Satisfy async requirement
             call_count += 1
             if call_count <= 1:
                 return [{"book": f"Book{call_count}", "chapter": call_count,
@@ -433,7 +436,7 @@ class TestRetrieveContentNode:
     @pytest.fixture(autouse=True)
     def reset_client(self) -> None:
         """Reset content client before each test."""
-        set_content_client(None)  # type: ignore
+        set_content_client(None)
     
     @pytest.mark.asyncio
     async def test_retrieve_content_fetches_chapters(
@@ -516,7 +519,7 @@ class TestSynthesizeNode:
     @pytest.fixture(autouse=True)
     def reset_client(self) -> None:
         """Reset synthesis client before each test."""
-        set_synthesis_client(None)  # type: ignore
+        set_synthesis_client(None)
     
     @pytest.mark.asyncio
     async def test_synthesize_generates_annotation(

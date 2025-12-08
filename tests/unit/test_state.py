@@ -88,7 +88,7 @@ class TestSourceChapter:
         with pytest.raises(ValidationError):
             SourceChapter(
                 book="Test",
-                chapter=0,  # Invalid - ge=1
+                chapter=0,  # Must be >= 1
                 title="Test",
                 tier=1,
             )
@@ -100,7 +100,7 @@ class TestSourceChapter:
                 book="Test",
                 chapter=1,
                 title="Test",
-                tier=4,  # Invalid - le=3
+                tier=4,  # Must be <= 3
             )
 
 
@@ -113,7 +113,7 @@ class TestTraversalConfig:
         
         assert config.max_hops == 3
         assert config.allow_cycles is True
-        assert config.min_similarity == 0.7
+        assert config.min_similarity == pytest.approx(0.7)
         assert config.max_results_per_tier == 10
     
     def test_traversal_config_custom_values(self) -> None:
@@ -128,7 +128,7 @@ class TestTraversalConfig:
         assert config.max_hops == 5
         assert config.relationship_types == [RelationshipType.PARALLEL]
         assert config.allow_cycles is False
-        assert config.min_similarity == 0.8
+        assert config.min_similarity == pytest.approx(0.8)
     
     def test_traversal_config_max_hops_bounds(self) -> None:
         """Test that max_hops has reasonable bounds."""
@@ -177,7 +177,7 @@ class TestGraphNode:
         )
         
         assert node.relationship == RelationshipType.PERPENDICULAR
-        assert node.similarity_score == 0.85
+        assert node.similarity_score == pytest.approx(0.85)
 
 
 class TestChapterMatch:
@@ -196,7 +196,7 @@ class TestChapterMatch:
         assert match.book == "Building Microservices"
         assert match.chapter == 3
         assert match.tier == 2
-        assert match.similarity == 0.85
+        assert match.similarity == pytest.approx(0.85)
     
     def test_chapter_match_similarity_bounds(self) -> None:
         """Test that similarity is bounded 0.0-1.0."""
@@ -225,7 +225,7 @@ class TestTraversalPath:
         )
         
         assert len(path.nodes) == 2
-        assert path.total_similarity == 0.9
+        assert path.total_similarity == pytest.approx(0.9)
         assert path.path_type == "linear"
 
 
