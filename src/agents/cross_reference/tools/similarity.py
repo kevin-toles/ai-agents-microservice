@@ -3,14 +3,20 @@
 Pattern: LangChain Tool
 Source: ARCHITECTURE.md tool definition
 
-Anti-Pattern References (CODING_PATTERNS_ANALYSIS.md):
-- #4.3: Framework-required unused params → acknowledge with _ assignment
-- #42-43: Async without await → add asyncio.sleep(0) for stub
-- #9.1: TODO → NOTE conversion with WBS reference
+WBS 5.7: Implemented via semantic-search-service client.
+Uses focus_areas=["llm_rag"] for domain-aware filtering to exclude
+irrelevant C++/game programming content when searching for LLM topics.
 """
 
-import asyncio
+import logging
 from typing import Any
+
+from src.core.clients.semantic_search import (
+    SemanticSearchClient,
+    get_semantic_search_client,
+)
+
+logger = logging.getLogger(__name__)
 
 
 async def search_similar(
@@ -18,31 +24,53 @@ async def search_similar(
     top_k: int = 10,
     filter_tier: int | None = None,
     min_similarity: float = 0.7,
+    focus_areas: list[str] | None = None,
 ) -> dict[str, Any]:
     """Find chapters semantically similar to the source content.
     
-    Uses vector search via Qdrant for semantic similarity.
+    Uses vector search via semantic-search-service with domain filtering.
     
     Args:
         query_text: Text to find similar content for
         top_k: Number of similar results to return
         filter_tier: Optional: Only return results from this tier
         min_similarity: Minimum similarity threshold 0.0-1.0
+        focus_areas: Domain focus areas for filtering (default: ["llm_rag"])
         
     Returns:
         Dict with similar chapters and similarity scores
-        
-    Note:
-        WBS 5.7: Implementation pending semantic-search-service client.
     """
-    # Maintain async signature for future I/O operations (Anti-Pattern #42-43)
-    await asyncio.sleep(0)
+    # Get or create client
+    client = get_semantic_search_client()
+    if client is None:
+        # Create default client with llm_rag focus
+        client = SemanticSearchClient(focus_areas=["llm_rag"])
     
-    # Acknowledge params for future implementation (Anti-Pattern #4.3)
-    _ = query_text, top_k, filter_tier, min_similarity
+    # Use provided focus_areas or default to llm_rag
+    effective_focus_areas = focus_areas if focus_areas is not None else ["llm_rag"]
     
-    # NOTE: WBS 5.7 - Implement via semantic-search-service client
-    return {
-        "results": [],
-        "total": 0,
-    }
+    logger.debug(
+        "Searching similar content",
+        extra={
+            "query": query_text[:50],
+            "top_k": top_k,
+            "focus_areas": effective_focus_areas,
+        },
+    )
+    
+    try:
+        result = await client.search_similar(
+            query_text=query_text,
+            top_k=top_k,
+            filter_tier=filter_tier,
+            min_similarity=min_similarity,
+            focus_areas=effective_focus_areas,
+        )
+        return result
+    except Exception as e:
+        logger.error("Semantic search failed", extra={"error": str(e)})
+        return {
+            "results": [],
+            "total": 0,
+            "error": str(e),
+        }
