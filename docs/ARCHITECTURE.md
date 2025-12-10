@@ -2,13 +2,68 @@
 
 ## Overview
 
-The AI Agents service is a **microservice** that exposes specialized AI agents via REST APIs. Applications call these endpoints to perform agent tasks. The agents internally use the LLM Gateway, Semantic Search, and Graph Database (Neo4j) microservices.
+The AI Agents service is a **microservice** that exposes specialized AI agents via REST APIs. Applications call these endpoints to perform agent tasks. The agents internally use the LLM Gateway, Semantic Search, Code-Orchestrator-Service, and Graph Database (Neo4j) microservices.
 
 **This service is the core of the Unified Agent Platform** - supporting both batch processing (llm-document-enhancer) and interactive use cases (VS Code Copilot, IDE extensions).
 
 ## Architecture Type
 
 **Microservice** - Independently deployable, stateless, horizontally scalable. Agents are exposed as API endpoints, not as libraries.
+
+---
+
+## Kitchen Brigade Role: EXPEDITOR
+
+In the Kitchen Brigade architecture, **ai-agents** serves as the **Expeditor** - the coordinator that:
+- Receives orders from customers (applications)
+- Routes tasks to the appropriate stations
+- Ensures everything comes together correctly
+- Does NOT do the cooking itself
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                          🍽️  KITCHEN BRIGADE MODEL                           │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  👤 CUSTOMER (llm-document-enhancer, VS Code, CI/CD)                        │
+│     └─→ POST /v1/agents/cross-reference                                     │
+│                                                                              │
+│  📋 EXPEDITOR (ai-agents) ← THIS SERVICE                                    │
+│     └─→ Receives order                                                      │
+│     └─→ Coordinates between stations                                        │
+│     └─→ Does NOT host models                                                │
+│     └─→ Does NOT execute searches                                           │
+│     └─→ Orchestrates the workflow                                           │
+│                                                                              │
+│  👨‍🍳 SOUS CHEF (Code-Orchestrator-Service, Port 8083)                        │
+│     └─→ Hosts CodeT5+, GraphCodeBERT, CodeBERT models                       │
+│     └─→ Extracts keywords, validates terms, ranks results                   │
+│     └─→ Called BY ai-agents for semantic term extraction                    │
+│                                                                              │
+│  📖 COOKBOOK (Semantic Search Service, Port 8081)                           │
+│     └─→ DUMB retrieval only                                                 │
+│     └─→ Takes keywords from Sous Chef                                       │
+│     └─→ Returns ALL matches without judgment                                │
+│                                                                              │
+│  🚪 ROUTER (LLM Gateway, Port 8080)                                         │
+│     └─→ Routes LLM inference requests                                       │
+│     └─→ Manages sessions and tools                                          │
+│                                                                              │
+│  🗄️ PANTRY (Qdrant, Neo4j)                                                  │
+│     └─→ Stores embeddings and relationships                                 │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Service Responsibility Matrix
+
+| Service | Role | Intelligence | What It Does | What It Does NOT Do |
+|---------|------|--------------|--------------|---------------------|
+| **ai-agents** | Expeditor | **Orchestration** | Coordinates workflow, calls other services | Host models, execute searches |
+| **Code-Orchestrator-Service** | Sous Chef | **SMART** | Extracts keywords, validates, ranks | Store content, execute searches |
+| **Semantic Search Service** | Cookbook | **DUMB** | Takes keywords, queries DBs, returns all | Generate keywords, filter results |
+| **LLM Gateway** | Router | Routing only | Routes LLM requests, manages sessions | Make decisions about content |
+| **Qdrant/Neo4j** | Pantry | Storage | Store embeddings and relationships | Nothing else |
 
 ---
 
