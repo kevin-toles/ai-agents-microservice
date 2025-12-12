@@ -6,9 +6,12 @@ Pattern: LangGraph workflow node
 Source: TIER_RELATIONSHIP_DIAGRAM.md Steps 2-4
 """
 
+import logging
 from typing import Protocol
 
 from src.agents.cross_reference.state import ChapterMatch, CrossReferenceState
+
+logger = logging.getLogger(__name__)
 
 
 class Neo4jClient(Protocol):
@@ -48,7 +51,21 @@ def set_neo4j_client(client: Neo4jClient | None) -> None:
 
 
 def get_neo4j_client() -> Neo4jClient | None:
-    """Get the current Neo4j client."""
+    """Get the current Neo4j client.
+    
+    If no client is set, attempts to create one from environment variables.
+    This handles multi-worker scenarios where lifespan may not propagate.
+    """
+    global _neo4j_client
+    if _neo4j_client is None:
+        # Lazy initialization for multi-worker support
+        try:
+            from src.core.clients.neo4j import create_neo4j_client_from_env
+            _neo4j_client = create_neo4j_client_from_env()
+            if _neo4j_client:
+                logger.info("Neo4j client initialized lazily in worker")
+        except Exception as e:
+            logger.warning("Failed to lazily initialize Neo4j client: %s", e)
     return _neo4j_client
 
 
@@ -73,12 +90,16 @@ async def search_taxonomy(state: CrossReferenceState) -> dict:
     
     # Check for concepts to search
     concepts = state.analyzed_concepts
+    print(f"[DEBUG search_taxonomy] analyzed_concepts from state: {concepts}")
+    logger.info("search_taxonomy called with analyzed_concepts: %s", concepts)
     if not concepts:
         result["taxonomy_matches"] = []
         return result
     
     # Get Neo4j client
     client = get_neo4j_client()
+    print(f"[DEBUG search_taxonomy] Neo4j client: {'present' if client else 'None'}")
+    logger.info("Neo4j client from get_neo4j_client(): %s", "present" if client else "None")
     if client is None:
         result["taxonomy_matches"] = []
         result["errors"] = state.errors + ["Neo4j client not configured"]
@@ -101,11 +122,15 @@ async def search_taxonomy(state: CrossReferenceState) -> dict:
     
     try:
         # Search Neo4j
+        print(f"[DEBUG search_taxonomy] Calling search_chapters with concepts={concepts}, tiers={tiers}")
+        logger.info("Calling client.search_chapters with concepts=%s, tiers=%s, limit=20", concepts, tiers)
         raw_matches = await client.search_chapters(
             concepts=concepts,
             tiers=tiers,
             limit=20,  # Get more than we need for filtering
         )
+        print(f"[DEBUG search_taxonomy] Raw matches from Neo4j: {len(raw_matches)}")
+        logger.info("Raw matches from Neo4j: %d", len(raw_matches))
         
         # Convert to ChapterMatch models
         matches = []
