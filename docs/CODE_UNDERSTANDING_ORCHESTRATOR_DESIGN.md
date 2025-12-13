@@ -1,5 +1,17 @@
 # Code Understanding Orchestrator Service
 
+> ## ⚠️ DEPRECATED
+> **Date**: January 2025  
+> **Reason**: This document is a duplicate. The canonical version lives in the Code-Orchestrator-Service repository.
+> 
+> **Canonical Document**:
+> - [Code-Orchestrator-Service/docs/ARCHITECTURE.md](/Code-Orchestrator-Service/docs/ARCHITECTURE.md) - Sous Chef architecture
+>
+> **Platform Context**:
+> - [AI_CODING_PLATFORM_ARCHITECTURE.md](/textbooks/pending/platform/AI_CODING_PLATFORM_ARCHITECTURE.md) - Kitchen Brigade overview
+>
+> This document is retained for historical reference only. Do not update.
+
 ## Executive Summary
 
 A standalone microservice that coordinates multiple specialized code understanding models (CodeT5+, GraphCodeBERT, CodeBERT) to dynamically extract, validate, and rank search terms from natural language queries. This service replaces hardcoded keyword mappings with intelligent, context-aware term generation.
