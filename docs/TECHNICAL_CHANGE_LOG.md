@@ -20,6 +20,59 @@ This document tracks all implementation changes, their rationale, and git commit
 
 ## 2025-12-13
 
+### CL-010: Enrichment Scalability - Agent Reference Prioritization
+
+| Field | Value |
+|-------|-------|
+| **Date/Time** | 2025-12-13 |
+| **WBS Item** | Phase 3.7 - Incremental/Delta Enrichment Pipeline |
+| **Change Type** | Architecture |
+| **Summary** | Agents now receive `similar_chapters` from full corpus, apply taxonomy filtering |
+| **Files Changed** | `docs/ARCHITECTURE.md`, `docs/TECHNICAL_CHANGE_LOG.md` |
+| **Rationale** | Support scalable enrichment with taxonomy-aware reference prioritization |
+| **Git Commit** | Pending |
+
+**Key Changes for Agents:**
+
+| Before | After |
+|--------|-------|
+| `similar_chapters` pre-filtered by taxonomy | `similar_chapters` from FULL corpus |
+| Agent received only relevant refs | Agent receives all refs, applies taxonomy filter |
+| Limited to taxonomy books | Can reference any book, tier from taxonomy |
+
+**Cross-Reference Agent Update:**
+
+```python
+# Agent workflow with full-corpus similar_chapters
+async def cross_reference(chapter_id: str, taxonomy: str = None):
+    # 1. Get similar chapters (from full corpus)
+    similar = await semantic_search.get_similar_chapters(chapter_id)
+    
+    # 2. If taxonomy specified, filter and add tier info
+    if taxonomy:
+        taxonomy_data = await load_taxonomy(taxonomy)
+        taxonomy_books = extract_book_titles(taxonomy_data)
+        similar = [
+            {**s, "tier": get_tier(s["book"], taxonomy_data)}
+            for s in similar
+            if s["book"] in taxonomy_books
+        ]
+    
+    # 3. Prioritize by tier (Tier 1 first) if taxonomy provided
+    if taxonomy:
+        similar.sort(key=lambda x: (x["tier"], -x["score"]))
+    
+    # 4. Generate citations with tier-aware structure
+    return generate_citations(similar)
+```
+
+**Benefits for Agents:**
+- Can dynamically switch taxonomies without re-querying enriched data
+- Cross-reference agent can prioritize Tier 1 references
+- Adding new book = agent automatically sees new similar_chapters
+
+---
+
 ### CL-009: Taxonomy-Agnostic Architecture
 
 | Field | Value |

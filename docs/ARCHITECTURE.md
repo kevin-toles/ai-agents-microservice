@@ -340,6 +340,74 @@ POST /v1/agents/cross-reference
 
 ---
 
+## Enrichment Scalability - Agent Perspective
+
+Agents receive `similar_chapters` from the FULL corpus and apply taxonomy filtering during reference prioritization.
+
+### How Agents Handle Full-Corpus Similar Chapters
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│         AGENT REFERENCE PRIORITIZATION WITH FULL-CORPUS DATA                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  1. Agent calls semantic-search for similar_chapters:                       │
+│     POST /v1/search/similar-chapters                                         │
+│     {"chapter_id": "arch_patterns_ch4", "taxonomy": "AI-ML_taxonomy"}       │
+│                                                                              │
+│  2. Semantic-search returns filtered results (filtered by taxonomy):        │
+│     {                                                                        │
+│       "similar_chapters": [                                                  │
+│         {"book": "Clean Architecture", "score": 0.91, "tier": 1},           │
+│         {"book": "Building Microservices", "score": 0.88, "tier": 2}        │
+│       ]                                                                      │
+│     }                                                                        │
+│                                                                              │
+│  3. Agent prioritizes by tier (Tier 1 references first):                    │
+│     - Tier 1: Clean Architecture, AI Engineering, ...                       │
+│     - Tier 2: Building Microservices, Designing Data-Intensive Apps, ...    │
+│     - Tier 3: (lower priority references)                                   │
+│                                                                              │
+│  4. Agent generates citations with tier-aware structure:                    │
+│     "See Clean Architecture (Tier 1, Priority 1) for foundational          │
+│      patterns, and Building Microservices (Tier 2, Priority 6) for         │
+│      implementation details."                                                │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Cross-Reference Agent Workflow
+
+```python
+async def cross_reference(chapter_id: str, taxonomy: str = None):
+    # 1. Get similar chapters (filtered by taxonomy if provided)
+    similar = await semantic_search.get_similar_chapters(
+        chapter_id=chapter_id,
+        taxonomy=taxonomy  # Filtering happens in semantic-search-service
+    )
+    
+    # 2. Results already have tier info if taxonomy was specified
+    # 3. Prioritize by tier (Tier 1 first, then by score within tier)
+    if taxonomy:
+        similar.sort(key=lambda x: (x.get("tier", 99), -x["score"]))
+    else:
+        similar.sort(key=lambda x: -x["score"])  # Pure similarity ranking
+    
+    # 4. Generate citations with tier-aware structure
+    return generate_scholarly_citations(similar, include_tier=bool(taxonomy))
+```
+
+### Benefits for Agents
+
+| Benefit | Description |
+|---------|-------------|
+| **Dynamic Taxonomy Switching** | Can switch taxonomies between requests without re-querying enriched data |
+| **Tier-Aware Prioritization** | Tier 1 references automatically prioritized when taxonomy specified |
+| **Automatic Updates** | New books added to corpus automatically appear in similar_chapters |
+| **No Agent Code Changes** | Filtering logic is in semantic-search-service |
+
+---
+
 ## Agents
 
 ### Cross-Reference Agent
@@ -349,7 +417,7 @@ The flagship agent for taxonomy-aware cross-referencing. Implements the spider w
 - **Input**: Source chapter, taxonomy (optional), traversal parameters
 - **Tools**: 
   - `search_taxonomy()` → Query Neo4j for related books/tiers
-  - `search_similar()` → Query Qdrant for similar chapters
+  - `search_similar()` → Query Qdrant for similar chapters (full corpus, filtered by taxonomy)
   - `get_chapter_metadata()` → Retrieve keywords, concepts, summary
   - `get_chapter_text()` → Retrieve full chapter content
   - `traverse_graph()` → Execute spider web traversal paths
