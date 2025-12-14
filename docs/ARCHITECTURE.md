@@ -273,30 +273,87 @@ ai-agents/
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/v1/agents/cross-reference` | **NEW** - Run taxonomy cross-referencing |
+| POST | `/v1/agents/cross-reference` | Run taxonomy cross-referencing (accepts `taxonomy` param) |
 | POST | `/v1/agents/code-review` | Run code review on diff/PR |
 | POST | `/v1/agents/architecture` | Run architecture analysis |
 | POST | `/v1/agents/doc-generate` | Generate documentation |
 | GET | `/v1/agents` | List available agents |
+| GET | `/v1/taxonomies` | List available taxonomies |
 | GET | `/health` | Health check |
 | GET | `/ready` | Readiness check |
 
 ---
 
+## Taxonomy-Agnostic Architecture
+
+> **Key Principle**: Taxonomies are query-time overlays, NOT baked into seeded data.
+
+### How Agents Use Taxonomies
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  User Request: "Cross-reference this chapter using Security taxonomy"        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  POST /v1/agents/cross-reference                                             │
+│  {                                                                           │
+│    "chapter_id": "arch_patterns_ch4_abc123",                                │
+│    "taxonomy": "Security_taxonomy",     ← User specifies taxonomy           │
+│    "tier_filter": [1, 2],               ← Optional: only high-priority refs │
+│    "max_references": 10                                                      │
+│  }                                                                           │
+│                                                                              │
+│  Agent Workflow:                                                             │
+│  1. Load taxonomy from ai-platform-data/taxonomies/ (query-time)            │
+│  2. Search semantic-search-service WITH taxonomy parameter                   │
+│  3. Results include tier/priority from specified taxonomy                    │
+│  4. Agent prioritizes Tier 1 references over Tier 3                         │
+│  5. Generate citations with tier-aware structure                             │
+│                                                                              │
+│  BENEFITS:                                                                   │
+│  • User can switch taxonomies without any re-processing                     │
+│  • Same content, different organizational views                              │
+│  • Adding new taxonomy = just add JSON file to ai-platform-data             │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Request Examples
+
+**With taxonomy** (tier info included):
+```json
+POST /v1/agents/cross-reference
+{
+  "chapter_id": "arch_patterns_ch4_abc123",
+  "taxonomy": "AI-ML_taxonomy",
+  "tier_filter": [1, 2]
+}
+```
+
+**Without taxonomy** (taxonomy-agnostic):
+```json
+POST /v1/agents/cross-reference
+{
+  "chapter_id": "arch_patterns_ch4_abc123"
+}
+```
+
+---
+
 ## Agents
 
-### Cross-Reference Agent (NEW)
+### Cross-Reference Agent
 
 The flagship agent for taxonomy-aware cross-referencing. Implements the spider web traversal model.
 
-- **Input**: Source chapter, taxonomy configuration, traversal parameters
+- **Input**: Source chapter, taxonomy (optional), traversal parameters
 - **Tools**: 
   - `search_taxonomy()` → Query Neo4j for related books/tiers
   - `search_similar()` → Query Qdrant for similar chapters
   - `get_chapter_metadata()` → Retrieve keywords, concepts, summary
   - `get_chapter_text()` → Retrieve full chapter content
   - `traverse_graph()` → Execute spider web traversal paths
-- **Output**: Scholarly annotation with Chicago-style citations, tier-aware structure
+- **Output**: Scholarly annotation with Chicago-style citations, tier-aware structure (when taxonomy provided)
 
 ### Code Review Agent
 - **Input**: Code diff, PR metadata
@@ -324,7 +381,7 @@ All agents share a common tool registry. Below are the schemas for Cross-Referen
 ```python
 {
     "name": "search_taxonomy",
-    "description": "Search the taxonomy graph for books related to a query. Returns books with their tier levels and relationship types.",
+    "description": "Search the taxonomy graph for books related to a query. Returns books with their tier levels and relationship types. Taxonomy is loaded at query-time from ai-platform-data/taxonomies/.",
     "parameters": {
         "type": "object",
         "properties": {
@@ -336,9 +393,9 @@ All agents share a common tool registry. Below are the schemas for Cross-Referen
                 "type": "integer",
                 "description": "The tier of the source book (for relationship calculation)"
             },
-            "taxonomy_id": {
+            "taxonomy": {
                 "type": "string",
-                "description": "ID of the taxonomy to search within"
+                "description": "Name of taxonomy file (e.g., 'AI-ML_taxonomy'). Loaded at query-time, NO re-seeding required."
             },
             "max_results": {
                 "type": "integer",
@@ -346,7 +403,7 @@ All agents share a common tool registry. Below are the schemas for Cross-Referen
                 "description": "Maximum number of results to return"
             }
         },
-        "required": ["query", "taxonomy_id"]
+        "required": ["query"]
     }
 }
 ```

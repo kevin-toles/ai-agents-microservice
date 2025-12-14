@@ -18,6 +18,53 @@ This document tracks all implementation changes, their rationale, and git commit
 
 ---
 
+## 2025-12-13
+
+### CL-009: Taxonomy-Agnostic Architecture
+
+| Field | Value |
+|-------|-------|
+| **Date/Time** | 2025-12-13 |
+| **WBS Item** | Phase 3.6 - Taxonomy Registry & Query-Time Resolution |
+| **Change Type** | Architecture |
+| **Summary** | Taxonomies are now query-time overlays, not baked into seeded data |
+| **Files Changed** | `docs/ARCHITECTURE.md` |
+| **Rationale** | Enable multi-taxonomy support without re-seeding databases |
+| **Git Commit** | Pending |
+
+**Key Changes:**
+
+| Before | After |
+|--------|-------|
+| `taxonomy_id` required in tool calls | `taxonomy` optional in API/tool calls |
+| Tier baked into database payloads | Tier applied at query-time from taxonomy file |
+| Re-seed required for taxonomy changes | NO re-seeding required |
+
+**API Contract Update:**
+
+```python
+# Cross-Reference Agent - taxonomy is now OPTIONAL
+POST /v1/agents/cross-reference
+{
+    "chapter_id": "arch_patterns_ch4_abc123",
+    "taxonomy": "AI-ML_taxonomy",    # Optional - loaded at query-time
+    "tier_filter": [1, 2]            # Optional - filter by tier
+}
+
+# Without taxonomy - taxonomy-agnostic results
+POST /v1/agents/cross-reference
+{
+    "chapter_id": "arch_patterns_ch4_abc123"
+}
+```
+
+**Benefits:**
+- Users can switch taxonomies via prompt without any re-processing
+- Multiple teams can use different taxonomies simultaneously
+- Adding new taxonomy = just add JSON file to `ai-platform-data/taxonomies/`
+
+---
+
 ## 2025-12-09
 
 ### CL-008: WBS 0.1.1 - Integration Profile Cross-Reference
