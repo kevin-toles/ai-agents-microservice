@@ -1,0 +1,159 @@
+"""MSEP Schemas.
+
+WBS: MSE-2.1 - Input Schema Dataclasses
+WBS: MSE-2.2 - Output Schema Dataclasses
+
+Defines all MSEP data structures using dataclasses.
+
+Anti-Patterns Avoided (per CODING_PATTERNS_ANALYSIS.md):
+- S1192: Uses constants from constants.py
+- #2.2: Full type annotations
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
+
+from src.agents.msep.constants import CHAPTER_ID_FORMAT
+
+if TYPE_CHECKING:
+    from src.agents.msep.config import MSEPConfig
+
+
+# =============================================================================
+# MSE-2.1: Input Schema Dataclasses
+# =============================================================================
+
+
+@dataclass
+class ChapterMeta:
+    """Metadata for a single chapter in the corpus.
+
+    Attributes:
+        book: Book title.
+        chapter: Chapter number.
+        title: Chapter title.
+        id: Unique chapter identifier (auto-generated if not provided).
+    """
+
+    book: str
+    chapter: int
+    title: str
+    id: str = field(default="")
+
+    def __post_init__(self) -> None:
+        """Auto-generate id if not provided."""
+        if not self.id:
+            self.id = CHAPTER_ID_FORMAT.format(book=self.book, chapter=self.chapter)
+
+
+@dataclass
+class MSEPRequest:
+    """Request payload for MSEP enrichment.
+
+    Attributes:
+        corpus: List of document texts (one per chapter).
+        chapter_index: Metadata for each chapter.
+        config: MSEP configuration.
+    """
+
+    corpus: list[str]
+    chapter_index: list[ChapterMeta]
+    config: "MSEPConfig"
+
+
+# =============================================================================
+# MSE-2.2: Output Schema Dataclasses
+# =============================================================================
+
+
+@dataclass
+class CrossReference:
+    """A cross-reference to another chapter.
+
+    Attributes:
+        target: Target chapter ID (e.g., "Book:ch5").
+        score: Final similarity score (base + boost).
+        base_score: Raw similarity score from SBERT.
+        topic_boost: Boost applied if same topic.
+        method: Enrichment method used (sbert, tfidf, bertopic, hybrid).
+    """
+
+    target: str
+    score: float
+    base_score: float
+    topic_boost: float
+    method: str
+
+
+@dataclass
+class MergedKeywords:
+    """Keywords from multiple extraction methods.
+
+    Attributes:
+        tfidf: Keywords extracted via TF-IDF.
+        semantic: Keywords extracted via semantic methods.
+        merged: Combined and deduplicated keywords.
+    """
+
+    tfidf: list[str]
+    semantic: list[str]
+    merged: list[str]
+
+
+@dataclass
+class Provenance:
+    """Provenance tracking for enrichment results.
+
+    Attributes:
+        methods_used: List of enrichment methods applied.
+        sbert_score: SBERT similarity score (if used).
+        topic_boost: Topic boost applied (if same topic).
+        timestamp: ISO 8601 timestamp of enrichment.
+    """
+
+    methods_used: list[str]
+    sbert_score: float
+    topic_boost: float
+    timestamp: str
+
+
+@dataclass
+class EnrichedChapter:
+    """Enriched metadata for a single chapter.
+
+    Attributes:
+        chapter_id: Unique chapter identifier.
+        cross_references: List of cross-references to other chapters.
+        keywords: Merged keywords from all methods.
+        topic_id: BERTopic cluster assignment.
+        provenance: Tracking info for how results were generated.
+    """
+
+    chapter_id: str
+    cross_references: list[CrossReference]
+    keywords: MergedKeywords
+    topic_id: int
+    provenance: Provenance
+
+
+@dataclass
+class EnrichedMetadata:
+    """Complete enriched metadata for an MSEP request.
+
+    Attributes:
+        chapters: List of enriched chapter metadata.
+        processing_time_ms: Total processing time in milliseconds.
+        total_cross_references: Total count of all cross-references.
+    """
+
+    chapters: list[EnrichedChapter]
+    processing_time_ms: float
+    total_cross_references: int = field(default=0)
+
+    def __post_init__(self) -> None:
+        """Compute total_cross_references from chapters."""
+        self.total_cross_references = sum(
+            len(ch.cross_references) for ch in self.chapters
+        )
