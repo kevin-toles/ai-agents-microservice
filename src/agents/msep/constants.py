@@ -89,3 +89,30 @@ METHOD_HYBRID: str = "hybrid"
 
 CHAPTER_ID_FORMAT: str = "{book}:ch{chapter}"
 """Format string for auto-generating chapter IDs."""
+
+# =============================================================================
+# API Endpoints (S1192 compliance - MSE-3)
+# =============================================================================
+
+# Code-Orchestrator-Service endpoints
+ENDPOINT_SBERT_EMBEDDINGS: str = "/v1/sbert/embeddings"
+"""Endpoint for SBERT embeddings."""
+
+ENDPOINT_SBERT_SIMILARITY: str = "/v1/sbert/similarity"
+"""Endpoint for SBERT similarity matrix."""
+
+ENDPOINT_BERTOPIC_CLUSTER: str = "/v1/bertopic/cluster"
+"""Endpoint for BERTopic clustering."""
+
+ENDPOINT_KEYWORDS_EXTRACT: str = "/v1/keywords/extract"
+"""Endpoint for TF-IDF keyword extraction."""
+
+# Semantic-Search-Service endpoints
+ENDPOINT_SEARCH_HYBRID: str = "/v1/search/hybrid"
+"""Endpoint for hybrid search."""
+
+ENDPOINT_GRAPH_RELATIONSHIPS: str = "/v1/graph/relationships"
+"""Endpoint for graph relationships."""
+
+ENDPOINT_GRAPH_RELATIONSHIPS_BATCH: str = "/v1/graph/relationships/batch"
+"""Endpoint for batch graph relationships."""
