@@ -116,3 +116,19 @@ ENDPOINT_GRAPH_RELATIONSHIPS: str = "/v1/graph/relationships"
 
 ENDPOINT_GRAPH_RELATIONSHIPS_BATCH: str = "/v1/graph/relationships/batch"
 """Endpoint for batch graph relationships."""
+
+# =============================================================================
+# Service Base URLs (Environment-Configurable)
+# =============================================================================
+
+import os
+
+SERVICE_CODE_ORCHESTRATOR_URL: str = os.environ.get(
+    "CODE_ORCHESTRATOR_URL", "http://localhost:8082"
+)
+"""Base URL for Code-Orchestrator-Service (env: CODE_ORCHESTRATOR_URL)."""
+
+SERVICE_SEMANTIC_SEARCH_URL: str = os.environ.get(
+    "SEMANTIC_SEARCH_URL", "http://localhost:8083"
+)
+"""Base URL for semantic-search-service (env: SEMANTIC_SEARCH_URL)."""
