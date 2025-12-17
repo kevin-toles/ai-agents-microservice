@@ -368,10 +368,15 @@ class TestEnrichedChapter:
         )
 
         chapter = EnrichedChapter(
+            book="Book",
+            chapter=1,
+            title="Introduction",
             chapter_id="Book:ch1",
             cross_references=[],
             keywords=MergedKeywords(tfidf=[], semantic=[], merged=[]),
             topic_id=0,
+            topic_name=None,
+            graph_relationships=[],
             provenance=Provenance(
                 methods_used=["sbert"],
                 sbert_score=0.0,
@@ -401,10 +406,15 @@ class TestEnrichedChapter:
             )
         ]
         chapter = EnrichedChapter(
+            book="Book",
+            chapter=1,
+            title="Introduction",
             chapter_id="Book:ch1",
             cross_references=refs,
             keywords=MergedKeywords(tfidf=[], semantic=[], merged=[]),
             topic_id=0,
+            topic_name=None,
+            graph_relationships=[],
             provenance=Provenance(
                 methods_used=["sbert"],
                 sbert_score=0.8,
@@ -425,10 +435,15 @@ class TestEnrichedChapter:
 
         kw = MergedKeywords(tfidf=["python"], semantic=["ai"], merged=["python", "ai"])
         chapter = EnrichedChapter(
+            book="Book",
+            chapter=1,
+            title="Introduction",
             chapter_id="Book:ch1",
             cross_references=[],
             keywords=kw,
             topic_id=0,
+            topic_name=None,
+            graph_relationships=[],
             provenance=Provenance(
                 methods_used=["sbert"],
                 sbert_score=0.0,
@@ -448,10 +463,15 @@ class TestEnrichedChapter:
         )
 
         chapter = EnrichedChapter(
+            book="Book",
+            chapter=1,
+            title="Introduction",
             chapter_id="Book:ch1",
             cross_references=[],
             keywords=MergedKeywords(tfidf=[], semantic=[], merged=[]),
             topic_id=3,
+            topic_name="Machine Learning",
+            graph_relationships=[],
             provenance=Provenance(
                 methods_used=["bertopic"],
                 sbert_score=0.0,
@@ -477,10 +497,15 @@ class TestEnrichedChapter:
             timestamp="2025-12-16T12:00:00Z",
         )
         chapter = EnrichedChapter(
+            book="Book",
+            chapter=1,
+            title="Introduction",
             chapter_id="Book:ch1",
             cross_references=[],
             keywords=MergedKeywords(tfidf=[], semantic=[], merged=[]),
             topic_id=0,
+            topic_name=None,
+            graph_relationships=[],
             provenance=prov,
         )
 
@@ -543,17 +568,27 @@ class TestEnrichedMetadata:
 
         chapters = [
             EnrichedChapter(
+                book="Book",
+                chapter=1,
+                title="Introduction",
                 chapter_id="Book:ch1",
                 cross_references=[ref1, ref2],
                 keywords=MergedKeywords(tfidf=[], semantic=[], merged=[]),
                 topic_id=0,
+                topic_name=None,
+                graph_relationships=[],
                 provenance=prov,
             ),
             EnrichedChapter(
+                book="Book",
+                chapter=2,
+                title="Fundamentals",
                 chapter_id="Book:ch2",
                 cross_references=[ref1],
                 keywords=MergedKeywords(tfidf=[], semantic=[], merged=[]),
                 topic_id=1,
+                topic_name="Topic 1",
+                graph_relationships=[],
                 provenance=prov,
             ),
         ]
@@ -627,10 +662,15 @@ class TestSchemasSerialization:
         )
         kw = MergedKeywords(tfidf=["python"], semantic=["ai"], merged=["python", "ai"])
         chapter = EnrichedChapter(
+            book="Book",
+            chapter=1,
+            title="Introduction",
             chapter_id="Book:ch1",
             cross_references=[ref],
             keywords=kw,
             topic_id=0,
+            topic_name=None,
+            graph_relationships=["PARALLEL:Book:ch2"],
             provenance=prov,
         )
         metadata = EnrichedMetadata(
@@ -645,3 +685,9 @@ class TestSchemasSerialization:
         assert "processing_time_ms" in result
         assert "total_cross_references" in result
         assert len(result["chapters"]) == 1
+        # Verify new fields are serialized
+        assert result["chapters"][0]["book"] == "Book"
+        assert result["chapters"][0]["chapter"] == 1
+        assert result["chapters"][0]["title"] == "Introduction"
+        assert result["chapters"][0]["topic_name"] is None
+        assert result["chapters"][0]["graph_relationships"] == ["PARALLEL:Book:ch2"]

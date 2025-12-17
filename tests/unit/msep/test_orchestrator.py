@@ -316,10 +316,10 @@ class TestOrchestratorHandlesPartialFailures:
 
         result = await orchestrator.enrich_metadata(sample_request)
 
-        # Should succeed with default topic_id
+        # Should succeed with None topic_id when topics unavailable
         assert result is not None
         for chapter in result.chapters:
-            assert chapter.topic_id == -1  # Default for missing
+            assert chapter.topic_id is None  # None when topics unavailable
 
     @pytest.mark.asyncio
     async def test_succeeds_with_keywords_failure(

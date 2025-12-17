@@ -501,10 +501,10 @@ class TestResultAggregator:
             top_k=10,
         )
 
-        # Should work, with -1 as default topic and no boosts
+        # Should work, with None as topic_id when no topics available
         assert isinstance(result, EnrichedMetadata)
         for chapter in result.chapters:
-            assert chapter.topic_id == -1  # Default when no topics
+            assert chapter.topic_id is None  # None when no valid topics
 
     def test_merge_results_handles_none_keywords(
         self,

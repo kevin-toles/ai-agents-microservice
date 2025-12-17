@@ -242,13 +242,13 @@ class CodeOrchestratorClient:
         return np.array(data["similarity_matrix"])
 
     async def cluster_topics(
-        self, corpus: list[str], chapter_index: int
+        self, corpus: list[str], chapter_index: list[dict[str, Any]]
     ) -> dict[str, Any]:
         """Cluster corpus into topics using BERTopic.
 
         Args:
             corpus: List of documents to cluster
-            chapter_index: Index of the source chapter for context
+            chapter_index: List of chapter metadata dicts with book, chapter, title
 
         Returns:
             Dict with topic_assignments, topic_count, chapter_topic, topics_info

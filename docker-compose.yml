@@ -1,0 +1,122 @@
+# ==============================================================================
+# AI Agents Service - Docker Compose
+# ==============================================================================
+# Reference: GRAPH_RAG_POC_PLAN.md Phase 7 (WBS 7.6)
+# Reference: MULTI_STAGE_ENRICHMENT_PIPELINE_ARCHITECTURE.md
+#
+# Kitchen Brigade Architecture:
+#   - ai-agents: EXPEDITOR - coordinates MSEP enrichment pipeline
+#   - Depends on: llm-gateway, semantic-search, neo4j
+#
+# Usage:
+#   docker-compose up -d                    # Start ai-agents with dependencies
+#   docker-compose up -d ai-agents          # Start ai-agents only (assumes deps running)
+#   docker-compose --profile standalone up  # Start with its own Neo4j
+#   docker-compose logs -f ai-agents        # Follow logs
+#   docker-compose down                     # Stop all
+#
+# Health Verification:
+#   curl http://localhost:8082/health
+#   curl http://localhost:8082/health/ready
+# ==============================================================================
+
+services:
+  # ============================================================================
+  # AI Agents Service - MSEP Orchestrator
+  # ============================================================================
+  ai-agents:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-agents
+    ports:
+      - "8082:8082"
+    environment:
+      # Service configuration
+      AI_AGENTS_PORT: 8082
+      AI_AGENTS_ENVIRONMENT: ${AI_AGENTS_ENVIRONMENT:-development}
+      AI_AGENTS_LOG_LEVEL: ${AI_AGENTS_LOG_LEVEL:-INFO}
+      
+      # External service URLs - Kitchen Brigade dependencies
+      # Code-Orchestrator-Service (Sous Chef) on port 8083
+      CODE_ORCHESTRATOR_URL: ${CODE_ORCHESTRATOR_URL:-http://host.docker.internal:8083}
+      # semantic-search-service (Cookbook) on port 8081
+      SEMANTIC_SEARCH_URL: ${SEMANTIC_SEARCH_URL:-http://host.docker.internal:8081}
+      # llm-gateway (Router) on port 8080
+      AI_AGENTS_LLM_GATEWAY_URL: ${AI_AGENTS_LLM_GATEWAY_URL:-http://host.docker.internal:8080}
+      
+      # Neo4j configuration
+      AI_AGENTS_NEO4J_URI: ${AI_AGENTS_NEO4J_URI:-bolt://host.docker.internal:7687}
+      AI_AGENTS_NEO4J_USER: ${AI_AGENTS_NEO4J_USER:-neo4j}
+      AI_AGENTS_NEO4J_PASSWORD: ${AI_AGENTS_NEO4J_PASSWORD:-devpassword}
+      
+      # Agent configuration
+      AI_AGENTS_DEFAULT_LLM_MODEL: ${AI_AGENTS_DEFAULT_LLM_MODEL:-claude-3-sonnet-20240229}
+      AI_AGENTS_MAX_TRAVERSAL_HOPS: ${AI_AGENTS_MAX_TRAVERSAL_HOPS:-3}
+      AI_AGENTS_DEFAULT_SIMILARITY_THRESHOLD: ${AI_AGENTS_DEFAULT_SIMILARITY_THRESHOLD:-0.7}
+      
+      # Feature flags
+      AI_AGENTS_ENABLE_CROSS_REFERENCE_AGENT: "true"
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - ai-agents-network
+    # For connecting to host services (llm-gateway, semantic-search, neo4j)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # ============================================================================
+  # Optional: Standalone Neo4j (use --profile standalone)
+  # ============================================================================
+  neo4j:
+    image: neo4j:5.15-community
+    container_name: ai-agents-neo4j
+    ports:
+      - "7474:7474"  # HTTP
+      - "7687:7687"  # Bolt
+    environment:
+      NEO4J_AUTH: neo4j/devpassword
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_security_procedures_unrestricted: apoc.*
+    volumes:
+      - neo4j-data:/data
+      - neo4j-logs:/logs
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:7474"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - ai-agents-network
+    profiles:
+      - standalone
+
+# ==============================================================================
+# Networks
+# ==============================================================================
+networks:
+  ai-agents-network:
+    name: ai-agents-network
+    driver: bridge
+  # Connect to llm-gateway network if it exists
+  llm-network:
+    name: llm-network
+    external: true
+
+# ==============================================================================
+# Volumes
+# ==============================================================================
+volumes:
+  neo4j-data:
+    name: ai-agents-neo4j-data
+  neo4j-logs:
+    name: ai-agents-neo4j-logs

@@ -10,3 +10,6 @@ structlog>=24.1.0
 tenacity>=8.2.0
 asyncio-throttle>=1.0.0
 neo4j>=5.0.0
+
+# MSEP dependencies (Multi-Stage Enrichment Pipeline)
+numpy>=1.24.0

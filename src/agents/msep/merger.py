@@ -232,16 +232,68 @@ def _build_enriched_chapters(
         merged_keywords = _build_merged_keywords(keywords[i] if i < len(keywords) else [])
         provenance = _build_chapter_provenance(cross_refs)
 
+        # Parse chapter_id to extract book and chapter number
+        # Format: "Book:chN" or "Book::N" or just "chapter_N"
+        book, chapter_num, title = _parse_chapter_id(chapter_id, i)
+        topic_id = topics[i] if i < len(topics) and topics[i] >= 0 else None
+        topic_name = f"Topic {topic_id}" if topic_id is not None else None
+
         chapter = EnrichedChapter(
+            book=book,
+            chapter=chapter_num,
+            title=title,
             chapter_id=chapter_id,
             cross_references=cross_refs,
             keywords=merged_keywords,
-            topic_id=topics[i] if i < len(topics) else -1,
+            topic_id=topic_id,
+            topic_name=topic_name,
+            graph_relationships=[],  # Merger doesn't have hybrid results
             provenance=provenance,
         )
         chapters.append(chapter)
 
     return chapters
+
+
+def _parse_chapter_id(chapter_id: str, index: int) -> tuple[str, int, str]:
+    """Parse chapter_id string to extract book, chapter number, and title.
+
+    Handles formats:
+    - "Book:chN" (e.g., "Deep Learning:ch1")
+    - "Book::N" (e.g., "Deep Learning::1")
+    - Fallback: "Unknown Book", index+1, chapter_id as title
+
+    Args:
+        chapter_id: Chapter identifier string.
+        index: Chapter index (for fallback).
+
+    Returns:
+        Tuple of (book, chapter_number, title).
+    """
+    # Try "Book:chN" format
+    if ":ch" in chapter_id:
+        parts = chapter_id.split(":ch")
+        if len(parts) == 2:
+            book = parts[0]
+            try:
+                chapter_num = int(parts[1])
+                return (book, chapter_num, f"Chapter {chapter_num}")
+            except ValueError:
+                pass
+
+    # Try "Book::N" format
+    if "::" in chapter_id:
+        parts = chapter_id.split("::")
+        if len(parts) == 2:
+            book = parts[0]
+            try:
+                chapter_num = int(parts[1])
+                return (book, chapter_num, f"Chapter {chapter_num}")
+            except ValueError:
+                pass
+
+    # Fallback
+    return ("Unknown Book", index + 1, chapter_id)
 
 
 def _build_cross_references(

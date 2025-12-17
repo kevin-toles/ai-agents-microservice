@@ -20,6 +20,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
 from numpy.typing import NDArray
 
 from src.agents.msep.exceptions import ServiceUnavailableError
@@ -126,10 +127,16 @@ class MSEPDispatcher:
         Returns:
             List of asyncio tasks
         """
+        # Convert chapter_index to list of dicts for Code-Orchestrator API
+        chapter_index_dicts = [
+            {"book": ch.book, "chapter": ch.chapter, "title": ch.title}
+            for ch in request.chapter_index
+        ]
+        
         tasks: list[asyncio.Task[Any]] = [
             asyncio.create_task(self._get_embeddings(request.corpus)),
             asyncio.create_task(self._get_similarity(request.corpus)),
-            asyncio.create_task(self._get_topics(request.corpus, chapter_index=0)),
+            asyncio.create_task(self._get_topics(request.corpus, chapter_index_dicts)),
             asyncio.create_task(self._get_keywords(request.corpus)),
         ]
 
@@ -198,12 +205,14 @@ class MSEPDispatcher:
         """
         return await self._code_orchestrator.get_similarity_matrix(corpus)
 
-    async def _get_topics(self, corpus: list[str], chapter_index: int) -> dict[str, Any]:
+    async def _get_topics(
+        self, corpus: list[str], chapter_index: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         """Get topic clusters from Code-Orchestrator.
 
         Args:
             corpus: List of document texts
-            chapter_index: Index of the source chapter for context
+            chapter_index: List of chapter metadata dicts
 
         Returns:
             Topics response dict
@@ -240,7 +249,7 @@ class MSEPDispatcher:
         """Process embeddings result (critical service).
 
         Args:
-            result: Result from embeddings call
+            result: Result from embeddings call (NDArray or Exception)
             dispatch_result: DispatchResult to update
 
         Raises:
@@ -252,7 +261,11 @@ class MSEPDispatcher:
                 f"Code-Orchestrator embeddings failed: {result}",
                 service="code-orchestrator",
             )
-        dispatch_result.embeddings = result.get("embeddings", [])
+        # Client returns numpy array directly, not a dict
+        if isinstance(result, np.ndarray):
+            dispatch_result.embeddings = result
+        else:
+            dispatch_result.embeddings = result.get("embeddings", [])
 
     def _process_similarity_result(
         self, result: Any, dispatch_result: DispatchResult
@@ -260,7 +273,7 @@ class MSEPDispatcher:
         """Process similarity result (critical service).
 
         Args:
-            result: Result from similarity call
+            result: Result from similarity call (NDArray or Exception)
             dispatch_result: DispatchResult to update
 
         Raises:
@@ -272,7 +285,11 @@ class MSEPDispatcher:
                 f"Code-Orchestrator similarity failed: {result}",
                 service="code-orchestrator",
             )
-        dispatch_result.similarity_matrix = result.get("similarity_matrix", [])
+        # Client returns numpy array directly, not a dict
+        if isinstance(result, np.ndarray):
+            dispatch_result.similarity_matrix = result
+        else:
+            dispatch_result.similarity_matrix = result.get("similarity_matrix", [])
 
     def _process_topics_result(
         self, result: Any, dispatch_result: DispatchResult
@@ -289,8 +306,13 @@ class MSEPDispatcher:
             dispatch_result.topic_info = []
             dispatch_result.topics_error = str(result)
         else:
-            dispatch_result.topics = result.get("topics", [])
-            dispatch_result.topic_info = result.get("topic_info", [])
+            # Extract topic_id from assignments (list of ClusterAssignment dicts)
+            assignments = result.get("assignments", [])
+            dispatch_result.topics = [
+                a.get("topic_id", -1) if isinstance(a, dict) else -1
+                for a in assignments
+            ]
+            dispatch_result.topic_info = result.get("topics", [])
 
     def _process_keywords_result(
         self, result: Any, dispatch_result: DispatchResult
@@ -298,13 +320,16 @@ class MSEPDispatcher:
         """Process keywords result (non-critical service).
 
         Args:
-            result: Result from keywords call
+            result: Result from keywords call (list or Exception)
             dispatch_result: DispatchResult to update
         """
         if isinstance(result, Exception):
             logger.warning(f"Keywords failed (non-critical): {result}")
             dispatch_result.keywords = []
             dispatch_result.keywords_error = str(result)
+        elif isinstance(result, list):
+            # Client returns list directly
+            dispatch_result.keywords = result
         else:
             dispatch_result.keywords = result.get("keywords", [])
 

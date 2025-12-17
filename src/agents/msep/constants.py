@@ -94,20 +94,20 @@ CHAPTER_ID_FORMAT: str = "{book}:ch{chapter}"
 # API Endpoints (S1192 compliance - MSE-3)
 # =============================================================================
 
-# Code-Orchestrator-Service endpoints
-ENDPOINT_SBERT_EMBEDDINGS: str = "/v1/sbert/embeddings"
+# Code-Orchestrator-Service endpoints (Port 8083)
+ENDPOINT_SBERT_EMBEDDINGS: str = "/v1/embeddings"
 """Endpoint for SBERT embeddings."""
 
-ENDPOINT_SBERT_SIMILARITY: str = "/v1/sbert/similarity"
-"""Endpoint for SBERT similarity matrix."""
+ENDPOINT_SBERT_SIMILARITY: str = "/v1/similarity/matrix"
+"""Endpoint for SBERT similarity matrix (full corpus pairwise)."""
 
-ENDPOINT_BERTOPIC_CLUSTER: str = "/v1/bertopic/cluster"
+ENDPOINT_BERTOPIC_CLUSTER: str = "/api/v1/cluster"
 """Endpoint for BERTopic clustering."""
 
-ENDPOINT_KEYWORDS_EXTRACT: str = "/v1/keywords/extract"
+ENDPOINT_KEYWORDS_EXTRACT: str = "/api/v1/keywords"
 """Endpoint for TF-IDF keyword extraction."""
 
-# Semantic-Search-Service endpoints
+# Semantic-Search-Service endpoints (Port 8081)
 ENDPOINT_SEARCH_HYBRID: str = "/v1/search/hybrid"
 """Endpoint for hybrid search."""
 
@@ -124,11 +124,11 @@ ENDPOINT_GRAPH_RELATIONSHIPS_BATCH: str = "/v1/graph/relationships/batch"
 import os
 
 SERVICE_CODE_ORCHESTRATOR_URL: str = os.environ.get(
-    "CODE_ORCHESTRATOR_URL", "http://localhost:8082"
+    "CODE_ORCHESTRATOR_URL", "http://localhost:8083"
 )
-"""Base URL for Code-Orchestrator-Service (env: CODE_ORCHESTRATOR_URL)."""
+"""Base URL for Code-Orchestrator-Service (env: CODE_ORCHESTRATOR_URL). Port 8083."""
 
 SERVICE_SEMANTIC_SEARCH_URL: str = os.environ.get(
-    "SEMANTIC_SEARCH_URL", "http://localhost:8083"
+    "SEMANTIC_SEARCH_URL", "http://localhost:8081"
 )
-"""Base URL for semantic-search-service (env: SEMANTIC_SEARCH_URL)."""
+"""Base URL for semantic-search-service (env: SEMANTIC_SEARCH_URL). Port 8081."""

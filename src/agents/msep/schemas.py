@@ -123,18 +123,30 @@ class Provenance:
 class EnrichedChapter:
     """Enriched metadata for a single chapter.
 
+    Per MULTI_STAGE_ENRICHMENT_PIPELINE_ARCHITECTURE.md Schema Definitions.
+
     Attributes:
+        book: Book title.
+        chapter: Chapter number.
+        title: Chapter title.
         chapter_id: Unique chapter identifier.
         cross_references: List of cross-references to other chapters.
         keywords: Merged keywords from all methods.
-        topic_id: BERTopic cluster assignment.
+        topic_id: BERTopic cluster assignment (None if BERTopic unavailable).
+        topic_name: Human-readable topic name (None if unavailable).
+        graph_relationships: Graph relationships from hybrid search.
         provenance: Tracking info for how results were generated.
     """
 
+    book: str
+    chapter: int
+    title: str
     chapter_id: str
     cross_references: list[CrossReference]
     keywords: MergedKeywords
-    topic_id: int
+    topic_id: int | None
+    topic_name: str | None
+    graph_relationships: list[str]
     provenance: Provenance
 
 

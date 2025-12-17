@@ -107,6 +107,9 @@ def mock_enriched_metadata() -> EnrichedMetadata:
     return EnrichedMetadata(
         chapters=[
             EnrichedChapter(
+                book="Deep Learning",
+                chapter=1,
+                title="Neural Networks",
                 chapter_id="Deep Learning:ch1",
                 cross_references=[
                     CrossReference(
@@ -123,6 +126,8 @@ def mock_enriched_metadata() -> EnrichedMetadata:
                     merged=["neural", "network", "deep learning", "activation"],
                 ),
                 topic_id=0,
+                topic_name="Machine Learning",
+                graph_relationships=[],
                 provenance=Provenance(
                     methods_used=["sbert", "tfidf", "bertopic"],
                     sbert_score=0.70,
@@ -131,6 +136,9 @@ def mock_enriched_metadata() -> EnrichedMetadata:
                 ),
             ),
             EnrichedChapter(
+                book="Deep Learning",
+                chapter=2,
+                title="Optimization",
                 chapter_id="Deep Learning:ch2",
                 cross_references=[
                     CrossReference(
@@ -147,6 +155,8 @@ def mock_enriched_metadata() -> EnrichedMetadata:
                     merged=["gradient", "optimization", "descent", "learning rate"],
                 ),
                 topic_id=0,
+                topic_name="Machine Learning",
+                graph_relationships=[],
                 provenance=Provenance(
                     methods_used=["sbert", "tfidf", "bertopic"],
                     sbert_score=0.70,

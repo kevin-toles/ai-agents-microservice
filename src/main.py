@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.routes.cross_reference import router as cross_reference_router
+from src.api.routes.enrich_metadata import router as enrich_metadata_router
 from src.core.clients.neo4j import (
     create_neo4j_client_from_env,
     set_neo4j_client as set_global_neo4j_client,
@@ -123,6 +124,7 @@ def create_app() -> FastAPI:
 
     # Include routers
     app.include_router(cross_reference_router)
+    app.include_router(enrich_metadata_router)
 
     return app
 

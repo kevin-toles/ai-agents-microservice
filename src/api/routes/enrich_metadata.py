@@ -155,12 +155,20 @@ class ProvenanceResponse(BaseModel):
 
 
 class EnrichedChapterResponse(BaseModel):
-    """Enriched chapter in response."""
+    """Enriched chapter in response.
 
+    Per MULTI_STAGE_ENRICHMENT_PIPELINE_ARCHITECTURE.md Schema Definitions.
+    """
+
+    book: str
+    chapter: int
+    title: str
     chapter_id: str
     cross_references: list[CrossReferenceResponse]
     keywords: MergedKeywordsResponse
-    topic_id: int
+    topic_id: int | None
+    topic_name: str | None
+    graph_relationships: list[str]
     provenance: ProvenanceResponse
 
 
@@ -277,6 +285,9 @@ def _build_response(result: EnrichedMetadata) -> EnrichMetadataResponse:
     """
     chapters = [
         EnrichedChapterResponse(
+            book=ch.book,
+            chapter=ch.chapter,
+            title=ch.title,
             chapter_id=ch.chapter_id,
             cross_references=[
                 CrossReferenceResponse(
@@ -294,6 +305,8 @@ def _build_response(result: EnrichedMetadata) -> EnrichMetadataResponse:
                 merged=ch.keywords.merged,
             ),
             topic_id=ch.topic_id,
+            topic_name=ch.topic_name,
+            graph_relationships=ch.graph_relationships,
             provenance=ProvenanceResponse(
                 methods_used=ch.provenance.methods_used,
                 sbert_score=ch.provenance.sbert_score,

@@ -170,11 +170,24 @@ class MSEPOrchestrator:
             request=request,
         )
 
+        # Get topic name if available
+        topic_name = self._get_topic_name(topic_id, dispatch_result)
+
+        # Get graph relationships if available
+        graph_relationships = self._get_graph_relationships(
+            chapter_meta.id, dispatch_result
+        )
+
         return EnrichedChapter(
+            book=chapter_meta.book,
+            chapter=chapter_meta.chapter,
+            title=chapter_meta.title,
             chapter_id=chapter_meta.id,
             cross_references=cross_refs,
             keywords=keywords,
-            topic_id=topic_id,
+            topic_id=topic_id if topic_id >= 0 else None,
+            topic_name=topic_name,
+            graph_relationships=graph_relationships,
             provenance=provenance,
         )
 
@@ -191,6 +204,56 @@ class MSEPOrchestrator:
         if dispatch_result.topics and idx < len(dispatch_result.topics):
             return dispatch_result.topics[idx]
         return -1
+
+    def _get_topic_name(
+        self, topic_id: int, dispatch_result: DispatchResult
+    ) -> str | None:
+        """Get human-readable topic name for a topic ID.
+
+        Args:
+            topic_id: Topic ID
+            dispatch_result: Result from dispatcher
+
+        Returns:
+            Topic name or None if unavailable
+        """
+        if topic_id < 0 or not dispatch_result.topic_info:
+            return None
+
+        # Find topic info with matching ID
+        for topic_info in dispatch_result.topic_info:
+            if topic_info.get("topic_id") == topic_id:
+                return topic_info.get("name") or topic_info.get("label")
+
+        return f"Topic {topic_id}"
+
+    def _get_graph_relationships(
+        self, chapter_id: str, dispatch_result: DispatchResult
+    ) -> list[str]:
+        """Get graph relationships for a chapter.
+
+        Args:
+            chapter_id: Chapter identifier
+            dispatch_result: Result from dispatcher
+
+        Returns:
+            List of relationship strings
+        """
+        if not dispatch_result.hybrid_results:
+            return []
+
+        # Handle both dict formats: {chapter_id: [rels]} or {relationships: {chapter_id: [rels]}}
+        relationships = dispatch_result.hybrid_results
+        if isinstance(relationships, dict):
+            if "relationships" in relationships:
+                relationships = relationships["relationships"]
+
+            if chapter_id in relationships:
+                rels = relationships[chapter_id]
+                if isinstance(rels, list):
+                    return [str(r) for r in rels]
+
+        return []
 
     def _build_cross_references(
         self,
@@ -210,7 +273,9 @@ class MSEPOrchestrator:
         """
         cross_refs: list[CrossReference] = []
 
-        if not dispatch_result.similarity_matrix:
+        if dispatch_result.similarity_matrix is None or (
+            hasattr(dispatch_result.similarity_matrix, 'size') and dispatch_result.similarity_matrix.size == 0
+        ):
             return cross_refs
 
         # Get this chapter's topic
@@ -259,7 +324,12 @@ class MSEPOrchestrator:
             CrossReference or None if below threshold
         """
         similarity_matrix = dispatch_result.similarity_matrix
-        if not similarity_matrix or idx >= len(similarity_matrix):
+        # Handle numpy arrays - check for None or empty
+        if similarity_matrix is None:
+            return None
+        if hasattr(similarity_matrix, 'size') and similarity_matrix.size == 0:
+            return None
+        if idx >= len(similarity_matrix):
             return None
         if j >= len(similarity_matrix[idx]):
             return None
@@ -342,12 +412,15 @@ class MSEPOrchestrator:
 
         # Get SBERT score for this chapter (average of similarities)
         sbert_score = 0.0
-        if dispatch_result.similarity_matrix and idx < len(
-            dispatch_result.similarity_matrix
-        ):
-            row = dispatch_result.similarity_matrix[idx]
-            if row:
-                sbert_score = sum(row) / len(row)
+        similarity_matrix = dispatch_result.similarity_matrix
+        has_valid_matrix = (
+            similarity_matrix is not None
+            and not (hasattr(similarity_matrix, 'size') and similarity_matrix.size == 0)
+        )
+        if has_valid_matrix and idx < len(similarity_matrix):
+            row = similarity_matrix[idx]
+            if len(row) > 0:
+                sbert_score = float(sum(row) / len(row))
 
         # Get topic boost applied
         source_topic = self._get_topic_id(idx, dispatch_result)

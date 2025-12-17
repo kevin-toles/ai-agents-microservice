@@ -425,7 +425,7 @@ paths:
                 domain:
                   type: string
 
-  /api/v1/search:
+  /v1/search:
     post:
       summary: Full pipeline - extract, validate, and search
       description: Combines extraction with semantic search service
@@ -897,7 +897,7 @@ class SemanticSearchClient:
     ) -> dict:
         """Execute search with extracted terms."""
         response = await self.client.post(
-            f"{self.base_url}/api/v1/search",
+            f"{self.base_url}/v1/search",
             json={
                 "query_terms": terms,
                 "taxonomy_filter": taxonomy,
