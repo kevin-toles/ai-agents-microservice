@@ -10,12 +10,54 @@ Anti-Patterns Avoided (per CODING_PATTERNS_ANALYSIS.md):
 
 from __future__ import annotations
 
+
 # =============================================================================
 # Topic Boost Constants (AC-2.5.1)
 # =============================================================================
 
 SAME_TOPIC_BOOST: float = 0.15
 """Boost applied when source and target chapters share the same BERTopic cluster."""
+
+# =============================================================================
+# EEP-3.1: Similarity Fusion Weights (AC-3.1.1 to AC-3.1.3)
+# =============================================================================
+
+FUSION_WEIGHT_SBERT: float = 0.45
+"""Weight for SBERT semantic similarity in fusion score.
+
+Rationale: SBERT captures deep semantic meaning and is the primary signal
+for document similarity. Higher weight reflects its reliability for
+natural language content per AI_CODING_PLATFORM_ARCHITECTURE.md.
+"""
+
+FUSION_WEIGHT_CODEBERT: float = 0.15
+"""Weight for CodeBERT code similarity in fusion score.
+
+Rationale: Code blocks are less common than prose in documentation.
+When present, CodeBERT provides valuable signal for technical content.
+Weight is redistributed to SBERT when no code blocks are present.
+"""
+
+FUSION_WEIGHT_CONCEPT: float = 0.25
+"""Weight for concept overlap (Jaccard) in fusion score.
+
+Rationale: Extracted concepts from taxonomy provide domain-specific
+matching that complements embedding similarity. Per EEP-2 requirements.
+"""
+
+FUSION_WEIGHT_KEYWORD: float = 0.15
+"""Weight for keyword Jaccard in fusion score.
+
+Rationale: TF-IDF keywords capture surface-level lexical similarity.
+Lower weight since embeddings already capture semantic meaning.
+"""
+
+FUSION_WEIGHT_TOPIC_BOOST: float = 0.15
+"""Additive boost when chapters share the same BERTopic cluster.
+
+Rationale: Same topic cluster indicates strong thematic relationship
+independent of similarity scores. Matches existing SAME_TOPIC_BOOST.
+"""
 
 # =============================================================================
 # Threshold Constants (AC-2.5.2, Dynamic threshold from MSE-5.2)
@@ -122,6 +164,7 @@ ENDPOINT_GRAPH_RELATIONSHIPS_BATCH: str = "/v1/graph/relationships/batch"
 # =============================================================================
 
 import os
+
 
 SERVICE_CODE_ORCHESTRATOR_URL: str = os.environ.get(
     "CODE_ORCHESTRATOR_URL", "http://localhost:8083"

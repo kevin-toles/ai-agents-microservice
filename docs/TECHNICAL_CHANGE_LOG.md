@@ -18,6 +18,111 @@ This document tracks all implementation changes, their rationale, and git commit
 
 ---
 
+## 2025-12-18
+
+### CL-012: EEP-6 Diagram Similarity - Agent Enhancement Opportunity
+
+| Field | Value |
+|-------|-------|
+| **Date/Time** | 2025-12-18 |
+| **WBS Item** | ENHANCED_ENRICHMENT_PIPELINE_WBS.md - Phase EEP-6 |
+| **Change Type** | Documentation |
+| **Summary** | EEP-6 Diagram Similarity implemented in Code-Orchestrator-Service. Cross-Reference Agent may leverage diagram similarity for enhanced citations. |
+| **Files Changed** | `docs/TECHNICAL_CHANGE_LOG.md` |
+| **Rationale** | Document future agent enhancement opportunities |
+| **Git Commit** | N/A (documentation only) |
+
+**EEP-6 Integration with Cross-Reference Agent:**
+
+The Cross-Reference Agent currently uses:
+- SBERT semantic similarity (0.45 weight)
+- CodeBERT code similarity (0.15 weight)
+- Concept overlap (0.25 weight)
+- Keyword Jaccard (0.15 weight)
+
+**Future Enhancement - Diagram Signal:**
+
+| Signal | Weight | Source |
+|--------|--------|--------|
+| `diagram_similarity` | 0.10 (proposed) | Code-Orchestrator-Service |
+
+**Potential Integration:**
+```python
+# Future: Add diagram similarity to fusion scoring
+async def cross_reference_with_diagrams(chapter_id: str):
+    # Get existing signals
+    sbert_score = await get_sbert_similarity(...)
+    concept_score = await get_concept_overlap(...)
+    
+    # NEW: Get diagram similarity from Code-Orchestrator
+    diagram_score = await code_orchestrator.get_diagram_similarity(
+        source_chapter_id=chapter_id,
+        target_chapter_id=candidate_id
+    )
+    
+    # Fuse scores with diagram signal
+    fusion_score = (
+        WEIGHT_SBERT * sbert_score +
+        WEIGHT_CONCEPT * concept_score +
+        WEIGHT_DIAGRAM * diagram_score  # NEW
+    )
+```
+
+**No Code Changes Required Now**: EEP-6 is self-contained. Agent integration is future work.
+
+**Architecture Alignment**:
+- ✅ Agents consume Code-Orchestrator-Service APIs (Kitchen Brigade)
+- ✅ No direct SBERT loading in agents (uses API)
+- ✅ Diagram analysis centralized in Sous Chef
+
+**Deviations from Original Architecture**: None
+
+---
+
+## 2025-07-01
+
+### CL-011: EEP-3 Multi-Level Similarity Scorers
+
+| Field | Value |
+|-------|-------|
+| **Date/Time** | 2025-07-01 |
+| **WBS Item** | EEP-3.1 through EEP-3.5 |
+| **Change Type** | Feature |
+| **Summary** | Implemented multi-signal similarity fusion for cross-references |
+| **Files Changed** | `src/agents/msep/scorers.py` (NEW), `src/agents/msep/constants.py`, `src/agents/msep/schemas.py`, `tests/unit/agents/msep/test_eep3_scorers.py` (NEW), `tests/unit/agents/msep/test_eep3_orchestrator.py` (NEW) |
+| **Rationale** | Per EEP-3 WBS: Combine SBERT, concept overlap, keyword Jaccard, and topic boost for richer cross-reference scoring |
+| **Git Commit** | Pending |
+
+**Key Acceptance Criteria Met:**
+
+| AC | Description | Status |
+|----|-------------|--------|
+| AC-3.1.1 | Define configurable weights in constants.py | ✅ |
+| AC-3.1.2 | Weights sum to 1.0 (normalized) | ✅ |
+| AC-3.1.3 | Document weight rationale in docstrings | ✅ |
+| AC-3.2.1 | Jaccard similarity between extracted concepts | ✅ |
+| AC-3.2.2 | Weight parent/child relationships (0.5 of direct) | ✅ |
+| AC-3.2.3 | Return both score and matched concepts list | ✅ |
+| AC-3.3.1 | Jaccard similarity between TF-IDF keywords | ✅ |
+| AC-3.3.2 | Apply n-gram matching (case-insensitive) | ✅ |
+| AC-3.4.2 | Add concept_overlap, keyword_jaccard to CrossReference | ✅ |
+| AC-3.4.3 | Maintain backward compatibility | ✅ |
+| AC-3.5.1 | 25+ tests written (39 total) | ✅ |
+| AC-3.5.2 | All tests pass | ✅ |
+| AC-3.5.3 | Anti-pattern audit clean | ✅ |
+
+**New Fusion Weights (constants.py):**
+
+| Constant | Value | Rationale |
+|----------|-------|-----------|
+| FUSION_WEIGHT_SBERT | 0.45 | Primary semantic signal |
+| FUSION_WEIGHT_CODEBERT | 0.15 | Technical code similarity |
+| FUSION_WEIGHT_CONCEPT | 0.25 | Domain concept overlap |
+| FUSION_WEIGHT_KEYWORD | 0.15 | Surface lexical matching |
+| FUSION_WEIGHT_TOPIC_BOOST | 0.15 | Same BERTopic cluster |
+
+---
+
 ## 2025-12-13
 
 ### CL-010: Enrichment Scalability - Agent Reference Prioritization

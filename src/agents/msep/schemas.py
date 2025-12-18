@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 
 from src.agents.msep.constants import CHAPTER_ID_FORMAT
 
+
 if TYPE_CHECKING:
     from src.agents.msep.config import MSEPConfig
 
@@ -60,7 +61,7 @@ class MSEPRequest:
 
     corpus: list[str]
     chapter_index: list[ChapterMeta]
-    config: "MSEPConfig"
+    config: MSEPConfig
 
 
 # =============================================================================
@@ -72,12 +73,19 @@ class MSEPRequest:
 class CrossReference:
     """A cross-reference to another chapter.
 
+    EEP-3.4 Update: Added multi-signal fusion fields (AC-3.4.2, AC-3.4.3).
+    EEP-4.4 Update: Added relationship_type field (AC-4.4.2).
+
     Attributes:
         target: Target chapter ID (e.g., "Book:ch5").
-        score: Final similarity score (base + boost).
+        score: Final fused similarity score.
         base_score: Raw similarity score from SBERT.
         topic_boost: Boost applied if same topic.
-        method: Enrichment method used (sbert, tfidf, bertopic, hybrid).
+        method: Enrichment method used (sbert, multi-signal, hybrid).
+        concept_overlap: Concept Jaccard score (EEP-3.2). None for backward compat.
+        keyword_jaccard: Keyword Jaccard score (EEP-3.3). None for backward compat.
+        matched_concepts: List of matched concepts (EEP-3.2). Empty for backward compat.
+        relationship_type: Graph relationship type (EEP-4.4). None for backward compat.
     """
 
     target: str
@@ -85,6 +93,10 @@ class CrossReference:
     base_score: float
     topic_boost: float
     method: str
+    concept_overlap: float | None = field(default=None)
+    keyword_jaccard: float | None = field(default=None)
+    matched_concepts: list[str] = field(default_factory=list)
+    relationship_type: str | None = field(default=None)
 
 
 @dataclass

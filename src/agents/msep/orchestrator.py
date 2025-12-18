@@ -17,8 +17,8 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from src.agents.msep.dispatcher import DispatchResult, MSEPDispatcher
 from src.agents.msep.schemas import (
@@ -30,6 +30,13 @@ from src.agents.msep.schemas import (
     MSEPRequest,
     Provenance,
 )
+from src.agents.msep.scorers import (
+    ConceptOverlapScorer,
+    KeywordJaccardScorer,
+    SimilarityWeights,
+    compute_fused_score,
+)
+
 
 if TYPE_CHECKING:
     from src.clients.protocols import CodeOrchestratorProtocol, SemanticSearchProtocol
@@ -49,8 +56,8 @@ class MSEPOrchestrator:
 
     def __init__(
         self,
-        code_orchestrator: "CodeOrchestratorProtocol | None" = None,
-        semantic_search: "SemanticSearchProtocol | None" = None,
+        code_orchestrator: CodeOrchestratorProtocol | None = None,
+        semantic_search: SemanticSearchProtocol | None = None,
     ) -> None:
         """Initialize MSEP orchestrator.
 
@@ -60,13 +67,13 @@ class MSEPOrchestrator:
         """
         # Create clients if not provided
         if code_orchestrator is None:
-            from src.clients.code_orchestrator import CodeOrchestratorClient
             from src.agents.msep.constants import SERVICE_CODE_ORCHESTRATOR_URL
+            from src.clients.code_orchestrator import CodeOrchestratorClient
 
             code_orchestrator = CodeOrchestratorClient(SERVICE_CODE_ORCHESTRATOR_URL)
         if semantic_search is None:
-            from src.clients.semantic_search import MSEPSemanticSearchClient
             from src.agents.msep.constants import SERVICE_SEMANTIC_SEARCH_URL
+            from src.clients.semantic_search import MSEPSemanticSearchClient
 
             semantic_search = MSEPSemanticSearchClient(SERVICE_SEMANTIC_SEARCH_URL)
 
@@ -310,7 +317,9 @@ class MSEPOrchestrator:
         request: MSEPRequest,
         dispatch_result: DispatchResult,
     ) -> CrossReference | None:
-        """Build a single cross-reference.
+        """Build a single cross-reference using multi-signal fusion.
+
+        EEP-3.4.1 Update: Uses compute_fused_score() for multi-signal fusion.
 
         Args:
             j: Target chapter index
@@ -327,22 +336,58 @@ class MSEPOrchestrator:
         # Handle numpy arrays - check for None or empty
         if similarity_matrix is None:
             return None
-        if hasattr(similarity_matrix, 'size') and similarity_matrix.size == 0:
+        if hasattr(similarity_matrix, "size") and similarity_matrix.size == 0:
             return None
         if idx >= len(similarity_matrix):
             return None
         if j >= len(similarity_matrix[idx]):
             return None
 
-        base_score = similarity_matrix[idx][j]
+        # Get SBERT base score
+        sbert_score = float(similarity_matrix[idx][j])
 
-        # Apply topic boost if same topic
+        # Compute topic match
         target_topic = self._get_topic_id(j, dispatch_result)
-        topic_boost = 0.0
-        if source_topic >= 0 and source_topic == target_topic:
-            topic_boost = request.config.same_topic_boost
+        topic_match = source_topic >= 0 and source_topic == target_topic
 
-        final_score = base_score + topic_boost
+        # Compute keyword Jaccard (EEP-3.3)
+        keyword_jaccard = 0.0
+        matched_concepts: list[str] = []
+        if dispatch_result.keywords:
+            source_keywords = (
+                dispatch_result.keywords[idx]
+                if idx < len(dispatch_result.keywords)
+                else []
+            )
+            target_keywords = (
+                dispatch_result.keywords[j]
+                if j < len(dispatch_result.keywords)
+                else []
+            )
+            keyword_scorer = KeywordJaccardScorer()
+            keyword_jaccard = keyword_scorer.compute(source_keywords, target_keywords)
+
+            # Use keywords as proxy for concepts (EEP-3.2)
+            concept_scorer = ConceptOverlapScorer()
+            concept_result = concept_scorer.compute(source_keywords, target_keywords)
+            concept_overlap = concept_result.score
+            matched_concepts = concept_result.matched_concepts
+        else:
+            concept_overlap = 0.0
+
+        # Compute fused score using EEP-3 formula
+        weights = SimilarityWeights()
+        final_score = compute_fused_score(
+            sbert_sim=sbert_score,
+            codebert_sim=None,  # CodeBERT not yet integrated
+            concept_jaccard=concept_overlap,
+            keyword_jaccard=keyword_jaccard,
+            topic_match=topic_match,
+            weights=weights,
+        )
+
+        # Calculate topic boost value for schema
+        topic_boost = weights.topic_boost if topic_match else 0.0
 
         # Filter by threshold
         if final_score < request.config.threshold:
@@ -351,9 +396,12 @@ class MSEPOrchestrator:
         return CrossReference(
             target=target_meta.id,
             score=final_score,
-            base_score=base_score,
+            base_score=sbert_score,
             topic_boost=topic_boost,
-            method="sbert",
+            method="multi-signal",
+            concept_overlap=concept_overlap,
+            keyword_jaccard=keyword_jaccard,
+            matched_concepts=matched_concepts,
         )
 
     def _build_keywords(
@@ -430,5 +478,5 @@ class MSEPOrchestrator:
             methods_used=methods_used,
             sbert_score=sbert_score,
             topic_boost=topic_boost,
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
         )

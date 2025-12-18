@@ -246,6 +246,35 @@ class TestCrossReference:
 
         assert dataclasses.is_dataclass(CrossReference)
 
+    def test_cross_reference_has_relationship_type_field(self) -> None:
+        """AC-4.4.2: CrossReference should have relationship_type field for EEP-4."""
+        from src.agents.msep.schemas import CrossReference
+
+        ref = CrossReference(
+            target="Book:ch1",
+            score=0.85,
+            base_score=0.75,
+            topic_boost=0.10,
+            method="sbert",
+            relationship_type="PARALLEL",
+        )
+
+        assert ref.relationship_type == "PARALLEL"
+
+    def test_cross_reference_relationship_type_default_none(self) -> None:
+        """AC-4.4.2: relationship_type should default to None for backward compat."""
+        from src.agents.msep.schemas import CrossReference
+
+        ref = CrossReference(
+            target="Book:ch1",
+            score=0.85,
+            base_score=0.75,
+            topic_boost=0.10,
+            method="sbert",
+        )
+
+        assert ref.relationship_type is None
+
 
 class TestMergedKeywords:
     """Tests for MergedKeywords dataclass (AC-2.2.2)."""
