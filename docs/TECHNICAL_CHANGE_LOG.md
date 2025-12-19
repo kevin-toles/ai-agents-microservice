@@ -20,6 +20,121 @@ This document tracks all implementation changes, their rationale, and git commit
 
 ## 2025-12-18
 
+### CL-014: MSE-8 - Audit Service Integration into MSEP Pipeline
+
+| Field | Value |
+|-------|-------|
+| **Date/Time** | 2025-12-18 |
+| **WBS Item** | MSE-8 (Audit Service Integration) |
+| **Change Type** | Feature |
+| **Summary** | Integrate audit-service into MSEP pipeline for cross-reference validation using CodeBERT similarity |
+| **Files Changed** | `src/clients/protocols.py`, `src/clients/audit_service.py`, `src/agents/msep/constants.py`, `src/agents/msep/config.py`, `src/agents/msep/orchestrator.py`, `src/agents/msep/schemas.py`, `tests/unit/agents/msep/test_audit_integration.py` |
+| **Rationale** | EEP-5 components exist in audit-service but are not integrated. MSEP needs to validate cross-references against reference materials. |
+| **Git Commit** | Pending |
+
+**Implementation Plan:**
+
+1. **protocols.py** - Add `AuditServiceProtocol`:
+   - `audit_cross_references(code, references, threshold)` method
+   - `close()` method for resource cleanup
+
+2. **audit_service.py** - New client module:
+   - `AuditServiceClient` - HTTP client with retry logic
+   - `FakeAuditServiceClient` - Test double with deterministic responses
+   - Connection pooling per Anti-Pattern #12
+
+3. **constants.py** - Add audit service constants:
+   - `SERVICE_AUDIT_SERVICE: str = "audit-service"`
+   - `SERVICE_AUDIT_URL: str = "http://audit-service:8084"`
+   - `ENDPOINT_AUDIT_CROSS_REF: str = "/v1/audit/cross-reference"`
+
+4. **config.py** - Add audit config flag:
+   - `enable_audit_validation: bool = field(default=False)`
+
+5. **orchestrator.py** - Integrate audit call:
+   - Inject `AuditServiceProtocol` dependency
+   - Call audit after `_build_enriched_chapters()`
+   - Add audit metadata to `EnrichedMetadata`
+
+6. **schemas.py** - Add audit response fields:
+   - `audit_passed: bool | None`
+   - `audit_findings: list[dict] | None`
+
+**Anti-Patterns Avoided:**
+- S1192: All URLs/endpoints as constants
+- S3776: Extract helper methods (cognitive complexity < 15)
+- S1172: Underscore prefix for unused parameters
+- #7/#13: Namespaced exception `AuditServiceUnavailableError`
+- #12: Single httpx.AsyncClient instance
+- #42/#43: Proper async context managers
+
+**Test Strategy (TDD RED Phase First):**
+- `TestAuditServiceProtocol` - 3 tests
+- `TestFakeAuditServiceClient` - 5 tests
+- `TestAuditServiceClient` - 6 tests
+- `TestMSEPOrchestratorAuditIntegration` - 8 tests
+
+**Architecture Alignment:**
+- ✅ Kitchen Brigade: ai-agents (Expeditor) calls audit-service (Auditor)
+- ✅ Supports Scenario #1 (MSEP validation) and Scenario #2 (Agentic code generation)
+- ✅ Protocol pattern enables FakeClient substitution in tests
+
+**Deviations from Original Architecture**: None
+
+---
+
+## 2025-07-16
+
+### CL-013: AC-TAX - Taxonomy Pass-Through for Query-Time Filtering
+
+| Field | Value |
+|-------|-------|
+| **Date/Time** | 2025-07-16 |
+| **WBS Item** | AC-TAX (Taxonomy Pass-Through) |
+| **Change Type** | Feature |
+| **Summary** | Added taxonomy field to MSEPConfig and taxonomy filtering to merge_results() for query-time cross-reference filtering |
+| **Files Changed** | `src/agents/msep/constants.py`, `src/agents/msep/config.py`, `src/agents/msep/merger.py`, `tests/unit/agents/msep/test_taxonomy_passthrough.py` |
+| **Rationale** | Architecture design: enrichment computes against full corpus, taxonomy filtering applied at query-time |
+| **Git Commit** | Pending |
+
+**Implementation Details:**
+
+1. **constants.py** - Added S1192-compliant constants:
+   - `DEFAULT_TAXONOMY: str | None = None`
+   - `ENV_TAXONOMY_KEY: str = "MSEP_TAXONOMY"`
+
+2. **config.py** - Added taxonomy field to MSEPConfig:
+   - `taxonomy: str | None = field(default=DEFAULT_TAXONOMY)`
+   - Updated `from_env()` to load `MSEP_TAXONOMY` environment variable
+
+3. **merger.py** - Added taxonomy filtering:
+   - `filter_by_taxonomy(cross_refs, taxonomy_books)` - Filters cross-references to books in taxonomy
+   - `_extract_book_from_target(target)` - Helper to parse book name from chapter ID
+   - Updated `merge_results()` to accept `_taxonomy` and `taxonomy_books` parameters
+   - Applies `filter_by_taxonomy()` during chapter enrichment
+
+**Anti-Patterns Avoided:**
+- S1192: All strings as constants (DEFAULT_TAXONOMY, ENV_TAXONOMY_KEY)
+- S1172: Underscore prefix on unused `_taxonomy` parameter (reserved for future provenance)
+- S3776: Cognitive complexity kept low via helper functions
+
+**Test Coverage:**
+- 16 new tests in `test_taxonomy_passthrough.py`
+- Test classes: `TestMSEPConfigTaxonomy`, `TestMSEPTaxonomyConstants`, `TestMSEPMergerTaxonomyFilter`, `TestEnrichedMetadataWithTaxonomy`
+- Total MSEP tests: 178 (was 162)
+
+**Architecture Alignment:**
+- ✅ Taxonomy is query-time filter (not enrichment-time) per architecture docs
+- ✅ Full corpus enrichment preserved; filter applied when results returned
+- ✅ MSEPConfig remains frozen (immutable)
+- ✅ Kitchen Brigade: ai-agents loads taxonomy, Code-Orchestrator has no taxonomy knowledge
+
+**Deviations from Original Architecture**: None
+
+---
+
+## 2025-12-18
+
 ### CL-012: EEP-6 Diagram Similarity - Agent Enhancement Opportunity
 
 | Field | Value |

@@ -101,3 +101,32 @@ class ServiceUnavailableError(MSEPError):
         super().__init__(message, cause)
         self.service = service
         self.url = url
+
+
+class AuditServiceUnavailableError(MSEPError):
+    """Raised when the audit-service is unavailable.
+
+    WBS: MSE-8.2 - Audit Service Client
+    Named to avoid shadowing builtins per CODING_PATTERNS_ANALYSIS.md #7.
+
+    Attributes:
+        message: Human-readable error description.
+        cause: Original exception that caused this error (optional).
+        url: URL that was unreachable (optional).
+    """
+
+    def __init__(
+        self,
+        message: str,
+        cause: Exception | None = None,
+        url: str | None = None,
+    ) -> None:
+        """Initialize audit service unavailable error.
+
+        Args:
+            message: Human-readable error description.
+            cause: Original exception that caused this error.
+            url: URL that was unreachable.
+        """
+        super().__init__(message, cause)
+        self.url = url

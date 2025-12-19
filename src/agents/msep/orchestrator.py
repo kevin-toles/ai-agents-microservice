@@ -1,10 +1,12 @@
 """MSEP Orchestrator.
 
 WBS: MSE-4.3 - Orchestrator
+WBS: MSE-8.6 - Audit Service Integration
+
 Main orchestration function for MSEP workflow.
 
 Reference Documents:
-- MULTI_STAGE_ENRICHMENT_PIPELINE_WBS.md: MSE-4.3
+- MULTI_STAGE_ENRICHMENT_PIPELINE_WBS.md: MSE-4.3, MSE-8.6
 - MULTI_STAGE_ENRICHMENT_PIPELINE_ARCHITECTURE.md: Orchestration flow
 
 Anti-Patterns Avoided (per CODING_PATTERNS_ANALYSIS.md):
@@ -18,9 +20,10 @@ from __future__ import annotations
 import logging
 import time
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from src.agents.msep.dispatcher import DispatchResult, MSEPDispatcher
+from src.agents.msep.exceptions import AuditServiceUnavailableError
 from src.agents.msep.schemas import (
     ChapterMeta,
     CrossReference,
@@ -39,7 +42,11 @@ from src.agents.msep.scorers import (
 
 
 if TYPE_CHECKING:
-    from src.clients.protocols import CodeOrchestratorProtocol, SemanticSearchProtocol
+    from src.clients.protocols import (
+        AuditServiceProtocol,
+        CodeOrchestratorProtocol,
+        SemanticSearchProtocol,
+    )
 
 
 # Configure logging
@@ -49,7 +56,11 @@ logger = logging.getLogger(__name__)
 class MSEPOrchestrator:
     """Orchestrator for Multi-Stage Enrichment Pipeline.
 
+    WBS: MSE-4.3 - Orchestrator
+    WBS: MSE-8.6 - Audit Service Integration
+
     Coordinates parallel calls to services and merges results.
+    Optionally validates cross-references via audit-service.
 
     Pattern: Orchestrator pattern for workflow coordination
     """
@@ -58,12 +69,16 @@ class MSEPOrchestrator:
         self,
         code_orchestrator: CodeOrchestratorProtocol | None = None,
         semantic_search: SemanticSearchProtocol | None = None,
+        audit_service: AuditServiceProtocol | None = None,
     ) -> None:
         """Initialize MSEP orchestrator.
+
+        WBS: MSE-8.6.1 - Accepts optional audit_service parameter
 
         Args:
             code_orchestrator: Optional Code-Orchestrator client
             semantic_search: Optional semantic-search client
+            audit_service: Optional Audit-Service client for validation
         """
         # Create clients if not provided
         if code_orchestrator is None:
@@ -81,15 +96,18 @@ class MSEPOrchestrator:
             code_orchestrator=code_orchestrator,
             semantic_search=semantic_search,
         )
+        self._audit_service = audit_service
 
     async def enrich_metadata(self, request: MSEPRequest) -> EnrichedMetadata:
         """Execute MSEP enrichment workflow.
+
+        WBS: MSE-8.6.2/3 - Audit integration based on config flag
 
         Args:
             request: MSEP request with corpus and config
 
         Returns:
-            EnrichedMetadata with all enriched chapters
+            EnrichedMetadata with all enriched chapters and optional audit results
 
         Raises:
             ServiceUnavailableError: When required services are unavailable
@@ -107,10 +125,96 @@ class MSEPOrchestrator:
 
         elapsed_ms = (time.perf_counter() - start_time) * 1000
 
+        # Run audit validation if enabled (MSE-8.6.2/3)
+        audit_result = await self._run_audit_validation(request, chapters)
+
         return EnrichedMetadata(
             chapters=chapters,
             processing_time_ms=elapsed_ms,
+            audit_passed=audit_result.get("passed") if audit_result else None,
+            audit_findings=audit_result.get("findings") if audit_result else None,
+            audit_best_similarity=audit_result.get("best_similarity") if audit_result else None,
         )
+
+    async def _run_audit_validation(
+        self,
+        request: MSEPRequest,
+        chapters: list[EnrichedChapter],
+    ) -> dict[str, Any] | None:
+        """Run audit validation if enabled.
+
+        WBS: MSE-8.6.2/3/4 - Audit validation with graceful error handling
+
+        Args:
+            request: MSEP request with config
+            chapters: Enriched chapters to validate
+
+        Returns:
+            Audit result dict or None if disabled/unavailable
+        """
+        # MSE-8.6.3: Skip if audit validation disabled
+        if not request.config.enable_audit_validation:
+            return None
+
+        # MSE-8.6.4: Skip if no audit service configured
+        if self._audit_service is None:
+            logger.warning("Audit validation enabled but no audit service configured")
+            return None
+
+        # Skip if no chapters to validate
+        if not chapters:
+            return None
+
+        try:
+            # Build audit request from first chapter (sample validation)
+            # In production, this could iterate over all chapters
+            code = request.corpus[0] if request.corpus else ""
+            references = self._build_audit_references(request, chapters)
+
+            result = await self._audit_service.audit_cross_references(
+                code=code,
+                references=references,
+                threshold=request.config.threshold,
+            )
+
+            logger.info(
+                "Audit validation complete: passed=%s, best_similarity=%.3f",
+                result.get("passed"),
+                result.get("best_similarity", 0.0),
+            )
+
+            return result
+
+        except AuditServiceUnavailableError as e:
+            # MSE-8.6.4: Handle unavailable gracefully
+            logger.warning("Audit service unavailable: %s", e.message)
+            return None
+
+    def _build_audit_references(
+        self,
+        request: MSEPRequest,
+        _chapters: list[EnrichedChapter],
+    ) -> list[dict[str, Any]]:
+        """Build audit references from request data.
+
+        Args:
+            request: MSEP request with corpus
+            _chapters: Enriched chapters (reserved for future use)
+
+        Returns:
+            List of reference dicts for audit service
+        """
+        references: list[dict[str, Any]] = []
+
+        for idx, chapter_meta in enumerate(request.chapter_index):
+            content = request.corpus[idx] if idx < len(request.corpus) else ""
+            references.append({
+                "chapter_id": chapter_meta.id,
+                "title": chapter_meta.title,
+                "content": content,
+            })
+
+        return references
 
     def _build_enriched_chapters(
         self,

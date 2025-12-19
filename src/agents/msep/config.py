@@ -14,11 +14,15 @@ import os
 from dataclasses import dataclass, field
 
 from src.agents.msep.constants import (
+    DEFAULT_TAXONOMY,
     DEFAULT_THRESHOLD,
-    DEFAULT_TOP_K,
     DEFAULT_TIMEOUT,
+    DEFAULT_TOP_K,
+    ENV_ENABLE_AUDIT_KEY,
+    ENV_TAXONOMY_KEY,
     SAME_TOPIC_BOOST,
 )
+
 
 # Environment variable prefix for MSEP config
 _ENV_PREFIX: str = "MSEP_"
@@ -43,6 +47,8 @@ class MSEPConfig:
         same_topic_boost: Boost applied when chapters share same topic.
         use_dynamic_threshold: Whether to adjust threshold by corpus size.
         enable_hybrid_search: Whether to include hybrid search results.
+        taxonomy: Optional taxonomy name for filtering results at query-time.
+        enable_audit_validation: Whether to call audit-service for validation.
     """
 
     threshold: float = field(default=DEFAULT_THRESHOLD)
@@ -51,9 +57,11 @@ class MSEPConfig:
     same_topic_boost: float = field(default=SAME_TOPIC_BOOST)
     use_dynamic_threshold: bool = field(default=True)
     enable_hybrid_search: bool = field(default=True)
+    taxonomy: str | None = field(default=DEFAULT_TAXONOMY)
+    enable_audit_validation: bool = field(default=False)
 
     @classmethod
-    def from_env(cls) -> "MSEPConfig":
+    def from_env(cls) -> MSEPConfig:
         """Create MSEPConfig from environment variables.
 
         Environment variables are prefixed with MSEP_:
@@ -63,6 +71,7 @@ class MSEPConfig:
         - MSEP_SAME_TOPIC_BOOST: float
         - MSEP_USE_DYNAMIC_THRESHOLD: bool (true/false)
         - MSEP_ENABLE_HYBRID_SEARCH: bool (true/false)
+        - MSEP_TAXONOMY: str (optional taxonomy name for filtering)
 
         Returns:
             MSEPConfig instance with values from environment.
@@ -73,6 +82,7 @@ class MSEPConfig:
         same_topic_boost_str = os.environ.get(f"{_ENV_PREFIX}SAME_TOPIC_BOOST")
         use_dynamic_threshold_str = os.environ.get(f"{_ENV_PREFIX}USE_DYNAMIC_THRESHOLD")
         enable_hybrid_search_str = os.environ.get(f"{_ENV_PREFIX}ENABLE_HYBRID_SEARCH")
+        taxonomy_str = os.environ.get(ENV_TAXONOMY_KEY)
 
         return cls(
             threshold=float(threshold_str) if threshold_str else DEFAULT_THRESHOLD,
@@ -92,5 +102,9 @@ class MSEPConfig:
                 _parse_bool(enable_hybrid_search_str)
                 if enable_hybrid_search_str
                 else True
+            ),
+            taxonomy=taxonomy_str if taxonomy_str else DEFAULT_TAXONOMY,
+            enable_audit_validation=(
+                _parse_bool(os.environ.get(ENV_ENABLE_AUDIT_KEY, "false"))
             ),
         )

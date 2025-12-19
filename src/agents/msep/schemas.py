@@ -13,7 +13,7 @@ Anti-Patterns Avoided (per CODING_PATTERNS_ANALYSIS.md):
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from src.agents.msep.constants import CHAPTER_ID_FORMAT
 
@@ -166,15 +166,23 @@ class EnrichedChapter:
 class EnrichedMetadata:
     """Complete enriched metadata for an MSEP request.
 
+    WBS MSE-8.7: Added audit fields for validation results.
+
     Attributes:
         chapters: List of enriched chapter metadata.
         processing_time_ms: Total processing time in milliseconds.
         total_cross_references: Total count of all cross-references.
+        audit_passed: Whether audit validation passed (None if not run).
+        audit_findings: List of audit findings (None if not run).
+        audit_best_similarity: Best similarity score from audit (None if not run).
     """
 
     chapters: list[EnrichedChapter]
     processing_time_ms: float
     total_cross_references: int = field(default=0)
+    audit_passed: bool | None = field(default=None)
+    audit_findings: list[dict[str, Any]] | None = field(default=None)
+    audit_best_similarity: float | None = field(default=None)
 
     def __post_init__(self) -> None:
         """Compute total_cross_references from chapters."""

@@ -138,6 +138,73 @@ def _clamp_threshold(value: float) -> float:
 
 
 # =============================================================================
+# MSE-TAX: Taxonomy Filter (AC-TAX-3)
+# =============================================================================
+
+
+def filter_by_taxonomy(
+    cross_refs: list[CrossReference],
+    taxonomy_books: set[str] | None,
+) -> list[CrossReference]:
+    """Filter cross-references to include only books in taxonomy.
+
+    AC-TAX-3.1: Returns all cross-refs when taxonomy_books is None.
+    AC-TAX-3.2: Filters to only targets whose book is in taxonomy_books.
+    AC-TAX-3.3: Handles empty cross_refs gracefully.
+    AC-TAX-3.4: Preserves original order of results.
+
+    Args:
+        cross_refs: List of cross-references to filter.
+        taxonomy_books: Set of book names in the taxonomy, or None.
+
+    Returns:
+        Filtered list of CrossReference (or original if taxonomy_books is None).
+    """
+    # AC-TAX-3.1: No filtering when taxonomy_books is None
+    if taxonomy_books is None:
+        return cross_refs
+
+    # AC-TAX-3.3: Handle empty cross_refs
+    if not cross_refs:
+        return cross_refs
+
+    # AC-TAX-3.2 & 3.4: Filter while preserving order
+    filtered: list[CrossReference] = []
+    for xref in cross_refs:
+        book_name = _extract_book_from_target(xref.target)
+        if book_name in taxonomy_books:
+            filtered.append(xref)
+
+    return filtered
+
+
+def _extract_book_from_target(target: str) -> str:
+    """Extract book name from target chapter ID.
+
+    Handles formats:
+    - "Book:chN" → "Book"
+    - "Book::N" → "Book"
+    - Fallback: return target as-is
+
+    Args:
+        target: Target chapter identifier.
+
+    Returns:
+        Book name extracted from target.
+    """
+    # Handle "Book:chN" format
+    if ":ch" in target:
+        return target.split(":ch")[0]
+
+    # Handle "Book::N" format
+    if "::" in target:
+        return target.split("::")[0]
+
+    # Fallback: assume the whole target is the book name
+    return target
+
+
+# =============================================================================
 # MSE-5.3: Result Aggregator
 # =============================================================================
 
@@ -149,6 +216,8 @@ def merge_results(
     chapter_ids: list[str],
     threshold: float,
     top_k: int,
+    _taxonomy: str | None = None,
+    taxonomy_books: set[str] | None = None,
 ) -> EnrichedMetadata:
     """Merge all enrichment results into EnrichedMetadata.
 
@@ -158,6 +227,7 @@ def merge_results(
     AC-5.3.4: Sorts cross-references by final score (descending).
     AC-5.3.5: Limits to top_k cross-references per chapter.
     AC-5.3.6: Cognitive complexity < 15 (uses helper methods).
+    AC-TAX-4: Applies taxonomy filter to cross-references when provided.
 
     Args:
         similarity_matrix: Pairwise similarity scores.
@@ -166,6 +236,8 @@ def merge_results(
         chapter_ids: List of chapter identifiers.
         threshold: Minimum score for cross-references.
         top_k: Maximum cross-references per chapter.
+        _taxonomy: Optional taxonomy name (reserved for future provenance/logging).
+        taxonomy_books: Optional set of book names to filter by.
 
     Returns:
         EnrichedMetadata with all chapters enriched.
@@ -176,7 +248,7 @@ def merge_results(
     safe_topics = topics if topics is not None else [-1] * len(chapter_ids)
     safe_keywords = keywords if keywords is not None else [[] for _ in chapter_ids]
 
-    # Build enriched chapters
+    # Build enriched chapters (with optional taxonomy filtering)
     chapters = _build_enriched_chapters(
         similarity_matrix=similarity_matrix,
         topics=safe_topics,
@@ -184,6 +256,7 @@ def merge_results(
         chapter_ids=chapter_ids,
         threshold=threshold,
         top_k=top_k,
+        taxonomy_books=taxonomy_books,
     )
 
     elapsed_ms = (time.perf_counter() - start_time) * 1000
@@ -201,6 +274,7 @@ def _build_enriched_chapters(
     chapter_ids: list[str],
     threshold: float,
     top_k: int,
+    taxonomy_books: set[str] | None = None,
 ) -> list[EnrichedChapter]:
     """Build list of EnrichedChapter from raw data.
 
@@ -213,6 +287,7 @@ def _build_enriched_chapters(
         chapter_ids: List of chapter identifiers.
         threshold: Minimum score for cross-references.
         top_k: Maximum cross-references per chapter.
+        taxonomy_books: Optional set of book names for filtering.
 
     Returns:
         List of EnrichedChapter dataclasses.
@@ -228,6 +303,9 @@ def _build_enriched_chapters(
             threshold=threshold,
             top_k=top_k,
         )
+
+        # Apply taxonomy filter if provided (AC-TAX-4)
+        cross_refs = filter_by_taxonomy(cross_refs, taxonomy_books)
 
         merged_keywords = _build_merged_keywords(keywords[i] if i < len(keywords) else [])
         provenance = _build_chapter_provenance(cross_refs)

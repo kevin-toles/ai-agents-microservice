@@ -12,6 +12,16 @@ from __future__ import annotations
 
 
 # =============================================================================
+# Taxonomy Constants (AC-TAX-2)
+# =============================================================================
+
+DEFAULT_TAXONOMY: str | None = None
+"""Default taxonomy value - None means no filtering applied."""
+
+ENV_TAXONOMY_KEY: str = "MSEP_TAXONOMY"
+"""Environment variable key for taxonomy configuration."""
+
+# =============================================================================
 # Topic Boost Constants (AC-2.5.1)
 # =============================================================================
 
@@ -175,3 +185,21 @@ SERVICE_SEMANTIC_SEARCH_URL: str = os.environ.get(
     "SEMANTIC_SEARCH_URL", "http://localhost:8081"
 )
 """Base URL for semantic-search-service (env: SEMANTIC_SEARCH_URL). Port 8081."""
+
+# =============================================================================
+# Audit Service Constants (MSE-8.4)
+# =============================================================================
+
+SERVICE_AUDIT_SERVICE: str = "audit-service"
+"""Name constant for audit-service."""
+
+SERVICE_AUDIT_URL: str = os.environ.get(
+    "AUDIT_SERVICE_URL", "http://audit-service:8084"
+)
+"""Base URL for audit-service (env: AUDIT_SERVICE_URL). Port 8084."""
+
+ENDPOINT_AUDIT_CROSS_REF: str = "/v1/audit/cross-reference"
+"""Endpoint for cross-reference audit."""
+
+ENV_ENABLE_AUDIT_KEY: str = "MSEP_ENABLE_AUDIT"
+"""Environment variable key for audit validation flag."""

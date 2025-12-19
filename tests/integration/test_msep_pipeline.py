@@ -333,8 +333,11 @@ class TestMSE71_ResultMerging:
                 assert hasattr(xref, "score"), "Cross-reference should have score"
                 assert hasattr(xref, "base_score"), "Cross-reference should have base_score"
                 assert hasattr(xref, "topic_boost"), "Cross-reference should have topic_boost"
-                # Final score = base_score + topic_boost (approximately)
-                assert xref.score >= xref.base_score, "Final score should >= base"
+                # Multi-signal scoring: score is weighted average of multiple signals
+                # Score may be lower than base_score if other signals (graph, taxonomy) are lower
+                assert 0.0 <= xref.score <= 1.0, "Score should be normalized [0, 1]"
+                assert 0.0 <= xref.base_score <= 1.0, "Base score should be normalized [0, 1]"
+                assert xref.topic_boost >= 0.0, "Topic boost should be non-negative"
                 return
         
         # It's okay if no cross-refs meet threshold in test data

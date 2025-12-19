@@ -139,3 +139,39 @@ class SemanticSearchProtocol(Protocol):
     async def close(self) -> None:
         """Release HTTP client resources."""
         ...
+
+
+@runtime_checkable
+class AuditServiceProtocol(Protocol):
+    """Protocol for Audit-Service client.
+
+    WBS: MSE-8.1 - Audit Service Protocol
+    Defines the interface for clients interacting with audit-service.
+    Enables duck typing for test doubles (FakeAuditServiceClient).
+
+    Methods:
+        audit_cross_references: Audit code against reference chapters
+        close: Release HTTP client resources
+    """
+
+    async def audit_cross_references(
+        self,
+        code: str,
+        references: list[dict[str, Any]],
+        threshold: float = 0.5,
+    ) -> dict[str, Any]:
+        """Audit code against reference chapters using CodeBERT similarity.
+
+        Args:
+            code: Source code/content to audit
+            references: List of reference chapter dicts with chapter_id, content
+            threshold: Similarity threshold for passing audit
+
+        Returns:
+            Dict with passed, status, findings, best_similarity
+        """
+        ...
+
+    async def close(self) -> None:
+        """Release HTTP client resources."""
+        ...
