@@ -12,6 +12,37 @@ The AI Agents service is a **microservice** that exposes specialized AI agents v
 
 ---
 
+## ⚠️ Gateway-First Communication Pattern
+
+**CRITICAL RULE**: External applications MUST access ai-agents through the Gateway.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                    SERVICE COMMUNICATION PATTERN                             │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  EXTERNAL → ai-agents: Via Gateway:8080 (REQUIRED)                          │
+│  ─────────────────────────────────────────────────                          │
+│  Applications outside the AI Platform must route through Gateway.           │
+│                                                                              │
+│  ✅ llm-document-enhancer → Gateway:8080 → ai-agents:8082                   │
+│  ✅ VS Code Extension → Gateway:8080 → ai-agents:8082                       │
+│  ❌ llm-document-enhancer → ai-agents:8082 (VIOLATION!)                     │
+│                                                                              │
+│  INTERNAL (From ai-agents): Direct calls allowed                             │
+│  ───────────────────────────────────────────────                             │
+│  ai-agents may call other platform services directly.                       │
+│                                                                              │
+│  ✅ ai-agents → audit-service:8084 (internal)                               │
+│  ✅ ai-agents → Code-Orchestrator:8083 (internal)                           │
+│  ✅ ai-agents → semantic-search:8081 (internal)                             │
+│  ✅ ai-agents → Gateway:8080 (for LLM calls)                                │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Kitchen Brigade Role: EXPEDITOR
 
 In the Kitchen Brigade architecture, **ai-agents** serves as the **Expeditor** - the coordinator that:

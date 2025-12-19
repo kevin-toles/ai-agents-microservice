@@ -18,6 +18,36 @@ This document tracks all implementation changes, their rationale, and git commit
 
 ---
 
+## 2025-12-19
+
+### CL-015: Gateway-First Communication Pattern Documentation
+
+| Field | Value |
+|-------|-------|
+| **Date/Time** | 2025-12-19 |
+| **WBS Item** | Architecture Documentation |
+| **Change Type** | Documentation |
+| **Summary** | Added Gateway-First Communication Pattern section to ARCHITECTURE.md. External applications MUST route through Gateway:8080 to access ai-agents. |
+| **Files Changed** | `docs/ARCHITECTURE.md` |
+| **Rationale** | Explicitly document that external apps cannot call ai-agents:8082 directly. All external access must go through Gateway. Internal platform services may call ai-agents directly. |
+| **Git Commit** | Pending |
+
+**Communication Pattern:**
+
+| Source | Target | Route | Status |
+|--------|--------|-------|--------|
+| External app (llm-document-enhancer) | ai-agents | Via Gateway:8080 | ✅ REQUIRED |
+| External app (VS Code extension) | ai-agents | Via Gateway:8080 | ✅ REQUIRED |
+| Platform service (Gateway) | ai-agents | Direct:8082 | ✅ Allowed |
+| Platform service (ai-agents) | audit-service | Direct:8084 | ✅ Allowed |
+
+**Architecture Compliance**:
+- ✅ ai-agents accessible externally ONLY through Gateway
+- ✅ Internal platform service communication is direct
+- ✅ Kitchen Brigade: CUSTOMER → ROUTER → EXPEDITOR
+
+---
+
 ## 2025-12-18
 
 ### CL-014: MSE-8 - Audit Service Integration into MSEP Pipeline
