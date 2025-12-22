@@ -4,15 +4,15 @@ POC: Inter-AI Concept Validation Conversation
 
 This script runs the proof-of-concept for Inter-AI Conversation Orchestration.
 
-Task: Have LLMs (Qwen, GPT-5.2, Claude Opus 4) and BERT tools (BERTopic, SBERT) collaborate
-to validate extracted concepts from 201 technical books.
+Task: Have LLMs (Qwen, GPT-5.2, Claude Opus 4) collaborate to validate extracted 
+concepts from 201 technical books. LLMs are informed about available tools 
+(BERTopic, SBERT) and decide when/how to use them.
 
-Flow:
-1. Load book list and extracted concepts from metadata
-2. Run BERTopic clustering on terms
-3. Start conversation between participants
-4. LLMs discuss and validate concept labels
-5. Save validated concept vocabulary
+Architecture:
+- Orchestrator presents: task, data, available tools
+- LLMs drive the discussion and request tool calls when needed
+- Tools execute on demand and return results to the conversation
+- LLMs analyze results and continue discussion until consensus
 
 Reference: docs/INTER_AI_ORCHESTRATION.md
 
@@ -141,10 +141,47 @@ def load_concepts_by_book(metadata_dir: Path) -> dict[str, list[str]]:
 def collect_all_terms(metadata_dir: Path) -> list[str]:
     """Collect all terms (keywords) from metadata.
     
+    Filters out noise like hex values, version numbers, timestamps, etc.
+    
     Returns:
-        List of all unique terms.
+        List of all unique, cleaned terms.
     """
+    import re
+    
     all_terms = set()
+    
+    # Patterns to filter out (noise)
+    noise_patterns = [
+        r'^[0-9a-f]{2,}$',           # Hex strings like "0f", "4d78", etc.
+        r'^[0-9]+$',                  # Pure numbers
+        r'^\d+[\s_.-]\d+',            # Version numbers like "10.12", "2024-12"
+        r'^[0-9]{4}[-/]\d{2}',        # Dates like "2024-12", "2024/12"
+        r'^\d+:\d+',                  # Times like "12:30"
+        r'^0x',                       # Hex prefixed
+        r'^__',                       # Python dunder methods
+        r'^\d+\s+(cid|ps|kb|mb)',     # Numeric with units
+        r'^[a-f0-9]{8,}$',            # Long hex strings
+        r'localhost|127\.\d+',        # IP addresses
+        r'^\d+\.\d+\.\d+',            # IP-like patterns
+        r'^https?://',                # URLs
+    ]
+    
+    # Compile patterns for efficiency
+    compiled_patterns = [re.compile(p, re.IGNORECASE) for p in noise_patterns]
+    
+    def is_valid_term(term: str) -> bool:
+        """Check if term is a valid concept candidate."""
+        # Too short
+        if len(term) < 3:
+            return False
+        # Pure punctuation or whitespace
+        if not any(c.isalpha() for c in term):
+            return False
+        # Matches noise pattern
+        for pattern in compiled_patterns:
+            if pattern.search(term):
+                return False
+        return True
     
     for file_path in sorted(metadata_dir.glob("*.json")):
         try:
@@ -156,12 +193,15 @@ def collect_all_terms(metadata_dir: Path) -> list[str]:
                 
             for chapter in data:
                 keywords = chapter.get("keywords", [])
-                all_terms.update(keywords)
+                for kw in keywords:
+                    if is_valid_term(kw):
+                        all_terms.add(kw)
                 
         except Exception as e:
             logger.warning(f"Error loading {file_path}: {e}")
     
-    return sorted(list(all_terms))
+    # Sort by length (longer terms more likely to be concepts)
+    return sorted(list(all_terms), key=lambda x: (-len(x), x))
 
 
 # =============================================================================
@@ -170,18 +210,45 @@ def collect_all_terms(metadata_dir: Path) -> list[str]:
 
 
 def create_participants() -> list[Participant]:
-    """Create the conversation participants."""
+    """Create the conversation participants.
+    
+    LLMs are the primary participants who drive the discussion.
+    Tools are available for LLMs to request when needed.
+    """
+    
+    # Tool descriptions for LLM system prompts
+    tools_description = """
+AVAILABLE TOOLS (request by saying "I'd like to use [tool_name] to..."):
+
+1. BERTopic Clustering Engine
+   - Purpose: Cluster terms into semantic groups using transformer embeddings
+   - Use when: You want to see how terms naturally group together
+   - Request format: "Use BERTopic to cluster these terms: [list of terms]"
+
+2. SBERT Semantic Analyzer  
+   - Purpose: Compute semantic similarity between terms/concepts
+   - Use when: You want to validate if terms belong together, or compare concepts
+   - Request format: "Use SBERT to compare similarity of: [term1] vs [term2]"
+
+When you request a tool, the orchestrator will execute it and share results with all participants.
+"""
+
+    base_task_context = """
+You are participating in a collaborative discussion with other AI models to analyze 
+concepts extracted from 201 technical books. Your goal is to determine which extracted 
+terms represent true CONCEPTS (abstract ideas) vs mere KEYWORDS (common words).
+
+CONCEPT = An abstract or generic idea generalized from particular instances
+  Examples: "microservice architecture", "test-driven development", "event sourcing"
+
+KEYWORD = A frequently occurring word without deep semantic meaning
+  Examples: "code", "test", "file", "run", "build"
+
+The discussion should result in a validated concept vocabulary.
+"""
+
     return [
-        # BERT Tools
-        Participant(
-            id="bertopic",
-            name="BERTopic Clustering Engine",
-            participant_type=ParticipantType.TOOL,
-            endpoint=f"{CODE_ORCHESTRATOR_URL}/api/v1/nlp/concepts/discover",
-            capabilities=["topic_clustering", "term_grouping"],
-        ),
-        
-        # LLMs
+        # LLMs - Primary participants who drive the discussion
         Participant(
             id="qwen",
             name="Qwen3 Coder",
@@ -189,44 +256,53 @@ def create_participants() -> list[Participant]:
             provider="openrouter",
             model="qwen/qwen3-coder",
             system_prompt=(
-                "You are Qwen3-Coder, a technical AI assistant specialized in software engineering. "
-                "Your role is to analyze term clusters and identify which represent true CONCEPTS "
-                "(abstract ideas like 'microservice architecture', 'test-driven development') vs "
-                "mere KEYWORDS (frequent words like 'code', 'test', 'deploy'). "
-                "A concept is an abstract or generic idea generalized from particular instances."
+                base_task_context + 
+                "\nYou are Qwen3-Coder, specialized in software engineering concepts. "
+                "Analyze the data from a technical/code perspective. Identify patterns "
+                "in how terms relate to software development practices.\n" +
+                tools_description
             ),
-            capabilities=["code_analysis", "concept_reasoning"],
+            capabilities=["code_analysis", "concept_reasoning", "tool_requester"],
         ),
         Participant(
             id="gpt",
             name="GPT-5.2",
             participant_type=ParticipantType.LLM,
             provider="openai",
-            model="gpt-5.2",
+            model="gpt-5.2-thinking",
             system_prompt=(
-                "You are GPT, an advanced reasoning AI. Your role is to validate and refine "
-                "concept labels proposed by other participants. Review the term clusters, "
-                "assess whether the proposed concept names accurately capture the abstract idea, "
-                "and suggest improvements. When you agree with another participant, say so explicitly."
+                base_task_context +
+                "\nYou are GPT-5.2, an advanced reasoning AI. Your role is to validate "
+                "and challenge proposals from other participants. Be critical but constructive. "
+                "If you disagree, explain why and propose alternatives.\n" +
+                tools_description
             ),
-            capabilities=["reasoning", "validation", "refinement"],
+            capabilities=["reasoning", "validation", "refinement", "tool_requester"],
         ),
         Participant(
             id="claude",
-            name="Claude Opus 4",
+            name="Claude Opus 4.5",
             participant_type=ParticipantType.LLM,
             provider="anthropic",
-            model="claude-opus-4-20250514",
+            model="claude-opus-4-5-20251101",
             system_prompt=(
-                "You are Claude, an AI assistant focused on synthesis and analysis. Your role is to "
-                "integrate insights from other participants, identify patterns across their suggestions, "
-                "and help synthesize a coherent final concept vocabulary. Focus on clarity and precision "
-                "in concept definitions. When the group reaches consensus, summarize the agreed-upon concepts."
+                base_task_context +
+                "\nYou are Claude Opus 4, focused on synthesis and clarity. Help integrate "
+                "insights from other participants. Identify when the group is converging on "
+                "consensus and summarize agreed-upon concepts.\n" +
+                tools_description
             ),
-            capabilities=["synthesis", "analysis", "summarization"],
+            capabilities=["synthesis", "analysis", "summarization", "tool_requester"],
         ),
         
-        # Additional tool for semantic validation
+        # Tools - Available on request from LLMs
+        Participant(
+            id="bertopic",
+            name="BERTopic Clustering Engine",
+            participant_type=ParticipantType.TOOL,
+            endpoint=f"{CODE_ORCHESTRATOR_URL}/api/v1/nlp/concepts/discover",
+            capabilities=["topic_clustering", "term_grouping"],
+        ),
         Participant(
             id="sbert",
             name="SBERT Semantic Analyzer",
@@ -257,24 +333,33 @@ async def run_concept_validation_conversation():
     all_terms = collect_all_terms(METADATA_DIR)
     
     print(f"      Loaded {len(book_list)} books")
-    print(f"      Found {len(all_terms)} unique terms")
+    print(f"      Found {len(all_terms)} unique terms (after filtering noise)")
     
-    # Step 2: Prepare context
+    # Step 2: Prepare context - organize data for LLMs to analyze
     print("\n[2/5] Preparing conversation context...")
     
-    # Sample of books and concepts for context (full list too large for prompt)
-    sample_books = book_list[:20]
-    sample_concepts = {k: v[:10] for k, v in list(concepts_by_book.items())[:10]}
+    # Organize concepts by book for LLMs to see the full picture
+    # Limit to representative sample for context window
+    sample_books = book_list[:30]  # 30 representative books
+    sample_concepts_by_book = {}
+    for book in sample_books:
+        title = book["title"]
+        if title in concepts_by_book:
+            sample_concepts_by_book[title] = concepts_by_book[title][:20]  # Top 20 per book
+    
+    # Get top terms across all books (most frequent/important)
+    top_terms = all_terms[:200]  # Top 200 terms for analysis
     
     context = {
         "total_books": len(book_list),
-        "total_terms": len(all_terms),
-        "sample_books": sample_books,
-        "concepts_by_book_sample": sample_concepts,
-        "terms": all_terms[:500],  # First 500 terms for BERTopic
+        "total_unique_terms": len(all_terms),
+        "sample_book_titles": [b["title"] for b in sample_books],
+        "concepts_by_book": sample_concepts_by_book,
+        "top_terms_for_analysis": top_terms,
     }
     
-    print(f"      Context prepared with {len(context['terms'])} terms for clustering")
+    print(f"      {len(sample_books)} sample books with concepts")
+    print(f"      {len(top_terms)} top terms for analysis")
     
     # Step 3: Create orchestrator and participants
     print("\n[3/5] Initializing orchestrator...")
@@ -286,31 +371,54 @@ async def run_concept_validation_conversation():
     )
     
     participants = create_participants()
-    print(f"      Created {len(participants)} participants")
+    llm_count = len([p for p in participants if p.participant_type == ParticipantType.LLM])
+    tool_count = len([p for p in participants if p.participant_type == ParticipantType.TOOL])
+    print(f"      Created {llm_count} LLM participants, {tool_count} tools available")
     
-    # Step 4: Define turn order
-    # Tool-first strategy: BERTopic clusters → LLMs discuss → SBERT validates
-    turn_order = ["bertopic", "qwen", "gpt", "sbert", "qwen", "gpt"]
+    # Step 4: Define turn order - LLMs only, they request tools when needed
+    # Each round: Qwen → GPT → Claude (all must participate)
+    turn_order = [
+        "qwen", "gpt", "claude",  # Round 1: Initial analysis
+        "qwen", "gpt", "claude",  # Round 2: Deeper discussion  
+        "qwen", "gpt", "claude",  # Round 3: Consensus building
+    ]
     
     # Step 5: Start and run conversation
     print("\n[4/5] Starting conversation...")
     
-    task = (
-        "Analyze the extracted terms from 201 technical books and collaborate to:\n"
-        "1. BERTopic: Cluster the terms into semantic groups\n"
-        "2. Qwen: For each cluster, propose a concept name (2-4 words, abstract idea)\n"
-        "3. GPT: Validate/refine Qwen's proposals\n"
-        "4. SBERT: Compute semantic coherence of the clusters\n"
-        "5. Reach consensus on which clusters represent true CONCEPTS vs just KEYWORDS\n\n"
-        "Output: A validated list of concept names with their representative terms."
-    )
+    task = """
+Analyze the extracted terms from 201 technical books and collaborate to build a 
+validated CONCEPT VOCABULARY.
+
+YOUR DATA:
+- {total_books} books analyzed
+- {total_terms} unique terms extracted
+- Sample books and their concepts provided in context
+- Top terms for analysis provided in context
+
+YOUR TASK:
+1. Review the extracted terms and concepts organized by book
+2. Discuss which terms represent true CONCEPTS (abstract ideas worth including in vocabulary)
+3. Challenge each other's proposals - debate and refine
+4. You may request tool assistance (BERTopic for clustering, SBERT for similarity)
+5. Build consensus on a final concept list
+
+REMEMBER:
+- CONCEPT = Abstract idea generalized from instances (e.g., "microservice architecture")
+- KEYWORD = Common word without deep meaning (e.g., "code", "test", "file")
+- ALL of you must participate before consensus can be declared
+- Challenge weak proposals - this should be a substantive discussion
+
+OUTPUT: A final list of validated concepts with brief definitions.
+""".format(total_books=context["total_books"], total_terms=context["total_unique_terms"])
     
     conversation = await orchestrator.start_conversation(
         task=task,
         participants=participants,
         context=context,
         turn_order=turn_order,
-        max_rounds=3,  # 3 rounds for POC
+        max_rounds=5,
+        min_rounds=2,  # IMPORTANT: Prevents premature consensus (requires at least 2 full rounds)
         consensus_threshold=0.8,
     )
     
@@ -339,9 +447,8 @@ async def run_concept_validation_conversation():
     print(f"Messages: {len(conversation.messages)}")
     print(f"Transcript saved to: {OUTPUT_DIR / f'{conversation.conversation_id}.txt'}")
     
-    # Close clients
-    await llm_adapter.close()
-    await tool_adapter.close()
+    # Close orchestrator clients
+    await orchestrator.close()
     
     return conversation
 

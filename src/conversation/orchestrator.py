@@ -91,6 +91,7 @@ class ConversationOrchestrator:
         context: dict[str, Any],
         turn_order: list[str] | None = None,
         max_rounds: int = 10,
+        min_rounds: int = 2,
         consensus_threshold: float = 0.8,
     ) -> Conversation:
         """Start a new inter-AI conversation.
@@ -101,6 +102,7 @@ class ConversationOrchestrator:
             context: Shared context (book list, clusters, etc.).
             turn_order: Order of turns. Defaults to participant order.
             max_rounds: Maximum rounds before timeout.
+            min_rounds: Minimum rounds before consensus can be declared (prevents premature exit).
             consensus_threshold: Agreement level needed.
             
         Returns:
@@ -112,6 +114,7 @@ class ConversationOrchestrator:
             context=context,
             turn_order=turn_order or [p.id for p in participants],
             max_rounds=max_rounds,
+            min_rounds=min_rounds,
             consensus_threshold=consensus_threshold,
         )
         
@@ -138,6 +141,9 @@ class ConversationOrchestrator:
     ) -> Conversation:
         """Run the conversation until completion.
         
+        Requires ALL LLM participants to respond before checking for consensus.
+        If an LLM fails, it's skipped but others must still respond.
+        
         Args:
             conversation: The conversation to run.
             on_message: Optional callback for each message.
@@ -146,6 +152,14 @@ class ConversationOrchestrator:
             The completed conversation.
         """
         logger.info(f"Running conversation {conversation.conversation_id}")
+        
+        # Track which LLMs have responded in current round
+        llm_participants = {
+            p.id for p in conversation.participants 
+            if p.participant_type == ParticipantType.LLM
+        }
+        llms_responded_this_round: set[str] = set()
+        last_response: dict[str, Any] | None = None
         
         while conversation.status == ConversationStatus.IN_PROGRESS:
             # Check termination conditions
@@ -190,13 +204,33 @@ class ConversationOrchestrator:
                 
                 logger.info(f"[{participant.id}]: {response['content'][:100]}...")
                 
-                # Check for consensus
-                if await self._check_consensus(conversation, response):
-                    conversation.status = ConversationStatus.CONSENSUS
-                    break
+                # Track LLM responses
+                if participant.participant_type == ParticipantType.LLM:
+                    llms_responded_this_round.add(participant.id)
+                    last_response = response
+                
+                # Only check consensus after ALL LLMs have responded at least once
+                all_llms_responded = llms_responded_this_round >= llm_participants
+                if all_llms_responded and last_response:
+                    logger.info(
+                        f"All LLMs responded ({len(llms_responded_this_round)}/{len(llm_participants)}), "
+                        f"checking for consensus..."
+                    )
+                    if await self._check_consensus(conversation, last_response):
+                        conversation.status = ConversationStatus.CONSENSUS
+                        break
+                    # Reset for next round
+                    llms_responded_this_round = set()
                 
             except Exception as e:
                 logger.error(f"Error from {participant.id}: {e}")
+                # Mark failed LLM as "responded" (with failure) so we don't block forever
+                if participant.participant_type == ParticipantType.LLM:
+                    llms_responded_this_round.add(participant.id)
+                    logger.warning(
+                        f"LLM {participant.id} failed, marking as responded. "
+                        f"({len(llms_responded_this_round)}/{len(llm_participants)} LLMs)"
+                    )
                 await self._send_orchestrator_message(
                     conversation,
                     f"Error from {participant.id}: {str(e)}. Continuing...",
@@ -260,7 +294,10 @@ class ConversationOrchestrator:
     ) -> bool:
         """Check if participants have reached consensus.
         
-        Simple heuristic: Look for agreement signals in responses.
+        Requires:
+        1. Minimum rounds completed (for deeper discussion)
+        2. Explicit consensus signal from the latest response
+        3. No recent disagreement signals
         
         Args:
             conversation: Current conversation.
@@ -269,20 +306,50 @@ class ConversationOrchestrator:
         Returns:
             True if consensus reached, False otherwise.
         """
+        # Require minimum rounds for deeper discussion
+        if conversation.current_round < conversation.min_rounds:
+            logger.debug(
+                f"Round {conversation.current_round} < min_rounds {conversation.min_rounds}, "
+                f"continuing discussion..."
+            )
+            return False
+        
         content = latest_response.get("content", "").lower()
         
-        # Check for consensus signals
+        # Check for disagreement signals (prevents premature consensus)
+        disagreement_signals = [
+            "i disagree",
+            "i don't agree",
+            "however,",
+            "but i think",
+            "on the contrary",
+            "let me offer an alternative",
+            "i have concerns",
+            "need to reconsider",
+        ]
+        
+        for signal in disagreement_signals:
+            if signal in content:
+                logger.debug(f"Disagreement signal detected: '{signal}'")
+                return False
+        
+        # Check for EXPLICIT consensus signals (must be clear declarations, not embedded in analysis)
+        # These must appear as standalone declarations, not within quoted analysis
         consensus_signals = [
-            "consensus reached",
-            "we agree",
-            "agreement reached",
-            "final answer",
-            "conclusion:",
-            "all participants agree",
+            "consensus reached:",  # Require colon to be declaration, not embedded
+            "we all agree that",
+            "agreement reached:",
+            "final consensus:",
+            "unanimous agreement:",
+            "all participants agree that",
+            "we have reached consensus:",
+            "## consensus",  # Markdown header format
+            "**consensus**",  # Bold format
         ]
         
         for signal in consensus_signals:
             if signal in content:
+                logger.info(f"Consensus signal detected: '{signal}'")
                 return True
         
         # Check custom consensus callback if registered
@@ -415,3 +482,10 @@ class ConversationOrchestrator:
         await self._save_transcript(conversation)
         
         return conversation
+
+    async def close(self) -> None:
+        """Close all adapters and cleanup resources."""
+        if self._llm_adapter:
+            await self._llm_adapter.close()
+        if self._tool_adapter:
+            await self._tool_adapter.close()
