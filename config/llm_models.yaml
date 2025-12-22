@@ -1,0 +1,140 @@
+# LLM Model Configuration
+# 
+# This file defines the available LLM models across all providers for the POC.
+# Models can be enabled/disabled and their parameters configured here.
+#
+# Usage: Load with src/config/models.py
+
+# =============================================================================
+# Provider Configurations
+# =============================================================================
+
+providers:
+  openai:
+    enabled: true
+    base_url: null  # Use default OpenAI API
+    models:
+      gpt-5.2:
+        enabled: true
+        display_name: "GPT-5.2"
+        description: "OpenAI's best model for coding and agentic tasks"
+        max_completion_tokens: 16384
+        default_temperature: 0.7
+        capabilities:
+          - reasoning
+          - validation
+          - refinement
+          - code_analysis
+      gpt-5.2-pro:
+        enabled: false
+        display_name: "GPT-5.2 Pro"
+        description: "Smarter version of GPT-5.2"
+        max_completion_tokens: 32768
+        default_temperature: 0.7
+      gpt-5:
+        enabled: false
+        display_name: "GPT-5"
+        description: "Previous intelligent reasoning model"
+        max_completion_tokens: 16384
+        default_temperature: 0.7
+      gpt-4o:
+        enabled: true
+        display_name: "GPT-4o"
+        description: "Fast, intelligent GPT model (fallback)"
+        max_tokens: 4096
+        default_temperature: 0.7
+
+  anthropic:
+    enabled: true
+    base_url: null  # Use default Anthropic API
+    models:
+      claude-opus-4-20250514:
+        enabled: true
+        display_name: "Claude Opus 4"
+        description: "Anthropic's most intelligent model"
+        max_tokens: 8192
+        default_temperature: 0.7
+        capabilities:
+          - reasoning
+          - validation
+          - analysis
+          - synthesis
+      claude-sonnet-4-20250514:
+        enabled: true
+        display_name: "Claude Sonnet 4"
+        description: "Balanced intelligence and speed"
+        max_tokens: 8192
+        default_temperature: 0.7
+      claude-3-5-sonnet-20241022:
+        enabled: true
+        display_name: "Claude 3.5 Sonnet"
+        description: "Previous generation (fallback)"
+        max_tokens: 4096
+        default_temperature: 0.7
+
+  openrouter:
+    enabled: true
+    base_url: "https://openrouter.ai/api/v1"
+    models:
+      qwen/qwen3-coder:
+        enabled: true
+        display_name: "Qwen3 Coder"
+        description: "Technical AI specialized in software engineering"
+        max_tokens: 4096
+        default_temperature: 0.7
+        capabilities:
+          - code_analysis
+          - concept_reasoning
+      anthropic/claude-3.5-sonnet:
+        enabled: false
+        display_name: "Claude 3.5 Sonnet (via OpenRouter)"
+        description: "Alternative routing for Claude"
+        max_tokens: 4096
+        default_temperature: 0.7
+
+# =============================================================================
+# POC Configuration
+# =============================================================================
+
+poc:
+  # Which models to use in the Inter-AI Orchestration POC
+  # Each participant is INDEPENDENT - if one fails, others continue
+  # No fallbacks - each LLM has a distinct role in the conversation
+  participants:
+    - id: qwen
+      provider: openrouter
+      model: qwen/qwen3-coder
+      role: "Technical analysis, code concept reasoning"
+      
+    - id: gpt
+      provider: openai
+      model: gpt-5.2
+      role: "Validation and refinement"
+      
+    - id: claude
+      provider: anthropic
+      model: claude-opus-4-20250514
+      role: "Analysis and synthesis"
+
+# =============================================================================
+# Error Handling Configuration
+# =============================================================================
+
+error_handling:
+  # Retry configuration per provider (retries within same provider only)
+  retry:
+    max_attempts: 3
+    backoff_base_seconds: 1.0
+    backoff_max_seconds: 30.0
+    
+  # How to handle participant failures
+  # skip: Log error and continue with other participants
+  # fail: Stop conversation if any participant fails
+  on_participant_failure: skip
+    
+  # Log levels for different error types
+  logging:
+    provider_error: WARNING
+    rate_limit: WARNING
+    auth_error: ERROR
+    participant_skipped: INFO
