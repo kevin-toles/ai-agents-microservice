@@ -1,0 +1,4537 @@
+{
+  "timestamp": "2025-12-22T19:15:38.527847",
+  "source": "Merged dispute resolution (original + retry)",
+  "summary": {
+    "original_concepts": 38,
+    "retry_concepts": 296,
+    "total_concepts": 334,
+    "original_keywords": 44,
+    "retry_keywords": 479,
+    "total_keywords": 523,
+    "total_rejected": 194,
+    "retry_still_disputed": 493,
+    "retry_errors": 2
+  },
+  "newly_agreed_concepts": [
+    "3d audio",
+    "acid",
+    "ai judge",
+    "alias",
+    "allocator",
+    "amazon s3",
+    "antipattern template",
+    "appraisal",
+    "approximation",
+    "architecture quantum",
+    "array",
+    "arrays",
+    "artifacts",
+    "asan",
+    "assignment",
+    "atam",
+    "attenuation",
+    "attitude",
+    "attribution",
+    "auc",
+    "auto",
+    "auto_ptr",
+    "axis aligned",
+    "base image",
+    "batch size",
+    "bezier",
+    "bias",
+    "bind",
+    "biquad",
+    "bitmap",
+    "boids",
+    "borg",
+    "boruta",
+    "bottleneck layer",
+    "bow",
+    "brain queue",
+    "bst",
+    "bump map",
+    "bytecode",
+    "calibrated",
+    "callable",
+    "case statement",
+    "cast",
+    "centroids",
+    "cfsm",
+    "checkpointer",
+    "child chunks",
+    "class accuracy",
+    "class template",
+    "classifier",
+    "classi\ufb01cation",
+    "clipmapping",
+    "clipmaps",
+    "cloudformation",
+    "clusterip",
+    "cnn",
+    "coarse chunk",
+    "coarse chunks",
+    "collapsing",
+    "commenting",
+    "commit",
+    "comprehension",
+    "compute unit",
+    "conditionals",
+    "configuration parameters",
+    "connection quota",
+    "constexpr",
+    "constructor",
+    "constructors",
+    "consumer",
+    "contamination",
+    "control block",
+    "conv2d",
+    "cookie",
+    "cookies",
+    "cpu limits",
+    "cql",
+    "crawlers",
+    "crewai",
+    "cron",
+    "crossplane",
+    "csp",
+    "ctypes",
+    "cube map",
+    "cuda",
+    "damping",
+    "declaration",
+    "decoding",
+    "deformation",
+    "degenerate feedback",
+    "deployments",
+    "deprecated",
+    "derivative",
+    "descriptors",
+    "designing microservices",
+    "detailitis",
+    "dev environment",
+    "diffuse light",
+    "dma",
+    "docker compose",
+    "docker container",
+    "docker containers",
+    "docker image",
+    "docker network",
+    "domains",
+    "dpo",
+    "dtype",
+    "dual graph",
+    "eigenvalues",
+    "encoding",
+    "enumerate",
+    "enums",
+    "event type",
+    "expanded geometry",
+    "fairness",
+    "faults",
+    "feast",
+    "feature cross",
+    "fibonacci",
+    "file systems",
+    "firmware",
+    "flock",
+    "flocking",
+    "follower",
+    "force vectors",
+    "frame rate",
+    "fresnel",
+    "frozenset",
+    "fsck",
+    "future",
+    "game turn",
+    "gameobject",
+    "gamestate",
+    "getter",
+    "good names",
+    "goto",
+    "granular chunks",
+    "group chat",
+    "groupby",
+    "hadoop cluster",
+    "hcl",
+    "height field",
+    "heightfield",
+    "hysteresis",
+    "index buffers",
+    "initialization",
+    "initializer_list",
+    "input recording",
+    "instancing",
+    "instrumenting",
+    "instrumenting applications",
+    "intersection",
+    "jinja",
+    "joins",
+    "jsx",
+    "keyframes",
+    "kubelet",
+    "kubernetes node",
+    "labeling",
+    "langgraph",
+    "latch",
+    "lava flow",
+    "lex yacc",
+    "lfs",
+    "lighting",
+    "lightmap",
+    "listen queue",
+    "llm twin",
+    "loader",
+    "local space",
+    "localai",
+    "locale",
+    "lock_guard",
+    "lockable",
+    "logits",
+    "loop",
+    "lpc",
+    "lvalue",
+    "mantissa",
+    "mask",
+    "md5",
+    "member function",
+    "memory_order",
+    "microservice apis",
+    "midi",
+    "missing values",
+    "mixing snapshots",
+    "mlflow tracking",
+    "monotonic",
+    "multistream",
+    "namedtuple",
+    "ndarray",
+    "nesting",
+    "nines",
+    "ntfs",
+    "null",
+    "nullptr",
+    "objectid",
+    "obscurity",
+    "occlusion",
+    "odm",
+    "onnx",
+    "operand",
+    "optimizers",
+    "orthogonal",
+    "oscillator",
+    "outliers",
+    "padding",
+    "page table",
+    "parsers",
+    "pca",
+    "pep",
+    "pie menus",
+    "platform services",
+    "pmml",
+    "pods",
+    "portal",
+    "precision",
+    "prometheus",
+    "prompt flow",
+    "pro\ufb01 ling",
+    "prvalue",
+    "pseudocode",
+    "pythonic",
+    "qps",
+    "quanta",
+    "quantum",
+    "quaternions",
+    "query document",
+    "race",
+    "rag chain",
+    "rag systems",
+    "ragas",
+    "rebalancing",
+    "redirection",
+    "refactoring",
+    "registered variable",
+    "registered variables",
+    "reliability",
+    "rendering",
+    "replication",
+    "rerankers",
+    "resolvers",
+    "resource",
+    "responsibilities",
+    "responsibility",
+    "retriever",
+    "return value",
+    "roc curve",
+    "rpcs",
+    "rum",
+    "run time",
+    "rust",
+    "scopes",
+    "seams",
+    "secret key",
+    "sensing model",
+    "seq",
+    "sequencer",
+    "server cluster",
+    "serving function",
+    "session id",
+    "sessions",
+    "setter",
+    "sft",
+    "sha256",
+    "shaders",
+    "shading",
+    "shared_ptr",
+    "signed",
+    "silhouette",
+    "sizeof",
+    "sjf",
+    "skew",
+    "skybox",
+    "slices",
+    "slis",
+    "smartptr",
+    "sparql",
+    "spheretree",
+    "splines",
+    "spring boot",
+    "sqs",
+    "ssao",
+    "ssi",
+    "sstf",
+    "stacking",
+    "stacks",
+    "static lighting",
+    "static method",
+    "status code",
+    "stride",
+    "subdivision",
+    "surface normal",
+    "syslog",
+    "tangent space",
+    "task",
+    "task set",
+    "tekton pipelines",
+    "temperature",
+    "template class",
+    "templates",
+    "testcase",
+    "texture",
+    "tf lite",
+    "tlb",
+    "toil",
+    "tokenizer",
+    "transformation",
+    "triangle strip",
+    "tumbling",
+    "type",
+    "ucb1",
+    "undo",
+    "unique_ptr",
+    "unit_of_work",
+    "uuid",
+    "validation error",
+    "velocity",
+    "vertex shader",
+    "viseme",
+    "visitor",
+    "vllm",
+    "void_t",
+    "volatile",
+    "vptr",
+    "vtbl",
+    "waitpid",
+    "welch test",
+    "whitening",
+    "worker node",
+    "world synchronization",
+    "\ufb01le systems",
+    "\ufb01lesystem"
+  ],
+  "newly_agreed_keywords": [
+    "2to3",
+    "accelerators",
+    "access",
+    "agentops",
+    "ai act",
+    "ai assistant",
+    "ai platform",
+    "ai services",
+    "ai systems",
+    "aiplatform",
+    "alb",
+    "alert",
+    "alertmanager",
+    "amazon ec2",
+    "amazon kinesis",
+    "ami",
+    "analytical data",
+    "analytics application",
+    "analyzer",
+    "angular",
+    "annotators",
+    "antivirus",
+    "apache cassandra",
+    "api server",
+    "app engine",
+    "app extensions",
+    "application data",
+    "apt",
+    "architectures",
+    "archive",
+    "argo",
+    "arithmetic",
+    "artoolkit",
+    "asset",
+    "attributes",
+    "auth0",
+    "automate",
+    "autonomous",
+    "aws networking",
+    "aws s3",
+    "azure",
+    "backends",
+    "balancers",
+    "bash",
+    "batches",
+    "bedrock",
+    "behaviors",
+    "bidding",
+    "billing",
+    "binding_data",
+    "blocker",
+    "bool",
+    "boost",
+    "boot",
+    "boto3",
+    "bounds",
+    "bower",
+    "bucket",
+    "buckets",
+    "budgets",
+    "buildah",
+    "cached",
+    "capabilities",
+    "cardholder data",
+    "cassandra data",
+    "cert manager",
+    "certainty",
+    "certification",
+    "char",
+    "chassis",
+    "checkstyle",
+    "chef",
+    "ci server",
+    "clang",
+    "client",
+    "cloud application",
+    "cloud dev",
+    "cloud environment",
+    "cloud spend",
+    "cloudwatch logs",
+    "cncf",
+    "cnn model",
+    "codebuild",
+    "codellama",
+    "codestral",
+    "cohesive",
+    "collector",
+    "comet",
+    "competence",
+    "completion",
+    "computation",
+    "computer science",
+    "computer systems",
+    "conciseness",
+    "conda",
+    "conditions",
+    "confidential",
+    "configuration data",
+    "configuration files",
+    "consumers",
+    "containerized",
+    "context",
+    "contextual",
+    "controllers",
+    "conventions",
+    "conversation",
+    "conversational",
+    "con\ufb01 guration",
+    "con\ufb01dence",
+    "coordinate",
+    "core",
+    "coreos",
+    "corpus",
+    "correlations",
+    "couchbase",
+    "coveralls",
+    "crm",
+    "cron service",
+    "cryptographic",
+    "cursor",
+    "dashboards",
+    "data systems",
+    "database",
+    "database servers",
+    "databases",
+    "datacenter",
+    "dataservice",
+    "dataset",
+    "datasets",
+    "decommission",
+    "deequ",
+    "default",
+    "defect",
+    "definition",
+    "density",
+    "deploying",
+    "derived",
+    "deviations",
+    "devops playbook",
+    "devops services",
+    "dicom",
+    "diffuse",
+    "digest",
+    "dimensions",
+    "distortion",
+    "docker desktop",
+    "driver",
+    "duplicate",
+    "dynamic",
+    "edge software",
+    "efs filesystem",
+    "eks",
+    "elastic",
+    "elasticache",
+    "elb",
+    "encode",
+    "encrypted",
+    "engagement",
+    "engine",
+    "enterprise",
+    "eventbridge",
+    "exec",
+    "executable",
+    "execute",
+    "execution",
+    "experiments",
+    "exploration",
+    "expr",
+    "extension",
+    "extract",
+    "failure",
+    "feature",
+    "feature set",
+    "filters",
+    "fintech",
+    "fleet",
+    "floating",
+    "formatting",
+    "frames",
+    "frequency",
+    "frontend deployment",
+    "frontends",
+    "game audio",
+    "game development",
+    "game input",
+    "gcp",
+    "gcr",
+    "genetic",
+    "git repository",
+    "gitea",
+    "gke",
+    "google cloud",
+    "gps",
+    "gpt",
+    "gpt 4v",
+    "gpt assistants",
+    "graphics",
+    "graypy",
+    "gsm",
+    "gunicorn",
+    "hamcrest",
+    "hashed",
+    "header",
+    "headers",
+    "health",
+    "hiding",
+    "history",
+    "home directories",
+    "host",
+    "hosted zones",
+    "httpx",
+    "hugging face",
+    "identities",
+    "idle",
+    "ieee",
+    "ietf",
+    "implementation",
+    "inbound",
+    "increment",
+    "influxdb",
+    "influxdb exporter",
+    "infrastructure team",
+    "init",
+    "inspection",
+    "inspections",
+    "inspector",
+    "installer",
+    "instances",
+    "integral",
+    "integrations",
+    "intelligence",
+    "interactions",
+    "interoperate",
+    "interval",
+    "inventory service",
+    "ipv6 support",
+    "is_constructible",
+    "iter",
+    "java",
+    "jframe",
+    "jmock",
+    "jsonable_encoder",
+    "k8s",
+    "kafka server",
+    "keycloak",
+    "kfp",
+    "kibana",
+    "kivy",
+    "knowledge",
+    "kube",
+    "kubeadm",
+    "kubebuilder",
+    "kubectl",
+    "kubeflow",
+    "kubernetes dashboard",
+    "kustomize",
+    "landscape",
+    "langchain app",
+    "langsmith",
+    "language",
+    "launchd",
+    "leaderboard",
+    "learning systems",
+    "libraries",
+    "linear path",
+    "live data",
+    "llama cpp",
+    "llamafile",
+    "lldp",
+    "lm studio",
+    "logger",
+    "login token",
+    "logstash",
+    "lookup",
+    "lua",
+    "lxc",
+    "mailgun",
+    "malicious",
+    "mappings",
+    "matcher",
+    "matchers",
+    "mcp inspector",
+    "membership",
+    "merging",
+    "method",
+    "microservice application",
+    "midpoint",
+    "minikube",
+    "minority",
+    "mistral",
+    "ml model",
+    "ml product",
+    "mmos",
+    "mobile app",
+    "modal",
+    "mode",
+    "models",
+    "modifier",
+    "module",
+    "mongodb database",
+    "monitor",
+    "monitors",
+    "mono",
+    "mortem",
+    "multilingual",
+    "mypy",
+    "mysql database",
+    "nas",
+    "navigation",
+    "network",
+    "networks",
+    "nist",
+    "node",
+    "notebook",
+    "notifications service",
+    "npm",
+    "number generator",
+    "odmantic",
+    "offline",
+    "offset",
+    "ollydbg",
+    "openapi_schema",
+    "operators",
+    "optimizing",
+    "oracle",
+    "order service",
+    "orders api",
+    "orders service",
+    "o\ufb04ine",
+    "parent",
+    "patches",
+    "path",
+    "payments service",
+    "pcap",
+    "peer",
+    "phpunit",
+    "pimcore",
+    "pipe",
+    "plot",
+    "plug",
+    "population",
+    "positional",
+    "postgresql",
+    "predictions",
+    "predictors",
+    "prefix",
+    "priorities",
+    "proc",
+    "procedure",
+    "procedures",
+    "process monitor",
+    "processes",
+    "processing",
+    "processing time",
+    "production",
+    "profile",
+    "profile service",
+    "programming",
+    "prometheus server",
+    "property",
+    "protected",
+    "protection",
+    "public",
+    "push",
+    "pydantic",
+    "pypi",
+    "pytz",
+    "quadratic",
+    "quarkus",
+    "rabbitmq",
+    "radius",
+    "ramcloud",
+    "random",
+    "ranges",
+    "rank",
+    "rate",
+    "rds",
+    "rds database",
+    "reactjs",
+    "recipe",
+    "recommendation",
+    "recommendations",
+    "reconstruction",
+    "record",
+    "record sets",
+    "redirect",
+    "redshift",
+    "region",
+    "registries",
+    "release",
+    "reliable",
+    "remediation",
+    "reporting",
+    "representation",
+    "request",
+    "resolution model",
+    "response",
+    "restart",
+    "retrain",
+    "risk",
+    "role",
+    "root",
+    "route",
+    "route53",
+    "routes",
+    "ruby",
+    "s3 storage",
+    "safety",
+    "sanic",
+    "scan",
+    "scanning",
+    "scatter",
+    "schemathesis",
+    "securing",
+    "security team",
+    "segment",
+    "selection",
+    "selenium",
+    "sensor",
+    "sentiment score",
+    "sentry",
+    "sequence",
+    "server",
+    "server hardware",
+    "service",
+    "service creation",
+    "services",
+    "severity",
+    "sharing",
+    "shutdown",
+    "signals",
+    "simplification",
+    "single host",
+    "single server",
+    "sink",
+    "size_t",
+    "skeleton",
+    "sku",
+    "skylight",
+    "slave",
+    "smart packet",
+    "smoke",
+    "sns",
+    "software product",
+    "software systems",
+    "sorted",
+    "source",
+    "specifications",
+    "speech",
+    "sphere",
+    "sphinx",
+    "sqlite",
+    "sqlmap",
+    "sre team",
+    "sre teams",
+    "stackdriver",
+    "stakeholders",
+    "standard",
+    "states",
+    "statistical",
+    "statsd",
+    "statsd exporter",
+    "storage",
+    "stress",
+    "structure",
+    "structured",
+    "subscriptions",
+    "subset",
+    "subtasks",
+    "sudo",
+    "summarizing",
+    "switch",
+    "symbol",
+    "sympy",
+    "sync",
+    "synthesis",
+    "sysops",
+    "telemetry sdk",
+    "test",
+    "tfma",
+    "threaded code",
+    "ticket service",
+    "ticketing",
+    "tiers",
+    "timeit",
+    "timing",
+    "tooling",
+    "traces",
+    "track",
+    "traf\ufb01c",
+    "trainable",
+    "training systems",
+    "translate",
+    "transparent",
+    "ubuntu",
+    "uint64",
+    "underrepresented",
+    "unit",
+    "unix",
+    "upgrade",
+    "urllib",
+    "uwsgi",
+    "varchar",
+    "velocities",
+    "version",
+    "vision",
+    "vmware",
+    "vocabularies",
+    "voltdb",
+    "volume",
+    "vorbis",
+    "web console",
+    "web servers",
+    "wiki",
+    "windowed",
+    "wireless",
+    "wishlist service",
+    "workspace",
+    "workstation",
+    "wrap",
+    "wrapping",
+    "xen project",
+    "zipfile"
+  ],
+  "both_rejected": [
+    "abc monolith",
+    "accelerate",
+    "accounting",
+    "action items",
+    "active setup",
+    "administrative",
+    "agenda service",
+    "agreement",
+    "alerting alertmanager",
+    "analyze",
+    "antipatterns pitfalls",
+    "api composer",
+    "apis microservices",
+    "approval",
+    "arch",
+    "architected framework",
+    "architecting scale",
+    "architecting transition",
+    "architects",
+    "argus",
+    "artillery",
+    "asg",
+    "assess devops",
+    "avoiding",
+    "based architecture",
+    "based decomposition",
+    "based retrieval",
+    "benefits",
+    "black tree",
+    "books service",
+    "box monitoring",
+    "breakdown",
+    "burn alerts",
+    "cacti",
+    "case study",
+    "categories",
+    "ch prometheus",
+    "challenges",
+    "cid information",
+    "cloud age",
+    "complicated subsystem",
+    "concurrency concurrency",
+    "conit",
+    "container package",
+    "contribute",
+    "correspondence",
+    "crds",
+    "create change",
+    "cri",
+    "criminals",
+    "customer payments",
+    "decisions",
+    "dedicated",
+    "deep dive",
+    "define roadmap",
+    "definitions",
+    "depend",
+    "descriptive",
+    "designing",
+    "difference",
+    "difficulty",
+    "dimension data",
+    "discipline",
+    "disclosure",
+    "disorders",
+    "django web2py",
+    "dora",
+    "effective performance",
+    "efficiency scalability",
+    "eni",
+    "ensure control",
+    "eradication event",
+    "excellence",
+    "excellence pillar",
+    "expectations",
+    "experience",
+    "figure cluster",
+    "gauge",
+    "globus",
+    "groupings",
+    "grunt",
+    "guidance",
+    "guide ai",
+    "hadoop spark",
+    "head tail",
+    "iceberg",
+    "ics",
+    "ideal environment",
+    "innovation",
+    "investigation",
+    "journey",
+    "junction",
+    "k8s io",
+    "km_model",
+    "kubernetes io",
+    "landesk",
+    "large language",
+    "list itertools",
+    "livebook",
+    "macd",
+    "macie",
+    "maglev",
+    "majority",
+    "managing",
+    "manifests",
+    "marathon",
+    "mean",
+    "measures",
+    "microservice way",
+    "misconception",
+    "misconceptions",
+    "mode networking",
+    "mongoose",
+    "monitoring distributed",
+    "mortems",
+    "msa enterprise",
+    "native infrastructure",
+    "near far",
+    "normal",
+    "notion",
+    "number clusters",
+    "omission",
+    "order functions",
+    "origin",
+    "pacman",
+    "pat",
+    "perception",
+    "permanent fix",
+    "plan",
+    "platform grouping",
+    "plug modules",
+    "post",
+    "practice",
+    "primary research",
+    "prober",
+    "production like",
+    "progressive",
+    "proven practices",
+    "quality speed",
+    "rancid",
+    "rank array",
+    "reliability security",
+    "remediation team",
+    "repair debt",
+    "representation infrastructure",
+    "rights",
+    "roles responsibilities",
+    "satisfaction",
+    "security reliability",
+    "separating",
+    "serf",
+    "server kubernetes",
+    "sess",
+    "shareholder value",
+    "sift",
+    "sign",
+    "sops",
+    "space bump",
+    "spans",
+    "sres",
+    "strategies scalability",
+    "strong",
+    "summarize",
+    "sweet spot",
+    "swim",
+    "tabletop",
+    "target group",
+    "task master",
+    "team cognitive",
+    "technology",
+    "technology value",
+    "tenets",
+    "term memory",
+    "theory",
+    "thought",
+    "tink",
+    "topics",
+    "trademarks",
+    "tsl ssl",
+    "typename concept",
+    "ubiquitous",
+    "understanding",
+    "understanding microservices",
+    "usage",
+    "usage reduction",
+    "valet",
+    "variations",
+    "versus brownfield",
+    "vision zero",
+    "vm sys",
+    "vstack",
+    "wip",
+    "xen",
+    "yarn"
+  ],
+  "still_disputed": [
+    {
+      "term": "access routines",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "aci",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "activation relu",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "advanced metrics",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "agent mode",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "agi",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "alexnet",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "allocate",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "amazon web",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "amplify",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "analytical",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "andon cord",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "angularjs",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "animation",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "ansistrano",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "apache solr",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "api implementation",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "apis",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "app runner",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "application load",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "applicationset",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "appops",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "architecting",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "architectural",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "architecture gcp",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "asg rolling",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "assume role",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "authenticate",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "autogen",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "autogen studio",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "automated",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "automated acceptance",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "aws",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "aws lambda",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "axis scaling",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "axis split",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "azure openai",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "backend tasks",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "backing",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "bean",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "behat",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "bgd",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "bittorrent",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "blending",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "block",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "bluemix devops",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "boehm",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "breaking apart",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "bucket quota",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "building llm",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "byte",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "cap",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "cassandra",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "categorical",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "cbam",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "cdk",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "centralizing",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "cert",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "certificate",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "certi\ufb01cate",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "certi\ufb01cates",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "chat tool",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "chord",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "chrono duration",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "chunk",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "cidr block",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "cidrblock",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "circuit",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "clang tidy",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "clean",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "cloud based",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "cloud gov",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "cloudwatch alarm",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "cluster daemons",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "code complete",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "coherent",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "collaborative",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "collection pipeline",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "commit stage",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "communications performance",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "comparison",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "compartment",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "compartments",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "compile",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "complement",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "completions",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "compliance code",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "compose",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "concept",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "concurrent futures",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "confidence",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "configmap",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "configurable",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "containers host",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "contexts",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "contextual data",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "control",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "conway",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "copilot chat",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "copilot extensions",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "copyright",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "REJECT"
+      }
+    },
+    {
+      "term": "correlated",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "cost calculator",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "cpu usage",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "crd",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "create peering",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "creating microservices",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "credentials",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "critic",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "csi",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "csr",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "cumulative",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "customized container",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "cyber",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "daemonset",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "data api",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "data hub",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "database instance",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "db service",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "dbcopilot",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "deadline",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "REJECT"
+      }
+    },
+    {
+      "term": "decision",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "delta delta",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "dependent",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "dependents",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "deploying apps",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "deployment pain",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "descent",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "description languages",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "designing data",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "detecting",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "dev teams",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "developer",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "REJECT"
+      }
+    },
+    {
+      "term": "development branch",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "dimensional",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "discourse",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "distances",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "di\ufb00 erence",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "docker machine",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "docker overlay",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "docker service",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "docker stack",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "driven",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "driven architecture",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "driven design",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "driven development",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "dss",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "ebs",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "ebs volume",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "ecr",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "ecs",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "edge server",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "effect coding",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "efs",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "eigen",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "eks cluster",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "elastic container",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "elastic ip",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "elk",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "emr",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "emr cluster",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "encrypt",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "enterprise devops",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "enumerated",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "euler",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "eval",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "evaluator",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "event types",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "factor",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "factor app",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "factorial",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "failure signals",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "faiss",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "falco",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "fight defensively",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "finetuned",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "flask",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "flask smorest",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "fold",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "foreach",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "forwarder",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "fractions",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "fsa",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "func",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "function",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "function lambda",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "functions",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "fuzz engine",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "geometric",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "git",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "glm",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "global data",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "glue job",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "governance change",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "govtech",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "gpt 4o",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "gpu",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "greenfield versus",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "grid",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "grids",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "grouping",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "gzip",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "handlers",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "hbase",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "healing",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "hfs",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "high performers",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "hpa",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "hubot",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "humaneval",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "hypothesis",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "iam users",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "ibm devops",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "ida",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "iis",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "image build",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "implementing apis",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "indentation",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "indicator",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "inline",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "installing kubernetes",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "integrate",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "intelligent msa",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "intended state",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "inter service",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "internet performance",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "iperf",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "iptables",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "ipv6 cidr",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "isps",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "javaspace",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "jmx",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "jtable",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "kafkastreams",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "kdc",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "kfserving",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "kinesis data",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "kitchen service",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "kms",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "ksql",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "lagrange",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "langchain",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "layer mlp",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "learning engineering",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "levels",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "lightsail",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "limits",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "listening",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "llm based",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "loadbalance",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "local models",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "lock",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "logical",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "loose",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "loss",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "luigi",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "lumen",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "machine monitor",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "magento",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "maintain",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "malicious code",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "management",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "management platform",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "matching",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "matrices",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "measure",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "membrane",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "memcache",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "meshes",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "mesos marathon",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "message",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "meta",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "metropolis model",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "microservices based",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "microservices java",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "mirageos",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "mixing",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "mobile computing",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "model development",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "model performance",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "mongodb",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "monitoring gcp",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "monitoring nodes",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "monolithic stack",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "mpm",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "msgpack",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "mtail",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "nacl",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "namenode",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "nameservice",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "nameservices",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "native application",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "nearest",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "nearest points",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "network insights",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "nfc",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "node exporter",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "noti\ufb01cation",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "nrql",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "oc cluster",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "oci",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "openai api",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "openshift cluster",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "operational",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "operations",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "ops mode",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "option",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "ordered",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "orientation",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "oriented design",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "oriented storage",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "os path",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "overloaded",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "owl",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "owners",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "owning",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "paketo buildpacks",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "partial",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "pathfinder",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "pattern description",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "paypal",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "REJECT"
+      }
+    },
+    {
+      "term": "performance goals",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "persister",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "phoenix project",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "php fpm",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "piecewise",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "pillar",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "ping",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "planning",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "playbooks",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "poly",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "polynomials",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "pool",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "port",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "prefetch files",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "primal",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "primes",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "REJECT"
+      }
+    },
+    {
+      "term": "principal",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "problem resolution",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "process",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "product teams",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "proto",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "provisioned",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "provisioner",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "psk",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "psr",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "pstate",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "publisher",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "pull",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "qualitative",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "quota",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "rag feature",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "random generator",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "random numbers",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "rdds",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "reader",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "ready list",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "real time",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "refcount",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "register",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "relationships",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "repo",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "representation design",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "requests",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "reservation",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "resttemplate",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "rewrite",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "robust",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "route 53",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "rule",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "runc",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "rxjava",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "sampler",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "samplerate",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "scaling reliability",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "scenario",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "sched",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "schedule",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "scheduledjob",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "science workflow",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "scrape",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "scriptable",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "sealedsecret",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "search",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "secret data",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "secretsmanager",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "securing services",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "seed",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "seldon core",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "sem",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "send",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "sensing",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "serialized",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "series analysis",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "service monolith",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "service pipelines",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "service pod",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "serviceaccount",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "setsnapregion",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "sha",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "shallow",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "showback",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "shredding",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "signing",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "snort",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "snowball",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "solr",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "solver",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "source llms",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "spdy",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "speculative",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "spiffe",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "splice",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "spreading",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "spring",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "sre book",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "stable",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "stack winding",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "stacked",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "stages",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "standardize",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "status check",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "std atomic",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "std future",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "std unique_ptr",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "stdio",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "stdout",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "stl",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "storage lens",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "stream aligned",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "streams tables",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "string",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "swagger",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "swap",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "sys fs",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "tactical",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "team api",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "team dependencies",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "teamtopologies",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "tekton",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "template type",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "test method",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "testing",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "testsuite",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "text query",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "textfile collector",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "tfdv",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "thread trace",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "tidy",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "tier service",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "tolerant",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "tolerations",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "tooling mlops",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "trade analysis",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "train",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "transaction volume",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "transcription job",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "tree",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "trunk",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "trusted advisor",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "turnaround",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "typevar",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "udfs",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "unittest mock",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "unshare",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "upgrading",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "user prompt",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "users",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "utc",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "velero",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "venv",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "verify",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "vertx",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "view",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "views",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "virtual events",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "virtualenv",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "virtualize",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "visual",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "vmm",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "volumesnapshot",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "voting",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "vpa",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "vpc private",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "vpc subnet",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "weave",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "web based",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "webserver cluster",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "worker",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "workers",
+      "votes": {
+        "gpt-5.2-2025-12-11": "KEYWORD",
+        "claude-opus-4-5-20251101": "CONCEPT"
+      }
+    },
+    {
+      "term": "write tests",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "zend",
+      "votes": {
+        "gpt-5.2-2025-12-11": "REJECT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    },
+    {
+      "term": "zenml",
+      "votes": {
+        "gpt-5.2-2025-12-11": "CONCEPT",
+        "claude-opus-4-5-20251101": "KEYWORD"
+      }
+    }
+  ],
+  "retry_errors": [
+    {
+      "term": "server node",
+      "model": "gpt-5.2-2025-12-11",
+      "error": "Request failed after 3 attempts: Connection error."
+    },
+    {
+      "term": "serversocket",
+      "model": "gpt-5.2-2025-12-11",
+      "error": "Request failed after 3 attempts: Connection error."
+    }
+  ]
+}
