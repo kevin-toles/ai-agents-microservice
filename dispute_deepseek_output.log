@@ -1,0 +1,23 @@
+======================================================================
+RETRY DISPUTE RESOLUTION WITH DEEPSEEK
+======================================================================
+
+Checking LLM Gateway...
+✅ Gateway reachable at http://localhost:8080
+
+Discovering available models...
+✅ Found 41 models from gateway
+
+Loading terms to process...
+✅ Loaded 493 still-disputed terms (need tie-breaker)
+✅ Using 1 models: ['deepseek-reasoner']
+   🧠 DeepSeek Reasoner included for tie-breaking!
+⏱️  Estimated time: 45 minutes
+
+----------------------------------------------------------------------
+RETRYING WITH SLOWER RATE
+----------------------------------------------------------------------
+Initializing book context lookup...
+Processing 493 failed terms...
+Settings: batch_size=2, delay=2.0-4.0s
+Retrying:   0%|          | 0/247 [00:00<?, ?it/s]                                                 Retrying:   0%|          | 0/247 [00:00<?, ?it/s]                                                 Retrying:   0%|          | 0/247 [00:06<?, ?it/s]                                                 Retrying:   0%|          | 0/247 [00:07<?, ?it/s]                                                 Retrying:   0%|          | 0/247 [00:12<?, ?it/s]                                                 Retrying:   0%|          | 0/247 [00:12<?, ?it/s]Retrying:   0%|          | 1/247 [00:17<1:10:08, 17.11s/it]                                                           Retrying:   0%|          | 1/247 [00:17<1:10:08, 17.11s/it]

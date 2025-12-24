@@ -1,0 +1,966 @@
+======================================================================
+INTER-AI DISCUSSION SYSTEM
+GPT-5.2 ↔ Claude Opus 4.5 ↔ DeepSeek Reasoner
+======================================================================
+
+Checking LLM Gateway...
+✅ Gateway reachable
+  Loaded 1110 terms from disputed_terms_needing_resolution.json
+
+✅ Loaded 1110 disputed terms
+
+Initializing book context lookup...
+
+======================================================================
+STARTING DISCUSSIONS
+======================================================================
+
+[1/1110] Processing: 2to3
+  → KEYWORD
+
+[2/1110] Processing: 3d audio
+  → CONCEPT ✅
+
+[3/1110] Processing: abc monolith
+  → KEYWORD
+
+[4/1110] Processing: accelerate
+  → KEYWORD
+
+[5/1110] Processing: accelerators
+  → KEYWORD
+
+[6/1110] Processing: access
+  → KEYWORD
+
+[7/1110] Processing: accounting
+  → KEYWORD
+
+[8/1110] Processing: acid
+  → CONCEPT ✅
+
+[9/1110] Processing: action items
+  → KEYWORD
+
+[10/1110] Processing: active setup
+  → KEYWORD
+
+[11/1110] Processing: administrative
+  → KEYWORD
+
+[12/1110] Processing: agenda service
+  → KEYWORD
+
+[13/1110] Processing: agentops
+  → KEYWORD
+
+[14/1110] Processing: agreement
+  → KEYWORD
+
+[15/1110] Processing: ai act
+  → CONCEPT ✅
+
+[16/1110] Processing: ai assistant
+  → CONCEPT ✅
+
+[17/1110] Processing: ai judge
+  → CONCEPT ✅
+
+[18/1110] Processing: ai platform
+  → CONCEPT ✅
+
+[19/1110] Processing: ai services
+  → CONCEPT ✅
+
+[20/1110] Processing: ai systems
+  → KEYWORD
+
+[21/1110] Processing: aiplatform
+  → KEYWORD
+
+[22/1110] Processing: akf
+  → KEYWORD
+
+[23/1110] Processing: alb
+  → KEYWORD
+
+[24/1110] Processing: alert
+  → CONCEPT ✅
+
+[25/1110] Processing: alerting alertmanager
+  → KEYWORD
+
+[26/1110] Processing: alertmanager
+  → KEYWORD
+
+[27/1110] Processing: alias
+  → CONCEPT ✅
+
+[28/1110] Processing: allocator
+  → CONCEPT ✅
+
+[29/1110] Processing: amazon ec2
+  → KEYWORD
+
+[30/1110] Processing: amazon kinesis
+  → KEYWORD
+
+[31/1110] Processing: amazon redshi
+  → KEYWORD
+
+[32/1110] Processing: amazon s3
+  → KEYWORD
+
+[33/1110] Processing: ami
+  → KEYWORD
+
+[34/1110] Processing: analytical data
+  → KEYWORD
+
+[35/1110] Processing: analytics application
+  → KEYWORD
+
+[36/1110] Processing: analyze
+  → KEYWORD
+
+[37/1110] Processing: analyzer
+  → KEYWORD
+
+[38/1110] Processing: angular
+  → KEYWORD
+
+[39/1110] Processing: annotators
+  → CONCEPT ✅
+
+[40/1110] Processing: antipattern template
+  → CONCEPT ✅
+
+[41/1110] Processing: antipatterns pitfalls
+  → CONCEPT ✅
+
+[42/1110] Processing: antivirus
+  → CONCEPT ✅
+
+[43/1110] Processing: apache cassandra
+  → KEYWORD
+
+[44/1110] Processing: api composer
+  → CONCEPT ✅
+
+[45/1110] Processing: api server
+  → KEYWORD
+
+[46/1110] Processing: apis microservices
+  → CONCEPT ✅
+
+[47/1110] Processing: app engine
+  → KEYWORD
+
+[48/1110] Processing: app extensions
+  → CONCEPT ✅
+
+[49/1110] Processing: application data
+  → KEYWORD
+
+[50/1110] Processing: appraisal
+  → CONCEPT ✅
+
+[51/1110] Processing: approval
+  → KEYWORD
+
+[52/1110] Processing: approximation
+  → CONCEPT ✅
+
+[53/1110] Processing: apt
+  → KEYWORD
+
+[54/1110] Processing: arch
+  → KEYWORD
+
+[55/1110] Processing: architected framework
+  → KEYWORD
+
+[56/1110] Processing: architecting scale
+  → CONCEPT ✅
+
+[57/1110] Processing: architecting transition
+  → CONCEPT ✅
+
+[58/1110] Processing: architects
+  → KEYWORD
+
+[59/1110] Processing: architecture quantum
+  → CONCEPT ✅
+
+[60/1110] Processing: architectures
+  → KEYWORD
+
+[61/1110] Processing: archive
+  → KEYWORD
+
+[62/1110] Processing: argo
+  → KEYWORD
+
+[63/1110] Processing: argus
+  → KEYWORD
+
+[64/1110] Processing: arithmetic
+  → KEYWORD
+
+[65/1110] Processing: array
+  → CONCEPT ✅
+
+[66/1110] Processing: arrays
+  → KEYWORD
+
+[67/1110] Processing: artifacts
+  → CONCEPT ✅
+
+[68/1110] Processing: artillery
+  → KEYWORD
+
+[69/1110] Processing: artoolkit
+  → KEYWORD
+
+[70/1110] Processing: asan
+  → KEYWORD
+
+[71/1110] Processing: asg
+  → KEYWORD
+
+[72/1110] Processing: asr
+  → KEYWORD
+
+[73/1110] Processing: assess devops
+  → KEYWORD
+
+[74/1110] Processing: asset
+  → KEYWORD
+
+[75/1110] Processing: assignment
+  → CONCEPT ✅
+
+[76/1110] Processing: atam
+  → CONCEPT ✅
+
+[77/1110] Processing: attackers
+  → KEYWORD
+
+[78/1110] Processing: attention
+  → CONCEPT ✅
+
+[79/1110] Processing: attenuation
+  → CONCEPT ✅
+
+[80/1110] Processing: attitude
+  → KEYWORD
+
+[81/1110] Processing: attributes
+  → KEYWORD
+
+[82/1110] Processing: attribution
+  → CONCEPT ✅
+
+[83/1110] Processing: auc
+  → CONCEPT ✅
+
+[84/1110] Processing: auth0
+  → KEYWORD
+
+[85/1110] Processing: auto
+  → KEYWORD
+
+[86/1110] Processing: auto_ptr
+  → KEYWORD
+
+[87/1110] Processing: automate
+  → KEYWORD
+
+[88/1110] Processing: autonomous
+  → KEYWORD
+
+[89/1110] Processing: avoiding
+  → KEYWORD
+
+[90/1110] Processing: aws networking
+  → CONCEPT ✅
+
+[91/1110] Processing: aws s3
+  → KEYWORD
+
+[92/1110] Processing: axis aligned
+  → KEYWORD
+
+[93/1110] Processing: azure
+  → KEYWORD
+
+[94/1110] Processing: backends
+  → CONCEPT ✅
+
+[95/1110] Processing: balancers
+  → CONCEPT ✅
+
+[96/1110] Processing: base image
+  → CONCEPT ✅
+
+[97/1110] Processing: based architecture
+  → KEYWORD
+
+[98/1110] Processing: based decomposition
+  → KEYWORD
+
+[99/1110] Processing: based replication
+  → CONCEPT ✅
+
+[100/1110] Processing: based retrieval
+  → KEYWORD
+
+[101/1110] Processing: bash
+  → KEYWORD
+
+[102/1110] Processing: batch size
+  → CONCEPT ✅
+
+[103/1110] Processing: batches
+  → CONCEPT ✅
+
+[104/1110] Processing: bedrock
+  → KEYWORD
+
+[105/1110] Processing: behaviors
+  → CONCEPT ✅
+
+[106/1110] Processing: benefits
+  → KEYWORD
+
+[107/1110] Processing: bezier
+  → CONCEPT ✅
+
+[108/1110] Processing: bias
+  → CONCEPT ✅
+
+[109/1110] Processing: bidding
+  → KEYWORD
+
+[110/1110] Processing: big classes
+  → CONCEPT ✅
+
+[111/1110] Processing: billing
+  → KEYWORD
+
+[112/1110] Processing: bind
+  → KEYWORD
+
+[113/1110] Processing: binding_data
+  → KEYWORD
+
+[114/1110] Processing: biquad
+  → CONCEPT ✅
+
+[115/1110] Processing: bitmap
+  → CONCEPT ✅
+
+[116/1110] Processing: black tree
+  → CONCEPT ✅
+
+[117/1110] Processing: blackbox_exporter
+  → KEYWORD
+
+[118/1110] Processing: blocker
+  → KEYWORD
+
+[119/1110] Processing: boids
+  → CONCEPT ✅
+
+[120/1110] Processing: books service
+  → KEYWORD
+
+[121/1110] Processing: bool
+  → KEYWORD
+
+[122/1110] Processing: boost
+  → KEYWORD
+
+[123/1110] Processing: boot
+  → KEYWORD
+
+[124/1110] Processing: borg
+  → CONCEPT ✅
+
+[125/1110] Processing: borgmon
+  → CONCEPT ✅
+
+[126/1110] Processing: boruta
+  → CONCEPT ✅
+
+[127/1110] Processing: boto3
+  → KEYWORD
+
+[128/1110] Processing: bottleneck layer
+  → CONCEPT ✅
+
+[129/1110] Processing: bounds
+  → KEYWORD
+
+[130/1110] Processing: bow
+  → CONCEPT ✅
+
+[131/1110] Processing: bower
+  → KEYWORD
+
+[132/1110] Processing: box monitoring
+  → KEYWORD
+
+[133/1110] Processing: brain queue
+  → CONCEPT ✅
+
+[134/1110] Processing: breakdown
+  → KEYWORD
+
+[135/1110] Processing: bst
+  → CONCEPT ✅
+
+[136/1110] Processing: bucket
+  → KEYWORD
+
+[137/1110] Processing: buckets
+  → KEYWORD
+
+[138/1110] Processing: budgets
+  → CONCEPT ✅
+
+[139/1110] Processing: buildah
+  → KEYWORD
+
+[140/1110] Processing: building reactive
+  → KEYWORD
+
+[141/1110] Processing: bump map
+  → CONCEPT ✅
+
+[142/1110] Processing: burn alerts
+  → KEYWORD
+
+[143/1110] Processing: bytecode
+  → CONCEPT ✅
+
+[144/1110] Processing: cached
+  → KEYWORD
+
+[145/1110] Processing: cacti
+  → KEYWORD
+
+[146/1110] Processing: calibrated
+  → CONCEPT ✅
+
+[147/1110] Processing: callable
+  → CONCEPT ✅
+
+[148/1110] Processing: capabilities
+  → KEYWORD
+
+[149/1110] Processing: cardholder data
+  → CONCEPT ✅
+
+[150/1110] Processing: cas
+  → KEYWORD
+
+[151/1110] Processing: case statement
+  → KEYWORD
+
+[152/1110] Processing: case study
+  → KEYWORD
+
+[153/1110] Processing: cassandra data
+  → KEYWORD
+
+[154/1110] Processing: cast
+  → CONCEPT ✅
+
+[155/1110] Processing: categories
+  → KEYWORD
+
+[156/1110] Processing: centroids
+  → CONCEPT ✅
+
+[157/1110] Processing: cert manager
+  → KEYWORD
+
+[158/1110] Processing: certainty
+  → CONCEPT ✅
+
+[159/1110] Processing: certification
+  → KEYWORD
+
+[160/1110] Processing: cfsm
+  → CONCEPT ✅
+
+[161/1110] Processing: ch prometheus
+  → KEYWORD
+
+[162/1110] Processing: challenges
+  → KEYWORD
+
+[163/1110] Processing: char
+  → KEYWORD
+
+[164/1110] Processing: chassis
+  → KEYWORD
+
+[165/1110] Processing: checkpointer
+  → CONCEPT ✅
+
+[166/1110] Processing: checkstyle
+  → KEYWORD
+
+[167/1110] Processing: chef
+  → KEYWORD
+
+[168/1110] Processing: child chunks
+  → CONCEPT ✅
+
+[169/1110] Processing: chunks
+  → KEYWORD
+
+[170/1110] Processing: ci server
+  → CONCEPT ✅
+
+[171/1110] Processing: cid information
+  → KEYWORD
+
+[172/1110] Processing: clang
+  → KEYWORD
+
+[173/1110] Processing: class accuracy
+  → CONCEPT ✅
+
+[174/1110] Processing: class template
+  → CONCEPT ✅
+
+[175/1110] Processing: classifier
+  → CONCEPT ✅
+
+[176/1110] Processing: classiﬁcation
+  → CONCEPT ✅
+
+[177/1110] Processing: client
+  → CONCEPT ✅
+
+[178/1110] Processing: clipmapping
+  → CONCEPT ✅
+
+[179/1110] Processing: clipmaps
+  → CONCEPT ✅
+
+[180/1110] Processing: cloud age
+  → KEYWORD
+
+[181/1110] Processing: cloud application
+  → CONCEPT ✅
+
+[182/1110] Processing: cloud dev
+  → KEYWORD
+
+[183/1110] Processing: cloud environment
+  → CONCEPT ✅
+
+[184/1110] Processing: cloud spend
+  → KEYWORD
+
+[185/1110] Processing: cloudformation
+  → KEYWORD
+
+[186/1110] Processing: cloudformation stack
+  → CONCEPT ✅
+
+[187/1110] Processing: cloudwatch logs
+  → KEYWORD
+
+[188/1110] Processing: clusterip
+  → KEYWORD
+
+[189/1110] Processing: cncf
+  → KEYWORD
+
+[190/1110] Processing: cni
+  → KEYWORD
+
+[191/1110] Processing: cnn
+  → CONCEPT ✅
+
+[192/1110] Processing: cnn model
+  → CONCEPT ✅
+
+[193/1110] Processing: coarse chunk
+  → CONCEPT ✅
+
+[194/1110] Processing: coarse chunks
+  → CONCEPT ✅
+
+[195/1110] Processing: codebuild
+  → KEYWORD
+
+[196/1110] Processing: codellama
+  → KEYWORD
+
+[197/1110] Processing: codestral
+  → KEYWORD
+
+[198/1110] Processing: cohesive
+  → CONCEPT ✅
+
+[199/1110] Processing: collapsing
+  → CONCEPT ✅
+
+[200/1110] Processing: collector
+  → KEYWORD
+
+[201/1110] Processing: comet
+  → KEYWORD
+
+[202/1110] Processing: commenting
+  → CONCEPT ✅
+
+[203/1110] Processing: commit
+  → CONCEPT ✅
+
+[204/1110] Processing: competence
+  → CONCEPT ✅
+
+[205/1110] Processing: completion
+  → KEYWORD
+
+[206/1110] Processing: complicated subsystem
+  → CONCEPT ✅
+
+[207/1110] Processing: comprehension
+  → CONCEPT ✅
+
+[208/1110] Processing: computation
+  → KEYWORD
+
+[209/1110] Processing: compute unit
+  → KEYWORD
+
+[210/1110] Processing: computer science
+  → KEYWORD
+
+[211/1110] Processing: computer systems
+  → CONCEPT ✅
+
+[212/1110] Processing: conciseness
+  → CONCEPT ✅
+
+[213/1110] Processing: concurrency concurrency
+  → CONCEPT ✅
+
+[214/1110] Processing: conda
+  → KEYWORD
+
+[215/1110] Processing: conditionals
+  → CONCEPT ✅
+
+[216/1110] Processing: conditions
+  → KEYWORD
+
+[217/1110] Processing: confidential
+  → KEYWORD
+
+[218/1110] Processing: configuration data
+  → KEYWORD
+
+[219/1110] Processing: configuration files
+  → KEYWORD
+
+[220/1110] Processing: configuration parameters
+  → KEYWORD
+
+[221/1110] Processing: conit
+  → CONCEPT ✅
+
+[222/1110] Processing: connection quota
+  → CONCEPT ✅
+
+[223/1110] Processing: constexpr
+  → CONCEPT ✅
+
+[224/1110] Processing: constructor
+  → CONCEPT ✅
+
+[225/1110] Processing: constructors
+  → CONCEPT ✅
+
+[226/1110] Processing: consumer
+  → CONCEPT ✅
+
+[227/1110] Processing: consumers
+  → KEYWORD
+
+[228/1110] Processing: container package
+  → KEYWORD
+
+[229/1110] Processing: containerized
+  → CONCEPT ✅
+
+[230/1110] Processing: contamination
+  → CONCEPT ✅
+
+[231/1110] Processing: context
+  → KEYWORD
+
+[232/1110] Processing: contextual
+  → KEYWORD
+
+[233/1110] Processing: contribute
+  → KEYWORD
+
+[234/1110] Processing: control block
+  → CONCEPT ✅
+
+[235/1110] Processing: controllers
+  → CONCEPT ✅
+
+[236/1110] Processing: conv2d
+  → KEYWORD
+
+[237/1110] Processing: conventions
+  → CONCEPT ✅
+
+[238/1110] Processing: conversation
+  → KEYWORD
+
+[239/1110] Processing: conversational
+  → CONCEPT ✅
+
+[240/1110] Processing: conﬁ guration
+  → KEYWORD
+
+[241/1110] Processing: conﬁdence
+  → CONCEPT ✅
+
+[242/1110] Processing: cookie
+  → KEYWORD
+
+[243/1110] Processing: cookies
+  → KEYWORD
+
+[244/1110] Processing: coordinate
+  → KEYWORD
+
+[245/1110] Processing: core
+  → KEYWORD
+
+[246/1110] Processing: coreos
+  → KEYWORD
+
+[247/1110] Processing: corpus
+  → CONCEPT ✅
+
+[248/1110] Processing: correlations
+  → CONCEPT ✅
+
+[249/1110] Processing: correspondence
+  → KEYWORD
+
+[250/1110] Processing: couchbase
+  → KEYWORD
+
+[251/1110] Processing: coveralls
+  → KEYWORD
+
+[252/1110] Processing: cpu limits
+  → KEYWORD
+
+[253/1110] Processing: cql
+  → KEYWORD
+
+[254/1110] Processing: crawlers
+  → CONCEPT ✅
+
+[255/1110] Processing: crds
+  → KEYWORD
+
+[256/1110] Processing: create change
+  → KEYWORD
+
+[257/1110] Processing: crewai
+  → CONCEPT ✅
+
+[258/1110] Processing: cri
+  → KEYWORD
+
+[259/1110] Processing: criminals
+  → KEYWORD
+
+[260/1110] Processing: crm
+  → KEYWORD
+
+[261/1110] Processing: cron
+  → CONCEPT ✅
+
+[262/1110] Processing: cron service
+  → CONCEPT ✅
+
+[263/1110] Processing: crossplane
+  → CONCEPT ✅
+
+[264/1110] Processing: cryptographic
+  → KEYWORD
+
+[265/1110] Processing: csp
+  → CONCEPT ✅
+
+[266/1110] Processing: ctypes
+  → CONCEPT ✅
+
+[267/1110] Processing: cube map
+  → CONCEPT ✅
+
+[268/1110] Processing: cuda
+  → KEYWORD
+
+[269/1110] Processing: cursor
+  → KEYWORD
+
+[270/1110] Processing: customer payments
+  → KEYWORD
+
+[271/1110] Processing: dagger
+  → KEYWORD
+
+[272/1110] Processing: damping
+  → CONCEPT ✅
+
+[273/1110] Processing: dashboards
+  → KEYWORD
+
+[274/1110] Processing: data systems
+  → CONCEPT ✅
+
+[275/1110] Processing: database
+  → CONCEPT ✅
+
+[276/1110] Processing: database servers
+  → KEYWORD
+
+[277/1110] Processing: databases
+  → CONCEPT ✅
+
+[278/1110] Processing: datacenter
+  → KEYWORD
+
+[279/1110] Processing: dataservice
+  → KEYWORD
+
+[280/1110] Processing: dataset
+  → CONCEPT ✅
+
+[281/1110] Processing: datasets
+  → KEYWORD
+
+[282/1110] Processing: decisions
+  → KEYWORD
+
+[283/1110] Processing: declaration
+  → CONCEPT ✅
+
+[284/1110] Processing: decoding
+  → CONCEPT ✅
+
+[285/1110] Processing: decommission
+  → CONCEPT ✅
+
+[286/1110] Processing: dedicated
+  → KEYWORD
+
+[287/1110] Processing: deep dive
+  → KEYWORD
+
+[288/1110] Processing: deequ
+  → KEYWORD
+
+[289/1110] Processing: default
+  → KEYWORD
+
+[290/1110] Processing: defect
+  → CONCEPT ✅
+
+[291/1110] Processing: define roadmap
+  → KEYWORD
+
+[292/1110] Processing: definition
+  → KEYWORD
+
+[293/1110] Processing: definitions
+  → KEYWORD
+
+[294/1110] Processing: deformation
+  → CONCEPT ✅
+
+[295/1110] Processing: degenerate feedback
+  → CONCEPT ✅
+
+[296/1110] Processing: density
+  → KEYWORD
+
+[297/1110] Processing: depend
+  → KEYWORD
+
+[298/1110] Processing: deploying
+  → KEYWORD
+
+[299/1110] Processing: deployments
+  → CONCEPT ✅
+
+[300/1110] Processing: deprecated
+  → CONCEPT ✅
+
+[301/1110] Processing: derivative
+  → CONCEPT ✅
+
+[302/1110] Processing: derived
+  → KEYWORD
+
+[303/1110] Processing: descriptive
+  → KEYWORD
+
+[304/1110] Processing: descriptors
+  → CONCEPT ✅
+
+[305/1110] Processing: designing
+  → KEYWORD
+
+[306/1110] Processing: designing microservices
+  → CONCEPT ✅
+
+[307/1110] Processing: detailitis
+  → CONCEPT ✅
+
+[308/1110] Processing: dev environment
+  → CONCEPT ✅
+
+[309/1110] Processing: deviations
+  → KEYWORD
+
+[310/1110] Processing: devops playbook
+  → CONCEPT ✅
+
+[311/1110] Processing: devops services
+  → KEYWORD
+
+[312/1110] Processing: devops sre
+  → CONCEPT ✅
+
+[313/1110] Processing: dicom
+  → CONCEPT ✅
+
+[314/1110] Processing: difference
+  → KEYWORD
+
+[315/1110] Processing: difficulty
+  → KEYWORD
+
+[316/1110] Processing: diffuse
+  → CONCEPT ✅
+
+[317/1110] Processing: diffuse light

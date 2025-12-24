@@ -155,28 +155,37 @@ class ToolParticipantAdapter(BaseParticipant):
         tool_id = participant.id
         context = conversation.context
         
+        # Get terms from various possible field names
+        terms = (
+            context.get("terms", []) or
+            context.get("top_terms_for_analysis", []) or
+            context.get("all_terms", [])
+        )
+        
         if tool_id == "bertopic":
+            # BERTopic/cluster endpoint expects corpus (list of docs) and chapter_index
+            # Convert terms to documents for clustering
             return {
-                "terms": context.get("terms", []),
-                "min_topic_size": 5,
-                "min_cluster_size": 5,
+                "corpus": terms if terms else ["placeholder"],
+                "chapter_index": list(range(len(terms))) if terms else [0],
+                "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
             }
         
         elif tool_id == "sbert":
             # Get last cluster/terms to compute similarity
             return {
-                "texts": context.get("texts", context.get("terms", [])[:100]),
+                "texts": terms[:100] if terms else [],
             }
         
         elif tool_id == "graphcodebert":
             return {
-                "terms": context.get("terms", []),
+                "terms": terms,
                 "threshold": 0.28,
             }
         
         elif tool_id == "concept_validator":
             return {
-                "terms": context.get("terms", []),
+                "terms": terms,
                 "min_word_count": 2,
             }
         

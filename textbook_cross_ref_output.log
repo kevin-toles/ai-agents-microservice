@@ -1,0 +1,45 @@
+======================================================================
+INTER-AI TEXTBOOK CROSS-REFERENCE ANALYSIS
+======================================================================
+Gateway: http://localhost:8080
+Models: GPT-5.2, Claude Opus 4.5, DeepSeek Reasoner
+Target books: 10
+
+
+[1/10] Processing: Designing Machine Learning Systems.json
+  ⚠️  Could not load Designing Machine Learning Systems.json
+
+[2/10] Processing: Machine Learning Design Patterns.json
+  ⚠️  Could not load Machine Learning Design Patterns.json
+
+[3/10] Processing: Building Machine Learning Pipelines.json
+  ⚠️  Could not load Building Machine Learning Pipelines.json
+
+[4/10] Processing: Reliable Machine Learning.json
+  ⚠️  Could not load Reliable Machine Learning.json
+
+[5/10] Processing: Practical MLOps.json
+  ⚠️  Could not load Practical MLOps.json
+
+[6/10] Processing: Machine Learning Engineering.json
+  ⚠️  Could not load Machine Learning Engineering.json
+
+[7/10] Processing: Introducing MLOps.json
+  ⚠️  Could not load Introducing MLOps.json
+
+[8/10] Processing: Clean Code.json
+  ⚠️  Could not load Clean Code.json
+
+[9/10] Processing: Clean Architecture.json
+  ⚠️  Could not load Clean Architecture.json
+
+[10/10] Processing: Design Patterns.json
+  ⚠️  Could not load Design Patterns.json
+
+======================================================================
+ANALYSIS COMPLETE
+Results saved to: /Users/kevintoles/POC/ai-agents/data/textbook_analysis/textbook_analysis_20251224_004109.json
+======================================================================
+
+Books analyzed: 0/10
+Total patterns extracted: 0

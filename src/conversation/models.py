@@ -148,6 +148,7 @@ class Conversation:
     status: ConversationStatus = ConversationStatus.PENDING
     consensus_threshold: float = 0.8
     max_rounds: int = 10
+    min_rounds: int = 1  # Minimum rounds before consensus can be declared
     current_round: int = 0
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)

@@ -35,11 +35,13 @@ from scripts.poc_concept_validation import (
     load_book_list,
 )
 
-# Configure logging
+# Configure logging - suppress httpx noise for clean progress output
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 # =============================================================================
@@ -50,11 +52,11 @@ BATCH_SIZE = 250
 OUTPUT_DIR = Path(__file__).parent.parent / "data" / "concept_validation"
 LLM_GATEWAY_URL = os.getenv("LLM_GATEWAY_URL", "http://localhost:8080")
 
-# Models to use
+# Models to use - 3-way Inter-AI Orchestration
 MODELS = [
-    {"id": "qwen", "provider": "openrouter", "model": "qwen/qwen3-coder"},
-    {"id": "gpt", "provider": "openai", "model": "gpt-5.2-thinking"},
+    {"id": "gpt", "provider": "openai", "model": "gpt-5.2-2025-12-11"},
     {"id": "claude", "provider": "anthropic", "model": "claude-opus-4-5-20251101"},
+    {"id": "deepseek", "provider": "deepseek", "model": "deepseek-reasoner"},
 ]
 
 # =============================================================================
@@ -68,8 +70,12 @@ async def call_llm(
     system_prompt: str,
     user_prompt: str,
     max_tokens: int = 4000,
-) -> str:
-    """Call LLM via gateway."""
+) -> tuple[str, str | None]:
+    """Call LLM via gateway.
+    
+    Returns:
+        Tuple of (response_content, error_message or None)
+    """
     try:
         response = await client.post(
             f"{LLM_GATEWAY_URL}/v1/chat/completions",
@@ -86,15 +92,19 @@ async def call_llm(
         )
         
         if response.status_code != 200:
-            logger.error(f"LLM error: {response.status_code} - {response.text}")
-            return ""
+            # Extract short error reason
+            try:
+                err_data = response.json()
+                err_msg = err_data.get("error", {}).get("message", "")[:50]
+            except Exception:
+                err_msg = f"HTTP {response.status_code}"
+            return "", err_msg
         
         data = response.json()
-        return data["choices"][0]["message"]["content"]
+        return data["choices"][0]["message"]["content"], None
         
     except Exception as e:
-        logger.error(f"Error calling LLM {model}: {e}")
-        return ""
+        return "", str(e)[:50]
 
 
 # =============================================================================
@@ -141,13 +151,17 @@ Output format (one per line):
 CONCEPT: term_name
 KEYWORD: term_name"""
 
-    logger.info(f"Batch {batch_num}: Calling {model_id} ({model_name}) with {len(terms)} terms")
+    print(f"  → {model_id}: calling {model_name}...", end="", flush=True)
     
-    response = await call_llm(client, model_name, SYSTEM_PROMPT, user_prompt)
+    response, error = await call_llm(client, model_name, SYSTEM_PROMPT, user_prompt)
+    
+    if error:
+        print(f" ⚠️  SKIPPED ({error})", flush=True)
+        return {"concepts": [], "keywords": [], "skipped": True}
     
     if not response:
-        logger.warning(f"Batch {batch_num}: No response from {model_id}")
-        return {"concepts": [], "keywords": []}
+        print(" ⚠️  SKIPPED (empty response)", flush=True)
+        return {"concepts": [], "keywords": [], "skipped": True}
     
     # Parse response
     concepts = []
@@ -164,9 +178,9 @@ KEYWORD: term_name"""
             if term:
                 keywords.append(term)
     
-    logger.info(f"Batch {batch_num}: {model_id} found {len(concepts)} concepts, {len(keywords)} keywords")
+    print(f" ✓ {len(concepts)} concepts, {len(keywords)} keywords", flush=True)
     
-    return {"concepts": concepts, "keywords": keywords}
+    return {"concepts": concepts, "keywords": keywords, "skipped": False}
 
 
 async def process_all_batches(all_terms: list[str]) -> dict[str, Any]:
@@ -193,7 +207,7 @@ async def process_all_batches(all_terms: list[str]) -> dict[str, Any]:
     
     async with httpx.AsyncClient() as client:
         for batch_num, batch_terms in enumerate(batches, 1):
-            print(f"\n--- Batch {batch_num}/{len(batches)} ({len(batch_terms)} terms) ---")
+            print(f"\n━━━ Batch {batch_num}/{len(batches)} ({len(batch_terms)} terms) ━━━", flush=True)
             
             # Process batch through each model
             for model_config in MODELS:
@@ -204,38 +218,90 @@ async def process_all_batches(all_terms: list[str]) -> dict[str, Any]:
             
             # Progress update
             processed = min(batch_num * BATCH_SIZE, len(all_terms))
-            print(f"Progress: {processed}/{len(all_terms)} terms ({100*processed/len(all_terms):.1f}%)")
+            pct = 100 * processed / len(all_terms)
+            bar_len = 30
+            filled = int(bar_len * pct / 100)
+            bar = "█" * filled + "░" * (bar_len - filled)
+            print(f"\n  [{bar}] {pct:.1f}% ({processed}/{len(all_terms)} terms)", flush=True)
     
     return all_results
 
 
-def compute_consensus(results: dict[str, Any], threshold: float = 0.67) -> dict[str, list[str]]:
-    """Compute consensus across models.
+def compute_consensus(results: dict[str, Any], threshold: float = 0.67, min_models: int = 2) -> dict[str, Any]:
+    """Compute consensus across models, adapting to failures.
     
-    A term is a CONCEPT if >= threshold of models agree.
+    A term is a CONCEPT if >= threshold of ACTIVE models agree.
+    Only counts models that actually returned data.
+    
+    Args:
+        results: Dict of model_id -> {concepts: set, keywords: set}
+        threshold: Fraction of active models that must agree (default 67%)
+        min_models: Minimum number of active models required (default 2)
+    
+    Returns:
+        Dict with concepts, keywords, and metadata about the consensus
     """
+    # Determine which models actually returned data
+    active_models = []
+    inactive_models = []
+    
+    for model_id, model_results in results.items():
+        total_classified = len(model_results["concepts"]) + len(model_results["keywords"])
+        if total_classified > 0:
+            active_models.append(model_id)
+        else:
+            inactive_models.append(model_id)
+    
+    num_active = len(active_models)
+    
+    print(f"\n=== CONSENSUS CALCULATION ===", flush=True)
+    print(f"Active models: {active_models} ({num_active})", flush=True)
+    if inactive_models:
+        print(f"⚠️  Inactive models (failed/skipped): {inactive_models}", flush=True)
+    
+    # Check minimum models requirement
+    if num_active < min_models:
+        print(f"❌ ERROR: Only {num_active} models responded, need at least {min_models}", flush=True)
+        return {
+            "concepts": [],
+            "keywords": [],
+            "error": f"Insufficient models: {num_active} < {min_models}",
+            "active_models": active_models,
+            "inactive_models": inactive_models,
+        }
+    
+    # Recalculate threshold based on active models
+    votes_needed = max(1, int(num_active * threshold + 0.5))  # Round up
+    print(f"Threshold: {threshold:.0%} of {num_active} = {votes_needed} votes needed", flush=True)
+    
+    # Collect all terms from active models only
     all_terms = set()
-    for model_results in results.values():
-        all_terms.update(model_results["concepts"])
-        all_terms.update(model_results["keywords"])
+    for model_id in active_models:
+        all_terms.update(results[model_id]["concepts"])
+        all_terms.update(results[model_id]["keywords"])
     
     concepts = []
     keywords = []
     
     for term in all_terms:
         concept_votes = sum(
-            1 for model_results in results.values()
-            if term in model_results["concepts"]
+            1 for model_id in active_models
+            if term in results[model_id]["concepts"]
         )
         
-        if concept_votes >= len(MODELS) * threshold:
+        if concept_votes >= votes_needed:
             concepts.append(term)
         else:
             keywords.append(term)
     
+    print(f"Results: {len(concepts)} concepts, {len(keywords)} keywords", flush=True)
+    
     return {
         "concepts": sorted(concepts),
         "keywords": sorted(keywords),
+        "active_models": active_models,
+        "inactive_models": inactive_models,
+        "votes_needed": votes_needed,
     }
 
 
@@ -262,12 +328,19 @@ async def main():
     results = await process_all_batches(all_terms)
     
     # Step 3: Compute consensus
-    print("\n[3/4] Computing consensus (67% agreement threshold)...")
-    consensus = compute_consensus(results, threshold=0.67)
+    print("\n[3/4] Computing consensus...")
+    consensus = compute_consensus(results, threshold=0.67, min_models=2)
     
-    print(f"\n=== CONSENSUS RESULTS ===")
-    print(f"Total CONCEPTS identified: {len(consensus['concepts'])}")
-    print(f"Total KEYWORDS identified: {len(consensus['keywords'])}")
+    # Check for errors
+    if "error" in consensus:
+        print(f"\n❌ CONSENSUS FAILED: {consensus['error']}")
+        print("Saving partial results anyway...")
+    else:
+        print(f"\n=== CONSENSUS RESULTS ===")
+        print(f"Active models: {consensus.get('active_models', [])}")
+        print(f"Votes needed: {consensus.get('votes_needed', 'N/A')}")
+        print(f"Total CONCEPTS identified: {len(consensus['concepts'])}")
+        print(f"Total KEYWORDS identified: {len(consensus['keywords'])}")
     
     # Step 4: Save results
     print("\n[4/4] Saving results...")
@@ -309,12 +382,21 @@ async def main():
     
     # Summary
     elapsed = (datetime.now() - start_time).total_seconds()
-    print(f"\n=== COMPLETE ===")
+    print(f"\n{'='*60}")
+    print(f"COMPLETE")
+    print(f"{'='*60}")
     print(f"Time elapsed: {elapsed/60:.1f} minutes")
+    print(f"Active models: {consensus.get('active_models', [])}")
+    if consensus.get('inactive_models'):
+        print(f"⚠️  Failed models: {consensus.get('inactive_models', [])}")
     print(f"Concepts identified: {len(consensus['concepts'])}")
-    print(f"\nSample concepts:")
-    for concept in consensus["concepts"][:20]:
-        print(f"  - {concept}")
+    
+    if consensus['concepts']:
+        print(f"\nSample concepts (first 20):")
+        for concept in consensus["concepts"][:20]:
+            print(f"  - {concept}")
+    elif "error" not in consensus:
+        print("\n⚠️  No concepts met consensus threshold. Check individual model outputs.")
     
     return consensus
 

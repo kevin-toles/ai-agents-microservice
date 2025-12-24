@@ -1,0 +1,34 @@
+============================================================
+POC: BATCHED INTER-AI CONCEPT VALIDATION
+============================================================
+
+[1/4] Loading all terms from metadata...
+      Loaded 10261 unique terms
+
+[2/4] Processing terms through LLMs...
+
+=== BATCHED CONCEPT VALIDATION ===
+Total terms: 10261
+Batch size: 250
+Number of batches: 42
+Models: ['gpt', 'claude', 'deepseek']
+
+
+━━━ Batch 1/42 (250 terms) ━━━
+  → gpt: calling gpt-5.2-2025-12-11... ✓ 150 concepts, 100 keywords
+  → claude: calling claude-opus-4-5-20251101... ✓ 126 concepts, 123 keywords
+  → deepseek: calling deepseek-reasoner... ⚠️  SKIPPED (empty response)
+
+  [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2.4% (250/10261 terms)
+
+━━━ Batch 2/42 (250 terms) ━━━
+  → gpt: calling gpt-5.2-2025-12-11... ✓ 165 concepts, 85 keywords
+  → claude: calling claude-opus-4-5-20251101... ✓ 146 concepts, 103 keywords
+  → deepseek: calling deepseek-reasoner... ⚠️  SKIPPED (empty response)
+
+  [█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 4.9% (500/10261 terms)
+
+━━━ Batch 3/42 (250 terms) ━━━
+  → gpt: calling gpt-5.2-2025-12-11... ✓ 145 concepts, 105 keywords
+  → claude: calling claude-opus-4-5-20251101... ✓ 99 concepts, 150 keywords
+  → deepseek: calling deepseek-reasoner...
