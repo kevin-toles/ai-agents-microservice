@@ -192,15 +192,15 @@ class TestOrchestratorReturnsEnrichedMetadata:
         assert actual_ids == expected_ids
 
     @pytest.mark.asyncio
-    async def test_chapters_have_cross_references(
+    async def test_chapters_have_similar_chapters(
         self,
         sample_request: MSEPRequest,
         orchestrator_with_mock_dispatcher: MSEPOrchestrator,
     ) -> None:
-        """Enriched chapters have cross_references list."""
+        """Enriched chapters have similar_chapters list."""
         result = await orchestrator_with_mock_dispatcher.enrich_metadata(sample_request)
         for chapter in result.chapters:
-            assert isinstance(chapter.cross_references, list)
+            assert isinstance(chapter.similar_chapters, list)
 
     @pytest.mark.asyncio
     async def test_chapters_have_keywords(
@@ -488,10 +488,10 @@ class TestOrchestratorCrossReferences:
 
         result = await orchestrator.enrich_metadata(sample_request)
 
-        # Check that cross-refs exist with scores
+        # Check that similar chapters exist with scores
         chapter_0 = result.chapters[0]
-        assert len(chapter_0.cross_references) > 0
-        for xref in chapter_0.cross_references:
+        assert len(chapter_0.similar_chapters) > 0
+        for xref in chapter_0.similar_chapters:
             assert isinstance(xref.base_score, float)
 
     @pytest.mark.asyncio
@@ -517,7 +517,7 @@ class TestOrchestratorCrossReferences:
         # Chapters 0 and 1 have same topic (0)
         chapter_0 = result.chapters[0]
         xref_to_ch1 = next(
-            (x for x in chapter_0.cross_references if "ch2" in x.target), None
+            (x for x in chapter_0.similar_chapters if "ch2" in x.target), None
         )
         if xref_to_ch1:
             assert xref_to_ch1.topic_boost == sample_request.config.same_topic_boost
@@ -562,9 +562,9 @@ class TestOrchestratorCrossReferences:
 
         result = await orchestrator.enrich_metadata(request)
 
-        # With 0.9 threshold and max 0.5 similarity, no cross-refs
+        # With 0.9 threshold and max 0.5 similarity, no similar chapters
         for chapter in result.chapters:
-            assert len(chapter.cross_references) == 0
+            assert len(chapter.similar_chapters) == 0
 
 
 # =============================================================================

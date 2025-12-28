@@ -295,7 +295,7 @@ def _build_enriched_chapters(
     chapters: list[EnrichedChapter] = []
 
     for i, chapter_id in enumerate(chapter_ids):
-        cross_refs = _build_cross_references(
+        similar_chapters = _build_similar_chapters(
             source_idx=i,
             similarity_matrix=similarity_matrix,
             topics=topics,
@@ -305,10 +305,10 @@ def _build_enriched_chapters(
         )
 
         # Apply taxonomy filter if provided (AC-TAX-4)
-        cross_refs = filter_by_taxonomy(cross_refs, taxonomy_books)
+        similar_chapters = filter_by_taxonomy(similar_chapters, taxonomy_books)
 
         merged_keywords = _build_merged_keywords(keywords[i] if i < len(keywords) else [])
-        provenance = _build_chapter_provenance(cross_refs)
+        provenance = _build_chapter_provenance(similar_chapters)
 
         # Parse chapter_id to extract book and chapter number
         # Format: "Book:chN" or "Book::N" or just "chapter_N"
@@ -321,7 +321,7 @@ def _build_enriched_chapters(
             chapter=chapter_num,
             title=title,
             chapter_id=chapter_id,
-            cross_references=cross_refs,
+            similar_chapters=similar_chapters,
             keywords=merged_keywords,
             topic_id=topic_id,
             topic_name=topic_name,
@@ -374,7 +374,7 @@ def _parse_chapter_id(chapter_id: str, index: int) -> tuple[str, int, str]:
     return ("Unknown Book", index + 1, chapter_id)
 
 
-def _build_cross_references(
+def _build_similar_chapters(
     source_idx: int,
     similarity_matrix: list[list[float]],
     topics: list[int],
@@ -382,7 +382,7 @@ def _build_cross_references(
     threshold: float,
     top_k: int,
 ) -> list[CrossReference]:
-    """Build cross-references for a single chapter.
+    """Build similar chapters list for a single chapter.
 
     Filters by threshold, sorts by score, limits to top_k.
 
@@ -392,10 +392,10 @@ def _build_cross_references(
         topics: Topic assignments for all chapters.
         chapter_ids: Chapter identifiers.
         threshold: Minimum score threshold.
-        top_k: Maximum number of cross-references.
+        top_k: Maximum number of similar chapters.
 
     Returns:
-        Sorted, filtered list of CrossReference.
+        Sorted, filtered list of CrossReference (similar chapters).
     """
     source_topic = topics[source_idx] if source_idx < len(topics) else None
     candidates: list[CrossReference] = []
@@ -423,9 +423,11 @@ def _build_cross_references(
         )
         candidates.append(xref)
 
-    # Sort descending by score, limit to top_k
+    # Sort descending by score, limit to top_k (0 = unlimited)
     candidates.sort(key=lambda x: x.score, reverse=True)
-    return candidates[:top_k]
+    if top_k > 0:
+        return candidates[:top_k]
+    return candidates
 
 
 def _build_merged_keywords(tfidf_keywords: list[str]) -> MergedKeywords:

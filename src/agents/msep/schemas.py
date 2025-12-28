@@ -35,12 +35,14 @@ class ChapterMeta:
         book: Book title.
         chapter: Chapter number.
         title: Chapter title.
+        summary: Original chapter summary (preserved for output).
         id: Unique chapter identifier (auto-generated if not provided).
     """
 
     book: str
     chapter: int
     title: str
+    summary: str = field(default="")
     id: str = field(default="")
 
     def __post_init__(self) -> None:
@@ -142,7 +144,9 @@ class EnrichedChapter:
         chapter: Chapter number.
         title: Chapter title.
         chapter_id: Unique chapter identifier.
-        cross_references: List of cross-references to other chapters.
+        summary: Original chapter summary (preserved from input).
+        content: Original chapter content/text (preserved from input).
+        similar_chapters: List of similar chapters (cross-references).
         keywords: Merged keywords from all methods.
         topic_id: BERTopic cluster assignment (None if BERTopic unavailable).
         topic_name: Human-readable topic name (None if unavailable).
@@ -154,7 +158,9 @@ class EnrichedChapter:
     chapter: int
     title: str
     chapter_id: str
-    cross_references: list[CrossReference]
+    summary: str
+    content: str
+    similar_chapters: list[CrossReference]
     keywords: MergedKeywords
     topic_id: int | None
     topic_name: str | None
@@ -171,7 +177,7 @@ class EnrichedMetadata:
     Attributes:
         chapters: List of enriched chapter metadata.
         processing_time_ms: Total processing time in milliseconds.
-        total_cross_references: Total count of all cross-references.
+        total_similar_chapters: Total count of all similar chapters.
         audit_passed: Whether audit validation passed (None if not run).
         audit_findings: List of audit findings (None if not run).
         audit_best_similarity: Best similarity score from audit (None if not run).
@@ -179,13 +185,13 @@ class EnrichedMetadata:
 
     chapters: list[EnrichedChapter]
     processing_time_ms: float
-    total_cross_references: int = field(default=0)
+    total_similar_chapters: int = field(default=0)
     audit_passed: bool | None = field(default=None)
     audit_findings: list[dict[str, Any]] | None = field(default=None)
     audit_best_similarity: float | None = field(default=None)
 
     def __post_init__(self) -> None:
-        """Compute total_cross_references from chapters."""
-        self.total_cross_references = sum(
-            len(ch.cross_references) for ch in self.chapters
+        """Compute total_similar_chapters from chapters."""
+        self.total_similar_chapters = sum(
+            len(ch.similar_chapters) for ch in self.chapters
         )

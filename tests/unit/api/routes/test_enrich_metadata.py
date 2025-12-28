@@ -111,7 +111,7 @@ def mock_enriched_metadata() -> EnrichedMetadata:
                 chapter=1,
                 title="Neural Networks",
                 chapter_id="Deep Learning:ch1",
-                cross_references=[
+                similar_chapters=[
                     CrossReference(
                         target="Deep Learning:ch2",
                         score=0.85,
@@ -140,7 +140,7 @@ def mock_enriched_metadata() -> EnrichedMetadata:
                 chapter=2,
                 title="Optimization",
                 chapter_id="Deep Learning:ch2",
-                cross_references=[
+                similar_chapters=[
                     CrossReference(
                         target="Deep Learning:ch1",
                         score=0.85,
@@ -320,13 +320,13 @@ class TestEndpointReturnsEnrichedMetadata:
             assert "processing_time_ms" in data
             assert data["processing_time_ms"] == 150.5
 
-    def test_response_contains_total_cross_references(
+    def test_response_contains_total_similar_chapters(
         self,
         client: TestClient,
         valid_request_body: dict[str, Any],
         mock_enriched_metadata: EnrichedMetadata,
     ) -> None:
-        """Response contains total_cross_references."""
+        """Response contains total_similar_chapters."""
         with patch(
             "src.api.routes.enrich_metadata.get_orchestrator"
         ) as mock_get_orch:
@@ -339,8 +339,8 @@ class TestEndpointReturnsEnrichedMetadata:
                 json=valid_request_body,
             )
             data = response.json()
-            assert "total_cross_references" in data
-            assert data["total_cross_references"] == 2
+            assert "total_similar_chapters" in data
+            assert data["total_similar_chapters"] == 2
 
     def test_response_chapter_structure(
         self,
@@ -364,18 +364,18 @@ class TestEndpointReturnsEnrichedMetadata:
             chapter = data["chapters"][0]
             
             assert "chapter_id" in chapter
-            assert "cross_references" in chapter
+            assert "similar_chapters" in chapter
             assert "keywords" in chapter
             assert "topic_id" in chapter
             assert "provenance" in chapter
 
-    def test_response_cross_reference_structure(
+    def test_response_similar_chapters_structure(
         self,
         client: TestClient,
         valid_request_body: dict[str, Any],
         mock_enriched_metadata: EnrichedMetadata,
     ) -> None:
-        """Response cross-references contain correct structure."""
+        """Response similar_chapters contain correct structure."""
         with patch(
             "src.api.routes.enrich_metadata.get_orchestrator"
         ) as mock_get_orch:
@@ -388,7 +388,7 @@ class TestEndpointReturnsEnrichedMetadata:
                 json=valid_request_body,
             )
             data = response.json()
-            xref = data["chapters"][0]["cross_references"][0]
+            xref = data["chapters"][0]["similar_chapters"][0]
             
             assert "target" in xref
             assert "score" in xref

@@ -90,7 +90,7 @@ THRESHOLD_ADJUSTMENT: float = 0.1
 # =============================================================================
 
 DEFAULT_TOP_K: int = 5
-"""Default number of top cross-references to return per chapter."""
+"""Default number of top similar chapters to return per chapter. Set to 0 for unlimited."""
 
 # =============================================================================
 # Timeout Constants (AC-2.5.4)

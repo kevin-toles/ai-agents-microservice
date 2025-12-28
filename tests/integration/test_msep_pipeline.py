@@ -291,14 +291,14 @@ class TestMSE71_ResultMerging:
             # Provenance should track methods used
             assert hasattr(chapter.provenance, "methods_used")
 
-    async def test_ac_7_1_2_cross_references_include_scores(
+    async def test_ac_7_1_2_similar_chapters_include_scores(
         self,
         sample_corpus: list[str],
         sample_chapter_index: list[dict[str, Any]],
         mock_code_orchestrator: AsyncMock,
         mock_semantic_search: AsyncMock,
     ) -> None:
-        """Cross-references should include both base_score and topic_boost."""
+        """Similar chapters should include both base_score and topic_boost."""
         from src.agents.msep.orchestrator import MSEPOrchestrator
         from src.agents.msep.schemas import ChapterMeta, MSEPRequest
         from src.agents.msep.config import MSEPConfig
@@ -326,13 +326,13 @@ class TestMSE71_ResultMerging:
         
         result = await orchestrator.enrich_metadata(request)
         
-        # Find a chapter with cross-references
+        # Find a chapter with similar chapters
         for chapter in result.chapters:
-            if chapter.cross_references:
-                xref = chapter.cross_references[0]
-                assert hasattr(xref, "score"), "Cross-reference should have score"
-                assert hasattr(xref, "base_score"), "Cross-reference should have base_score"
-                assert hasattr(xref, "topic_boost"), "Cross-reference should have topic_boost"
+            if chapter.similar_chapters:
+                xref = chapter.similar_chapters[0]
+                assert hasattr(xref, "score"), "Similar chapter should have score"
+                assert hasattr(xref, "base_score"), "Similar chapter should have base_score"
+                assert hasattr(xref, "topic_boost"), "Similar chapter should have topic_boost"
                 # Multi-signal scoring: score is weighted average of multiple signals
                 # Score may be lower than base_score if other signals (graph, taxonomy) are lower
                 assert 0.0 <= xref.score <= 1.0, "Score should be normalized [0, 1]"

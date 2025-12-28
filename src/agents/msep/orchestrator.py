@@ -264,8 +264,8 @@ class MSEPOrchestrator:
         # Get topic ID for this chapter
         topic_id = self._get_topic_id(idx, dispatch_result)
 
-        # Build cross-references
-        cross_refs = self._build_cross_references(
+        # Build similar chapters (cross-references)
+        similar_chapters = self._build_similar_chapters(
             idx=idx,
             request=request,
             dispatch_result=dispatch_result,
@@ -289,12 +289,18 @@ class MSEPOrchestrator:
             chapter_meta.id, dispatch_result
         )
 
+        # Get original content from corpus and summary from chapter_meta
+        content = request.corpus[idx] if idx < len(request.corpus) else ""
+        summary = chapter_meta.summary or content
+
         return EnrichedChapter(
             book=chapter_meta.book,
             chapter=chapter_meta.chapter,
             title=chapter_meta.title,
             chapter_id=chapter_meta.id,
-            cross_references=cross_refs,
+            summary=summary,
+            content=content,
+            similar_chapters=similar_chapters,
             keywords=keywords,
             topic_id=topic_id if topic_id >= 0 else None,
             topic_name=topic_name,
@@ -366,13 +372,13 @@ class MSEPOrchestrator:
 
         return []
 
-    def _build_cross_references(
+    def _build_similar_chapters(
         self,
         idx: int,
         request: MSEPRequest,
         dispatch_result: DispatchResult,
     ) -> list[CrossReference]:
-        """Build cross-references for a chapter.
+        """Build similar chapters list for a chapter.
 
         Args:
             idx: Chapter index
@@ -380,19 +386,19 @@ class MSEPOrchestrator:
             dispatch_result: Result from dispatcher
 
         Returns:
-            List of cross-references
+            List of similar chapters (CrossReference objects)
         """
-        cross_refs: list[CrossReference] = []
+        similar: list[CrossReference] = []
 
         if dispatch_result.similarity_matrix is None or (
             hasattr(dispatch_result.similarity_matrix, 'size') and dispatch_result.similarity_matrix.size == 0
         ):
-            return cross_refs
+            return similar
 
         # Get this chapter's topic
         source_topic = self._get_topic_id(idx, dispatch_result)
 
-        # Build cross-refs from similarity matrix
+        # Build similar chapters from similarity matrix
         for j, target_meta in enumerate(request.chapter_index):
             if j == idx:
                 continue  # Skip self-reference
@@ -406,11 +412,13 @@ class MSEPOrchestrator:
                 dispatch_result=dispatch_result,
             )
             if xref:
-                cross_refs.append(xref)
+                similar.append(xref)
 
-        # Sort by score descending and limit to top_k
-        cross_refs.sort(key=lambda x: x.score, reverse=True)
-        return cross_refs[: request.config.top_k]
+        # Sort by score descending and limit to top_k (0 = unlimited)
+        similar.sort(key=lambda x: x.score, reverse=True)
+        if request.config.top_k > 0:
+            return similar[: request.config.top_k]
+        return similar
 
     def _build_single_cross_reference(
         self,

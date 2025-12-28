@@ -305,7 +305,7 @@ class TestMSE72_ResultSchema:
                 assert isinstance(chapter, EnrichedChapter)
                 assert hasattr(chapter, "id")
                 assert hasattr(chapter, "provenance")
-                assert hasattr(chapter, "cross_references")
+                assert hasattr(chapter, "similar_chapters")
             
         finally:
             await code_orchestrator.close()

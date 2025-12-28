@@ -71,6 +71,7 @@ class ChapterMetaRequest(BaseModel):
     book: str = Field(..., description="Book title")
     chapter: int = Field(..., description="Chapter number")
     title: str = Field(..., description="Chapter title")
+    summary: str = Field(default="", description="Original chapter summary")
     id: str | None = Field(default=None, description="Optional chapter ID")
 
 
@@ -164,7 +165,9 @@ class EnrichedChapterResponse(BaseModel):
     chapter: int
     title: str
     chapter_id: str
-    cross_references: list[CrossReferenceResponse]
+    summary: str
+    content: str
+    similar_chapters: list[CrossReferenceResponse]
     keywords: MergedKeywordsResponse
     topic_id: int | None
     topic_name: str | None
@@ -177,7 +180,7 @@ class EnrichMetadataResponse(BaseModel):
 
     chapters: list[EnrichedChapterResponse]
     processing_time_ms: float
-    total_cross_references: int
+    total_similar_chapters: int
 
 
 class HealthResponse(BaseModel):
@@ -249,6 +252,7 @@ def _build_msep_request(request: EnrichMetadataRequest) -> MSEPRequest:
             book=ch.book,
             chapter=ch.chapter,
             title=ch.title,
+            summary=ch.summary,
             id=ch.id or "",
         )
         for ch in request.chapter_index
@@ -289,7 +293,9 @@ def _build_response(result: EnrichedMetadata) -> EnrichMetadataResponse:
             chapter=ch.chapter,
             title=ch.title,
             chapter_id=ch.chapter_id,
-            cross_references=[
+            summary=ch.summary,
+            content=ch.content,
+            similar_chapters=[
                 CrossReferenceResponse(
                     target=xref.target,
                     score=xref.score,
@@ -297,7 +303,7 @@ def _build_response(result: EnrichedMetadata) -> EnrichMetadataResponse:
                     topic_boost=xref.topic_boost,
                     method=xref.method,
                 )
-                for xref in ch.cross_references
+                for xref in ch.similar_chapters
             ],
             keywords=MergedKeywordsResponse(
                 tfidf=ch.keywords.tfidf,
@@ -320,7 +326,7 @@ def _build_response(result: EnrichedMetadata) -> EnrichMetadataResponse:
     return EnrichMetadataResponse(
         chapters=chapters,
         processing_time_ms=result.processing_time_ms,
-        total_cross_references=result.total_cross_references,
+        total_similar_chapters=result.total_similar_chapters,
     )
 
 

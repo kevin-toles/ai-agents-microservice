@@ -100,7 +100,7 @@ class TestCrossReferenceSchema:
 
 
 # =============================================================================
-# AC-3.4.1: Update _build_cross_references() to use multi-signal fusion
+# AC-3.4.1: Update _build_similar_chapters() to use multi-signal fusion
 # =============================================================================
 
 
@@ -234,7 +234,7 @@ class TestEnrichedOutputSchema:
             chapter=1,
             title="Introduction",
             chapter_id="TestBook:ch1",
-            cross_references=[xref],
+            similar_chapters=[xref],
             keywords=MergedKeywords(
                 tfidf=["test"], semantic=[], merged=["test"]
             ),
@@ -250,9 +250,9 @@ class TestEnrichedOutputSchema:
         )
 
         # Verify cross-reference has new fields
-        assert chapter.cross_references[0].concept_overlap == 0.5
-        assert chapter.cross_references[0].keyword_jaccard == 0.3
-        assert chapter.cross_references[0].matched_concepts == ["llm"]
+        assert chapter.similar_chapters[0].concept_overlap == 0.5
+        assert chapter.similar_chapters[0].keyword_jaccard == 0.3
+        assert chapter.similar_chapters[0].matched_concepts == ["llm"]
 
     def test_crossref_method_indicates_multi_signal(self) -> None:
         """AC-3.4.4: Method field indicates multi-signal fusion was used."""

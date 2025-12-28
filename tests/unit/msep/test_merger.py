@@ -326,7 +326,7 @@ class TestResultAggregator:
         # Base score: 0.8, boost: 0.15, final: 0.95
         ch0 = result.chapters[0]
         ch1_ref = next(
-            (xr for xr in ch0.cross_references if xr.target == "Book:ch2"), None
+            (xr for xr in ch0.similar_chapters if xr.target == "Book:ch2"), None
         )
         assert ch1_ref is not None
         assert ch1_ref.base_score == pytest.approx(0.8)
@@ -353,9 +353,9 @@ class TestResultAggregator:
             top_k=10,
         )
 
-        # Only high-scoring cross-refs should remain
+        # Only high-scoring similar chapters should remain
         for chapter in result.chapters:
-            for xref in chapter.cross_references:
+            for xref in chapter.similar_chapters:
                 assert xref.score >= 0.7
 
     def test_merge_results_sorts_by_score_descending(
@@ -377,9 +377,9 @@ class TestResultAggregator:
             top_k=10,
         )
 
-        # Check each chapter's cross-refs are sorted descending
+        # Check each chapter's similar_chapters are sorted descending
         for chapter in result.chapters:
-            scores = [xr.score for xr in chapter.cross_references]
+            scores = [xr.score for xr in chapter.similar_chapters]
             assert scores == sorted(scores, reverse=True)
 
     def test_merge_results_limits_to_top_k(
@@ -410,9 +410,9 @@ class TestResultAggregator:
             top_k=2,  # Limit to 2 cross-refs per chapter
         )
 
-        # Each chapter should have at most 2 cross-references
+        # Each chapter should have at most 2 similar chapters
         for chapter in result.chapters:
-            assert len(chapter.cross_references) <= 2
+            assert len(chapter.similar_chapters) <= 2
 
     def test_merge_results_excludes_self_references(
         self,
@@ -435,7 +435,7 @@ class TestResultAggregator:
 
         # No self-references
         for chapter in result.chapters:
-            for xref in chapter.cross_references:
+            for xref in chapter.similar_chapters:
                 assert xref.target != chapter.chapter_id
 
     def test_merge_results_assigns_topic_ids(
@@ -685,10 +685,10 @@ class TestMergerIntegration:
 
         # Verify topic boost was applied correctly
         ch0 = result.chapters[0]
-        if ch0.cross_references:
+        if ch0.similar_chapters:
             # Ch0 -> Ch1 should have boost (same topic)
             ch1_ref = next(
-                (xr for xr in ch0.cross_references if xr.target == "A:ch2"), None
+                (xr for xr in ch0.similar_chapters if xr.target == "A:ch2"), None
             )
             if ch1_ref:
                 assert ch1_ref.topic_boost == SAME_TOPIC_BOOST

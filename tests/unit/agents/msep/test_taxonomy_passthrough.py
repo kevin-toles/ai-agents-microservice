@@ -320,7 +320,7 @@ class TestEnrichedMetadataWithTaxonomy:
             taxonomy_books={TEST_BOOK_IN_TAXONOMY},
         )
 
-        # First chapter's cross-refs should NOT include book not in taxonomy
-        ch0_refs = result.chapters[0].cross_references
+        # First chapter's similar_chapters should NOT include book not in taxonomy
+        ch0_refs = result.chapters[0].similar_chapters
         for ref in ch0_refs:
             assert TEST_BOOK_NOT_IN_TAXONOMY not in ref.target

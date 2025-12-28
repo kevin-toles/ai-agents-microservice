@@ -13,7 +13,7 @@ Acceptance Criteria Coverage:
 - AC-2.2.2: MergedKeywords has: tfidf, semantic, merged
 - AC-2.2.3: Provenance has: methods_used, sbert_score, topic_boost, timestamp
 - AC-2.2.4: EnrichedChapter has all required fields
-- AC-2.2.5: EnrichedMetadata.total_cross_references computed in __post_init__
+- AC-2.2.5: EnrichedMetadata.total_similar_chapters computed in __post_init__
 - AC-2.2.6: All schemas JSON-serializable via dataclasses.asdict()
 
 Anti-Patterns Avoided (per CODING_PATTERNS_ANALYSIS.md):
@@ -401,7 +401,7 @@ class TestEnrichedChapter:
             chapter=1,
             title="Introduction",
             chapter_id="Book:ch1",
-            cross_references=[],
+            similar_chapters=[],
             keywords=MergedKeywords(tfidf=[], semantic=[], merged=[]),
             topic_id=0,
             topic_name=None,
@@ -416,8 +416,8 @@ class TestEnrichedChapter:
 
         assert chapter.chapter_id == "Book:ch1"
 
-    def test_enriched_chapter_has_cross_references_field(self) -> None:
-        """AC-2.2.4: EnrichedChapter should have cross_references field."""
+    def test_enriched_chapter_has_similar_chapters_field(self) -> None:
+        """AC-2.2.4: EnrichedChapter should have similar_chapters field."""
         from src.agents.msep.schemas import (
             EnrichedChapter,
             CrossReference,
@@ -439,7 +439,7 @@ class TestEnrichedChapter:
             chapter=1,
             title="Introduction",
             chapter_id="Book:ch1",
-            cross_references=refs,
+            similar_chapters=refs,
             keywords=MergedKeywords(tfidf=[], semantic=[], merged=[]),
             topic_id=0,
             topic_name=None,
@@ -452,7 +452,7 @@ class TestEnrichedChapter:
             ),
         )
 
-        assert len(chapter.cross_references) == 1
+        assert len(chapter.similar_chapters) == 1
 
     def test_enriched_chapter_has_keywords_field(self) -> None:
         """AC-2.2.4: EnrichedChapter should have keywords field."""
@@ -468,7 +468,7 @@ class TestEnrichedChapter:
             chapter=1,
             title="Introduction",
             chapter_id="Book:ch1",
-            cross_references=[],
+            similar_chapters=[],
             keywords=kw,
             topic_id=0,
             topic_name=None,
@@ -496,7 +496,7 @@ class TestEnrichedChapter:
             chapter=1,
             title="Introduction",
             chapter_id="Book:ch1",
-            cross_references=[],
+            similar_chapters=[],
             keywords=MergedKeywords(tfidf=[], semantic=[], merged=[]),
             topic_id=3,
             topic_name="Machine Learning",
@@ -530,7 +530,7 @@ class TestEnrichedChapter:
             chapter=1,
             title="Introduction",
             chapter_id="Book:ch1",
-            cross_references=[],
+            similar_chapters=[],
             keywords=MergedKeywords(tfidf=[], semantic=[], merged=[]),
             topic_id=0,
             topic_name=None,
@@ -572,8 +572,8 @@ class TestEnrichedMetadata:
 
         assert metadata.processing_time_ms == 150.5
 
-    def test_enriched_metadata_total_cross_references_computed(self) -> None:
-        """AC-2.2.5: EnrichedMetadata.total_cross_references computed in __post_init__."""
+    def test_enriched_metadata_total_similar_chapters_computed(self) -> None:
+        """AC-2.2.5: EnrichedMetadata.total_similar_chapters computed in __post_init__."""
         from src.agents.msep.schemas import (
             EnrichedMetadata,
             EnrichedChapter,
@@ -601,7 +601,7 @@ class TestEnrichedMetadata:
                 chapter=1,
                 title="Introduction",
                 chapter_id="Book:ch1",
-                cross_references=[ref1, ref2],
+                similar_chapters=[ref1, ref2],
                 keywords=MergedKeywords(tfidf=[], semantic=[], merged=[]),
                 topic_id=0,
                 topic_name=None,
@@ -613,7 +613,7 @@ class TestEnrichedMetadata:
                 chapter=2,
                 title="Fundamentals",
                 chapter_id="Book:ch2",
-                cross_references=[ref1],
+                similar_chapters=[ref1],
                 keywords=MergedKeywords(tfidf=[], semantic=[], merged=[]),
                 topic_id=1,
                 topic_name="Topic 1",
@@ -628,7 +628,7 @@ class TestEnrichedMetadata:
         )
 
         # 2 refs in ch1 + 1 ref in ch2 = 3 total
-        assert metadata.total_cross_references == 3
+        assert metadata.total_similar_chapters == 3
 
     def test_enriched_metadata_is_dataclass(self) -> None:
         """AC-2.2.5: EnrichedMetadata should be a dataclass."""
@@ -695,7 +695,7 @@ class TestSchemasSerialization:
             chapter=1,
             title="Introduction",
             chapter_id="Book:ch1",
-            cross_references=[ref],
+            similar_chapters=[ref],
             keywords=kw,
             topic_id=0,
             topic_name=None,
@@ -712,7 +712,7 @@ class TestSchemasSerialization:
         assert isinstance(result, dict)
         assert "chapters" in result
         assert "processing_time_ms" in result
-        assert "total_cross_references" in result
+        assert "total_similar_chapters" in result
         assert len(result["chapters"]) == 1
         # Verify new fields are serialized
         assert result["chapters"][0]["book"] == "Book"
