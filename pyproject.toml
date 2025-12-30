@@ -18,6 +18,9 @@ keywords = [
     "langraph",
     "cross-reference",
     "taxonomy",
+    "agent-functions",
+    "pipelines",
+    "citations",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",

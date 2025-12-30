@@ -115,6 +115,198 @@ def mock_neo4j_client() -> AsyncMock:
 
 
 # ============================================================================
+# FakeClient Protocol Pattern (WBS-AGT1 AC-1.5)
+# ============================================================================
+# 
+# FakeClient pattern provides test doubles that implement service protocols
+# without requiring network calls. Use these in unit tests instead of mocking.
+#
+# Pattern: Protocol Duck Typing
+# Reference: AGENT_FUNCTIONS_ARCHITECTURE.md → Testing Patterns
+# ============================================================================
+
+from typing import Protocol, Any, runtime_checkable
+from pydantic import BaseModel
+
+
+@runtime_checkable
+class InferenceClientProtocol(Protocol):
+    """Protocol for inference service clients.
+    
+    Enables duck typing for test doubles without inheritance.
+    """
+    
+    async def complete(
+        self,
+        prompt: str,
+        model: str | None = None,
+        preset: str | None = None,
+        max_tokens: int | None = None,
+    ) -> dict[str, Any]:
+        """Generate completion from LLM."""
+        ...
+
+
+@runtime_checkable
+class SemanticSearchClientProtocol(Protocol):
+    """Protocol for semantic search service clients."""
+    
+    async def search(
+        self,
+        query: str,
+        collection: str | None = None,
+        limit: int = 10,
+        filters: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Search for semantically similar content."""
+        ...
+
+
+class FakeInferenceClient:
+    """Fake inference client for testing.
+    
+    Implements InferenceClientProtocol via duck typing.
+    Configure expected responses in constructor.
+    
+    Example:
+        ```python
+        client = FakeInferenceClient(
+            response="Generated summary of the content."
+        )
+        result = await client.complete("Summarize this")
+        assert result["response"] == "Generated summary of the content."
+        ```
+    """
+    
+    def __init__(
+        self,
+        response: str = "Fake LLM response",
+        model: str = "fake-model",
+        tokens_used: int = 100,
+        should_raise: Exception | None = None,
+    ) -> None:
+        self._response = response
+        self._model = model
+        self._tokens_used = tokens_used
+        self._should_raise = should_raise
+        self._call_count = 0
+        self._call_args: list[dict[str, Any]] = []
+    
+    async def complete(
+        self,
+        prompt: str,
+        model: str | None = None,
+        preset: str | None = None,
+        max_tokens: int | None = None,
+    ) -> dict[str, Any]:
+        """Return canned completion response."""
+        self._call_count += 1
+        self._call_args.append({
+            "prompt": prompt,
+            "model": model,
+            "preset": preset,
+            "max_tokens": max_tokens,
+        })
+        
+        if self._should_raise:
+            raise self._should_raise
+        
+        return {
+            "response": self._response,
+            "model": model or self._model,
+            "tokens_used": self._tokens_used,
+        }
+    
+    @property
+    def call_count(self) -> int:
+        return self._call_count
+    
+    @property
+    def call_args(self) -> list[dict[str, Any]]:
+        return self._call_args
+
+
+class FakeSemanticSearchClient:
+    """Fake semantic search client for testing.
+    
+    Implements SemanticSearchClientProtocol via duck typing.
+    Configure expected search results in constructor.
+    """
+    
+    def __init__(
+        self,
+        results: list[dict[str, Any]] | None = None,
+        should_raise: Exception | None = None,
+    ) -> None:
+        self._results = results or []
+        self._should_raise = should_raise
+        self._call_count = 0
+        self._call_args: list[dict[str, Any]] = []
+    
+    async def search(
+        self,
+        query: str,
+        collection: str | None = None,
+        limit: int = 10,
+        filters: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Return canned search results."""
+        self._call_count += 1
+        self._call_args.append({
+            "query": query,
+            "collection": collection,
+            "limit": limit,
+            "filters": filters,
+        })
+        
+        if self._should_raise:
+            raise self._should_raise
+        
+        return self._results[:limit]
+    
+    @property
+    def call_count(self) -> int:
+        return self._call_count
+    
+    @property
+    def call_args(self) -> list[dict[str, Any]]:
+        return self._call_args
+
+
+@pytest.fixture
+def fake_inference_client() -> FakeInferenceClient:
+    """Create a FakeInferenceClient for testing.
+    
+    Returns a fake client that passes protocol type checking.
+    """
+    return FakeInferenceClient()
+
+
+@pytest.fixture
+def fake_semantic_search_client() -> FakeSemanticSearchClient:
+    """Create a FakeSemanticSearchClient for testing.
+    
+    Returns a fake client that passes protocol type checking.
+    """
+    return FakeSemanticSearchClient(
+        results=[
+            {
+                "id": "doc_001",
+                "content": "Related content about software design",
+                "score": 0.95,
+                "metadata": {"book": "A Philosophy of Software Design", "chapter": 1},
+            },
+            {
+                "id": "doc_002",
+                "content": "Information about design patterns",
+                "score": 0.88,
+                "metadata": {"book": "Design Patterns", "chapter": 3},
+            },
+        ]
+    )
+
+
+# ============================================================================
 # Event Loop Configuration (for async tests)
 # ============================================================================
 

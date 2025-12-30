@@ -2,9 +2,14 @@
 Main entry point for ai-agents service.
 
 Creates the FastAPI application instance for uvicorn.
+
+Kitchen Brigade Architecture:
+    ai-agents acts as the Expeditor (:8082), orchestrating workflow
+    execution and coordinating with downstream services.
+
+Reference: WBS-AGT2 AC-2.3, AGENT_FUNCTIONS_ARCHITECTURE.md
 """
 
-import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -19,6 +24,8 @@ from src.core.clients.neo4j import (
 )
 from src.core.clients.semantic_search import SemanticSearchClient
 from src.core.clients.content_adapter import SemanticSearchContentAdapter
+from src.core.config import get_settings
+from src.core.logging import configure_logging, get_logger
 from src.agents.cross_reference.nodes.search_taxonomy import (
     set_neo4j_client as set_node_neo4j_client,
 )
@@ -26,7 +33,9 @@ from src.agents.cross_reference.nodes.retrieve_content import (
     set_content_client,
 )
 
-logger = logging.getLogger(__name__)
+# Configure structured logging on module load
+configure_logging()
+logger = get_logger(__name__)
 
 
 @asynccontextmanager
@@ -40,7 +49,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     - Neo4j client: Direct access for taxonomy search
     - SemanticSearchClient: Content retrieval via semantic-search-service
     """
-    logger.info("Starting ai-agents service...")
+    settings = get_settings()
+    logger.info("Starting ai-agents service", port=settings.port, role="Expeditor")
     
     # Initialize Neo4j client
     neo4j_client = create_neo4j_client_from_env()
@@ -52,13 +62,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         # Health check
         try:
             if await neo4j_client.health_check():
-                logger.info("Neo4j: connected")
+                logger.info("Neo4j connected successfully")
                 app.state.neo4j_status = "connected"
             else:
-                logger.warning("Neo4j: health check failed")
+                logger.warning("Neo4j health check failed")
                 app.state.neo4j_status = "unhealthy"
         except Exception as e:
-            logger.error("Neo4j connection error: %s", e)
+            logger.error("Neo4j connection error", error=str(e))
             app.state.neo4j_status = f"error: {e}"
     else:
         logger.warning("Neo4j client not configured")
@@ -72,12 +82,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     content_adapter = SemanticSearchContentAdapter(semantic_search_client)
     set_content_client(content_adapter)
     app.state.semantic_search_client = semantic_search_client
-    logger.info("SemanticSearch content client: initialized")
+    logger.info("SemanticSearch content client initialized")
     
     yield
     
     # Cleanup on shutdown
-    logger.info("Shutting down ai-agents service...")
+    logger.info("Shutting down ai-agents service")
     
     # Close semantic search client
     if semantic_search_client:
