@@ -10,19 +10,19 @@ From Architecture Doc:
 ```yaml
 analyze_artifact:
   description: "Analyze artifact for quality, security, patterns"
-  
+
   input:
     artifact: str             # Code or document
     artifact_type: enum       # code | document | config
     analysis_type: enum       # quality | security | patterns | dependencies
     checklist: list[str]      # Optional specific checks
-  
+
   output:
     findings: list[Finding]   # Issues with severity, location, fix hint
     metrics: dict             # CC, LOC, etc. for code
     pass: bool                # Overall gate
     compressed_report: str    # For downstream
-  
+
   context_budget:
     input: 16384 tokens
     output: 2048 tokens
@@ -30,14 +30,14 @@ analyze_artifact:
 """
 
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 
 class ArtifactKind(str, Enum):
     """Type of artifact being analyzed.
-    
+
     From AGENT_FUNCTIONS_ARCHITECTURE.md:
     - code: Source code files
     - document: Documentation/markdown
@@ -50,7 +50,7 @@ class ArtifactKind(str, Enum):
 
 class AnalysisType(str, Enum):
     """Type of analysis to perform.
-    
+
     From AGENT_FUNCTIONS_ARCHITECTURE.md (AC-9.5):
     - quality: Code quality checks (complexity, style, docstrings)
     - security: Security vulnerability detection
@@ -65,7 +65,7 @@ class AnalysisType(str, Enum):
 
 class Severity(str, Enum):
     """Severity level for findings.
-    
+
     Severity levels from low to critical:
     - INFO: Informational, not an issue
     - LOW: Minor issue, no immediate action needed
@@ -82,9 +82,9 @@ class Severity(str, Enum):
 
 class AnalyzeArtifactInput(BaseModel):
     """Input schema for analyze_artifact function.
-    
+
     Reference: AC-9.1, AC-9.5
-    
+
     From AGENT_FUNCTIONS_ARCHITECTURE.md:
     - artifact: Code or document content
     - artifact_type: code | document | config
@@ -111,9 +111,9 @@ class AnalyzeArtifactInput(BaseModel):
 
 class Finding(BaseModel):
     """Single finding from artifact analysis.
-    
+
     Exit Criteria: Each Finding has severity, category, description, location.
-    
+
     From AGENT_FUNCTIONS_ARCHITECTURE.md:
     - findings: list[Finding] # Issues with severity, location, fix hint
     """
@@ -133,11 +133,11 @@ class Finding(BaseModel):
         ...,
         description="Location in artifact (e.g., 'line 42', 'func:calculate', 'class:User')",
     )
-    fix_hint: Optional[str] = Field(
+    fix_hint: str | None = Field(
         default=None,
         description="Optional hint for how to fix the issue",
     )
-    line_number: Optional[int] = Field(
+    line_number: int | None = Field(
         default=None,
         description="Optional precise line number for the finding",
     )
@@ -145,9 +145,9 @@ class Finding(BaseModel):
 
 class AnalysisResult(BaseModel):
     """Output schema for analyze_artifact function.
-    
+
     Reference: AC-9.2
-    
+
     From AGENT_FUNCTIONS_ARCHITECTURE.md:
     - findings: list[Finding] # Issues with severity, location, fix hint
     - metrics: dict # CC, LOC, etc. for code
@@ -166,7 +166,7 @@ class AnalysisResult(BaseModel):
         default=True,
         description="Overall analysis gate (True if no critical/high issues)",
     )
-    compressed_report: Optional[str] = Field(
+    compressed_report: str | None = Field(
         default=None,
         description="Compressed summary for downstream functions",
     )

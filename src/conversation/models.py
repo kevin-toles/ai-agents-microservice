@@ -18,7 +18,7 @@ from typing import Any
 
 class ParticipantType(str, Enum):
     """Type of participant in the conversation."""
-    
+
     LLM = "llm"                    # External LLM (via llm-gateway)
     TOOL = "tool"                  # BERT tool (via Code-Orchestrator)
     ORCHESTRATOR = "orchestrator"  # ai-agents itself
@@ -26,7 +26,7 @@ class ParticipantType(str, Enum):
 
 class ConversationStatus(str, Enum):
     """Status of a conversation."""
-    
+
     PENDING = "pending"            # Not yet started
     IN_PROGRESS = "in_progress"    # Active conversation
     CONSENSUS = "consensus"        # Participants reached agreement
@@ -39,7 +39,7 @@ class ConversationStatus(str, Enum):
 @dataclass
 class ConversationMessage:
     """Single message in an inter-AI conversation.
-    
+
     Attributes:
         message_id: Unique message identifier.
         conversation_id: Parent conversation ID.
@@ -52,7 +52,7 @@ class ConversationMessage:
         latency_ms: Response time in milliseconds.
         metadata: Participant-specific metadata.
     """
-    
+
     conversation_id: str
     participant_id: str
     participant_type: ParticipantType
@@ -63,7 +63,7 @@ class ConversationMessage:
     tokens_used: int | None = None
     latency_ms: int = 0
     metadata: dict[str, Any] = field(default_factory=dict)
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         return {
@@ -83,7 +83,7 @@ class ConversationMessage:
 @dataclass
 class Participant:
     """Definition of a conversation participant.
-    
+
     Attributes:
         id: Unique identifier (e.g., "qwen", "gpt-5.2", "bertopic").
         name: Human-readable name.
@@ -94,7 +94,7 @@ class Participant:
         system_prompt: Optional system prompt for LLMs.
         capabilities: List of what this participant can do.
     """
-    
+
     id: str
     name: str
     participant_type: ParticipantType
@@ -103,7 +103,7 @@ class Participant:
     endpoint: str | None = None
     system_prompt: str | None = None
     capabilities: list[str] = field(default_factory=list)
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
@@ -120,7 +120,7 @@ class Participant:
 @dataclass
 class Conversation:
     """Complete inter-AI conversation state.
-    
+
     Attributes:
         conversation_id: Unique conversation identifier.
         task: What problem are we solving?
@@ -137,7 +137,7 @@ class Conversation:
         updated_at: Last activity timestamp.
         result: Final result/output of the conversation.
     """
-    
+
     task: str
     participants: list[Participant]
     context: dict[str, Any]
@@ -153,64 +153,64 @@ class Conversation:
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
     result: dict[str, Any] | None = None
-    
+
     def __post_init__(self):
         """Initialize turn order from participants if not set."""
         if not self.turn_order and self.participants:
             self.turn_order = [p.id for p in self.participants]
         if not self.current_turn and self.turn_order:
             self.current_turn = self.turn_order[0]
-    
+
     def add_message(self, message: ConversationMessage) -> None:
         """Add a message to the conversation."""
         self.messages.append(message)
         self.updated_at = datetime.utcnow()
-    
+
     def get_participant(self, participant_id: str) -> Participant | None:
         """Get a participant by ID."""
         for p in self.participants:
             if p.id == participant_id:
                 return p
         return None
-    
+
     def advance_turn(self) -> str | None:
         """Advance to the next participant's turn.
-        
+
         Returns:
             The ID of the next participant, or None if no more turns.
         """
         if not self.turn_order:
             return None
-        
+
         if self.current_turn is None:
             self.current_turn = self.turn_order[0]
             return self.current_turn
-        
+
         try:
             current_idx = self.turn_order.index(self.current_turn)
             next_idx = (current_idx + 1) % len(self.turn_order)
-            
+
             # Check if we've completed a round
             if next_idx == 0:
                 self.current_round += 1
-                
+
             self.current_turn = self.turn_order[next_idx]
             return self.current_turn
-            
+
         except ValueError:
             # Current turn not in order, reset to first
             self.current_turn = self.turn_order[0]
             return self.current_turn
-    
+
     def get_message_history_for_llm(
         self,
         max_messages: int = 50,
     ) -> list[dict[str, str]]:
         """Get message history formatted for LLM context.
-        
+
         Args:
             max_messages: Maximum messages to include.
-            
+
         Returns:
             List of {role, content} dicts for LLM.
         """
@@ -224,7 +224,7 @@ class Conversation:
                 "content": formatted_content,
             })
         return history
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         return {
@@ -243,10 +243,10 @@ class Conversation:
             "updated_at": self.updated_at.isoformat(),
             "result": self.result,
         }
-    
+
     def get_transcript(self) -> str:
         """Get full conversation transcript as text.
-        
+
         Returns:
             Human-readable transcript.
         """
@@ -258,15 +258,15 @@ class Conversation:
             "",
             "--- TRANSCRIPT ---",
         ]
-        
+
         for msg in self.messages:
             timestamp = msg.timestamp.strftime("%H:%M:%S")
             speaker = msg.participant_id.upper()
             lines.append(f"[{timestamp}] {speaker}: {msg.content}")
-            
+
         if self.result:
             lines.append("")
             lines.append("--- RESULT ---")
             lines.append(str(self.result))
-            
+
         return "\n".join(lines)

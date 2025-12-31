@@ -87,9 +87,9 @@ LANGUAGE_TEMPLATES = {
 
 class GenerateCodeFunction(AgentFunction):
     """Generate code from natural language specification.
-    
+
     Reference: AGENT_FUNCTIONS_ARCHITECTURE.md → Agent Function 3
-    
+
     Acceptance Criteria:
     - AC-8.1: Generates code from natural language spec
     - AC-8.2: Returns CodeOutput with language, code, explanation
@@ -98,12 +98,12 @@ class GenerateCodeFunction(AgentFunction):
     - AC-8.5: Supports target_language parameter
     - AC-8.6: Includes test stubs when include_tests=True
     """
-    
+
     name: str = "generate_code"
-    
+
     # AC-8.4: Default preset D4 (Standard)
     default_preset: str = "D4"
-    
+
     # Preset options from architecture doc
     available_presets: dict[str, str] = {
         "default": "D4",      # qwen (gen) + deepseek (critique)
@@ -111,10 +111,10 @@ class GenerateCodeFunction(AgentFunction):
         "quality": "D4",      # qwen (gen) + deepseek (critique)
         "long_file": "S6",    # granite-8b-code-128k
     }
-    
+
     async def run(self, **kwargs: Any) -> CodeOutput:
         """Generate code from specification.
-        
+
         Args:
             specification: Natural language description of what to build
             target_language: Programming language (default: python)
@@ -122,10 +122,10 @@ class GenerateCodeFunction(AgentFunction):
             context_artifacts: Related code for context
             patterns_to_follow: Design patterns to follow
             constraints: Must-have requirements
-            
+
         Returns:
             CodeOutput with code, language, explanation, test_code
-            
+
         Raises:
             ContextBudgetExceededError: If input exceeds budget
         """
@@ -135,13 +135,13 @@ class GenerateCodeFunction(AgentFunction):
         context_artifacts: list[str] = kwargs.get("context_artifacts", [])
         patterns_to_follow: list[str] = kwargs.get("patterns_to_follow", [])
         constraints: list[str] = kwargs.get("constraints", [])
-        
+
         # Convert enum/string to string
         if isinstance(target_language, TargetLanguage):
             lang_str = target_language.value
         else:
             lang_str = str(target_language).lower()
-        
+
         # AC-8.3: Enforce input budget - using shared utility
         total_input = specification + "\n".join(context_artifacts)
         input_tokens = estimate_tokens(total_input)
@@ -151,7 +151,7 @@ class GenerateCodeFunction(AgentFunction):
                 actual=input_tokens,
                 limit=INPUT_BUDGET_TOKENS,
             )
-        
+
         # Generate code based on specification
         code = self._generate_code(
             specification=specification,
@@ -160,7 +160,7 @@ class GenerateCodeFunction(AgentFunction):
             patterns_to_follow=patterns_to_follow,
             constraints=constraints,
         )
-        
+
         # Generate explanation
         explanation = self._generate_explanation(
             specification=specification,
@@ -168,10 +168,10 @@ class GenerateCodeFunction(AgentFunction):
             patterns=patterns_to_follow,
             constraints=constraints,
         )
-        
+
         # Generate test hints
         test_hints = self._generate_test_hints(specification)
-        
+
         # AC-8.6: Generate test code if requested
         test_code = None
         if include_tests:
@@ -180,10 +180,10 @@ class GenerateCodeFunction(AgentFunction):
                 language=lang_str,
                 specification=specification,
             )
-        
+
         # Generate compressed intent
         compressed_intent = self._compress_intent(specification)
-        
+
         return CodeOutput(
             code=code,
             language=lang_str,
@@ -193,7 +193,7 @@ class GenerateCodeFunction(AgentFunction):
             compressed_intent=compressed_intent,
             citations=[],
         )
-    
+
     def _generate_code(
         self,
         specification: str,
@@ -203,12 +203,12 @@ class GenerateCodeFunction(AgentFunction):
         constraints: list[str],
     ) -> str:
         """Generate code from specification.
-        
+
         This is a simplified implementation that generates template-based code.
         In production, this would call inference-service.
         """
         spec_lower = specification.lower()
-        
+
         # Detect code type from specification
         is_function = any(kw in spec_lower for kw in ["function", "method", "def", "func"])
         is_class = any(kw in spec_lower for kw in [
@@ -217,14 +217,14 @@ class GenerateCodeFunction(AgentFunction):
         ])
         is_query = any(kw in spec_lower for kw in ["query", "select", "insert", "sql"])
         is_async = any(kw in spec_lower for kw in ["async", "await", "asynchronous"])
-        
+
         # Check for async constraint
         if constraints:
             is_async = is_async or any("async" in c.lower() for c in constraints)
-        
+
         # Extract function/class name from specification
         name = self._extract_name(specification)
-        
+
         # Generate based on language
         if language == "python":
             return self._generate_python(
@@ -263,11 +263,11 @@ class GenerateCodeFunction(AgentFunction):
                 patterns_to_follow=patterns_to_follow,
                 constraints=constraints,
             )
-    
+
     def _extract_name(self, specification: str) -> str:
         """Extract function/class name from specification."""
         spec_lower = specification.lower()
-        
+
         # Common patterns
         patterns = [
             r"create (?:a |an )?(\w+)",
@@ -277,7 +277,7 @@ class GenerateCodeFunction(AgentFunction):
             r"called (\w+)",
             r"named (\w+)",
         ]
-        
+
         for pattern in patterns:
             match = re.search(pattern, spec_lower)
             if match:
@@ -286,12 +286,12 @@ class GenerateCodeFunction(AgentFunction):
                 if "class" in spec_lower:
                     return name.title().replace(" ", "")
                 return name.lower().replace(" ", "_")
-        
+
         # Default names
         if "class" in spec_lower:
             return "MyClass"
         return "my_function"
-    
+
     def _generate_python(
         self,
         specification: str,
@@ -305,13 +305,13 @@ class GenerateCodeFunction(AgentFunction):
     ) -> str:
         """Generate Python code."""
         spec_lower = specification.lower()
-        
+
         # Check for type hint constraint
         needs_type_hints: bool = bool(constraints and any("type" in c.lower() for c in constraints))
-        
+
         # Check for factory pattern
         is_factory: bool = bool(patterns_to_follow and any("factory" in p.lower() for p in patterns_to_follow))
-        
+
         # Check for repository pattern from context
         extends_base = False
         base_class = ""
@@ -326,71 +326,71 @@ class GenerateCodeFunction(AgentFunction):
                     match = re.search(r"class (\w+):", artifact)
                     base_class = match.group(1) if match else "Base"
                     break
-        
+
         if is_class:
             # Generate class
             class_name = name.title().replace("_", "") if "_" in name else name.title()
-            
+
             # Check for Calculator
             if "calculator" in spec_lower:
                 return self._generate_calculator_class(class_name, needs_type_hints)
-            
+
             # Check for Repository (before User since UserRepository matches both)
             if "repository" in spec_lower:
                 return self._generate_repository_class(
                     class_name, extends_base, base_class, needs_type_hints
                 )
-            
+
             # Check for User
             if "user" in spec_lower:
                 return self._generate_user_class(class_name, needs_type_hints)
-            
+
             # Check for Factory pattern
             if is_factory:
                 return self._generate_factory_class(class_name, specification, needs_type_hints)
-            
+
             # Generic class
             return f'''class {class_name}:
     """Class generated from specification."""
-    
+
     def __init__(self):
         pass
 '''
-        
+
         elif is_function:
             func_name = name.lower().replace(" ", "_")
-            
+
             # Check for arithmetic operations
             if any(op in spec_lower for op in ["add", "sum", "plus"]):
                 return self._generate_add_function(func_name, is_async, needs_type_hints)
-            
+
             if any(op in spec_lower for op in ["subtract", "minus", "difference"]):
                 return self._generate_subtract_function(func_name, is_async, needs_type_hints)
-            
+
             if any(op in spec_lower for op in ["multiply", "product", "times"]):
                 return self._generate_multiply_function(func_name, is_async, needs_type_hints)
-            
+
             if any(op in spec_lower for op in ["divide", "quotient"]):
                 return self._generate_divide_function(func_name, is_async, needs_type_hints)
-            
+
             if any(op in spec_lower for op in ["square", "power"]):
                 return self._generate_square_function(func_name, is_async, needs_type_hints)
-            
+
             if any(op in spec_lower for op in ["even", "odd", "check"]):
                 return self._generate_is_even_function(func_name, is_async, needs_type_hints)
-            
+
             if any(op in spec_lower for op in ["hello", "greet"]):
                 return self._generate_hello_function(func_name, is_async, needs_type_hints)
-            
+
             if any(op in spec_lower for op in ["fetch", "get", "retrieve"]):
                 return self._generate_fetch_function(func_name, is_async, needs_type_hints)
-            
+
             if any(op in spec_lower for op in ["concat", "join", "combine", "string"]):
                 return self._generate_concat_function(func_name, is_async, needs_type_hints)
-            
+
             if any(op in spec_lower for op in ["length", "len", "size"]):
                 return self._generate_length_function(func_name, is_async, needs_type_hints)
-            
+
             # Generic function
             async_kw = "async " if is_async else ""
             type_hint = " -> None" if needs_type_hints else ""
@@ -398,13 +398,13 @@ class GenerateCodeFunction(AgentFunction):
     """Function generated from specification."""
     pass
 '''
-        
+
         # Default: generate simple function
         return f'''def {name}():
     """Generated from specification."""
     pass
 '''
-    
+
     def _generate_add_function(self, name: str, is_async: bool, type_hints: bool) -> str:
         """Generate addition function."""
         async_kw = "async " if is_async else ""
@@ -417,7 +417,7 @@ class GenerateCodeFunction(AgentFunction):
     """Add two numbers."""
     return a + b
 '''
-    
+
     def _generate_subtract_function(self, name: str, is_async: bool, type_hints: bool) -> str:
         """Generate subtraction function."""
         async_kw = "async " if is_async else ""
@@ -430,7 +430,7 @@ class GenerateCodeFunction(AgentFunction):
     """Subtract b from a."""
     return a - b
 '''
-    
+
     def _generate_multiply_function(self, name: str, is_async: bool, type_hints: bool) -> str:
         """Generate multiplication function."""
         async_kw = "async " if is_async else ""
@@ -443,7 +443,7 @@ class GenerateCodeFunction(AgentFunction):
     """Multiply two numbers."""
     return a * b
 '''
-    
+
     def _generate_divide_function(self, name: str, is_async: bool, type_hints: bool) -> str:
         """Generate division function."""
         async_kw = "async " if is_async else ""
@@ -460,7 +460,7 @@ class GenerateCodeFunction(AgentFunction):
         raise ValueError("Cannot divide by zero")
     return a / b
 '''
-    
+
     def _generate_square_function(self, name: str, is_async: bool, type_hints: bool) -> str:
         """Generate square function."""
         async_kw = "async " if is_async else ""
@@ -473,7 +473,7 @@ class GenerateCodeFunction(AgentFunction):
     """Square a number."""
     return n * n
 '''
-    
+
     def _generate_is_even_function(self, name: str, is_async: bool, type_hints: bool) -> str:
         """Generate is_even function."""
         async_kw = "async " if is_async else ""
@@ -487,7 +487,7 @@ class GenerateCodeFunction(AgentFunction):
     """Check if a number is even."""
     return n % 2 == 0
 '''
-    
+
     def _generate_hello_function(self, name: str, is_async: bool, type_hints: bool) -> str:
         """Generate hello world function."""
         async_kw = "async " if is_async else ""
@@ -500,11 +500,10 @@ class GenerateCodeFunction(AgentFunction):
     """Return hello world."""
     return "Hello, World!"
 '''
-    
+
     def _generate_fetch_function(self, name: str, is_async: bool, type_hints: bool) -> str:
         """Generate fetch/get data function."""
         async_kw = "async " if is_async else ""
-        await_kw = "await " if is_async else ""
         if type_hints:
             return f'''{async_kw}def {name}(url: str) -> dict:
     """Fetch data from URL."""
@@ -516,7 +515,7 @@ class GenerateCodeFunction(AgentFunction):
     # Placeholder implementation
     return {{"data": "fetched"}}
 '''
-    
+
     def _generate_concat_function(self, name: str, is_async: bool, type_hints: bool) -> str:
         """Generate string concatenation function."""
         async_kw = "async " if is_async else ""
@@ -529,7 +528,7 @@ class GenerateCodeFunction(AgentFunction):
     """Concatenate two strings."""
     return a + b
 '''
-    
+
     def _generate_length_function(self, name: str, is_async: bool, type_hints: bool) -> str:
         """Generate length function."""
         async_kw = "async " if is_async else ""
@@ -542,54 +541,54 @@ class GenerateCodeFunction(AgentFunction):
     """Return length of string."""
     return len(s)
 '''
-    
+
     def _generate_calculator_class(self, name: str, type_hints: bool) -> str:
         """Generate Calculator class."""
         if type_hints:
             return f'''class {name}:
     """Calculator class with basic operations."""
-    
+
     def add(self, a: int, b: int) -> int:
         """Add two numbers."""
         return a + b
-    
+
     def subtract(self, a: int, b: int) -> int:
         """Subtract b from a."""
         return a - b
 '''
         return f'''class {name}:
     """Calculator class with basic operations."""
-    
+
     def add(self, a, b):
         """Add two numbers."""
         return a + b
-    
+
     def subtract(self, a, b):
         """Subtract b from a."""
         return a - b
 '''
-    
+
     def _generate_user_class(self, name: str, type_hints: bool) -> str:
         """Generate User class."""
         if type_hints:
             return f'''class {name}:
     """User class representing a user."""
-    
+
     def __init__(self, name: str, email: str):
         self.name = name
         self.email = email
-    
+
     def __repr__(self) -> str:
         return f"{name}(name={{self.name}}, email={{self.email}})"
 '''
         return f'''class {name}:
     """User class representing a user."""
-    
+
     def __init__(self, name, email):
         self.name = name
         self.email = email
 '''
-    
+
     def _generate_repository_class(
         self,
         name: str,
@@ -602,33 +601,33 @@ class GenerateCodeFunction(AgentFunction):
         if type_hints:
             return f'''class {name}{inheritance}:
     """Repository class for data access."""
-    
+
     def __init__(self):
         self._items: dict[str, dict] = {{}}
-    
+
     def get(self, id: str) -> dict | None:
         """Get item by ID."""
         return self._items.get(id)
-    
+
     def save(self, id: str, item: dict) -> None:
         """Save item with ID."""
         self._items[id] = item
 '''
         return f'''class {name}{inheritance}:
     """Repository class for data access."""
-    
+
     def __init__(self):
         self._items = {{}}
-    
+
     def get(self, id):
         """Get item by ID."""
         return self._items.get(id)
-    
+
     def save(self, id, item):
         """Save item with ID."""
         self._items[id] = item
 '''
-    
+
     def _generate_factory_class(
         self,
         name: str,
@@ -640,12 +639,12 @@ class GenerateCodeFunction(AgentFunction):
         spec_lower = specification.lower()
         if "database" in spec_lower or "connection" in spec_lower:
             return self._generate_database_factory(name, type_hints)
-        
+
         # Generic factory
         if type_hints:
             return f'''class {name}:
     """Factory class for creating objects."""
-    
+
     @staticmethod
     def create(type_name: str) -> object:
         """Create an object of the given type."""
@@ -654,20 +653,20 @@ class GenerateCodeFunction(AgentFunction):
 '''
         return f'''class {name}:
     """Factory class for creating objects."""
-    
+
     @staticmethod
     def create(type_name):
         """Create an object of the given type."""
         # Factory implementation
         return object()
 '''
-    
+
     def _generate_database_factory(self, name: str, type_hints: bool) -> str:
         """Generate database connection factory."""
         if type_hints:
             return f'''class {name}:
     """Factory for creating database connections."""
-    
+
     @staticmethod
     def create(db_type: str, connection_string: str) -> object:
         """Create a database connection."""
@@ -690,7 +689,7 @@ class MySQLConnection:
 '''
         return f'''class {name}:
     """Factory for creating database connections."""
-    
+
     @staticmethod
     def create(db_type, connection_string):
         """Create a database connection."""
@@ -711,7 +710,7 @@ class MySQLConnection:
     def __init__(self, connection_string):
         self.connection_string = connection_string
 '''
-    
+
     def _generate_javascript(
         self,
         specification: str,
@@ -721,7 +720,7 @@ class MySQLConnection:
     ) -> str:
         """Generate JavaScript code."""
         spec_lower = specification.lower()
-        
+
         if is_class:
             class_name = name.title().replace("_", "")
             return f'''class {class_name} {{
@@ -730,26 +729,26 @@ class MySQLConnection:
     }}
 }}
 '''
-        
+
         if is_function:
             func_name = name.lower().replace(" ", "_")
-            
+
             if any(op in spec_lower for op in ["concat", "join", "string"]):
                 return f'''function {func_name}(a, b) {{
     return a + b;
 }}
 '''
-            
+
             return f'''function {func_name}() {{
     // Implementation
 }}
 '''
-        
+
         return f'''const {name} = () => {{
     // Implementation
 }};
 '''
-    
+
     def _generate_typescript(
         self,
         specification: str,
@@ -759,7 +758,7 @@ class MySQLConnection:
     ) -> str:
         """Generate TypeScript code."""
         spec_lower = specification.lower()
-        
+
         if is_class:
             class_name = name.title().replace("_", "")
             return f'''class {class_name} {{
@@ -768,38 +767,38 @@ class MySQLConnection:
     }}
 }}
 '''
-        
+
         if is_function:
             func_name = name.lower().replace(" ", "_")
-            
+
             if any(op in spec_lower for op in ["length", "len", "size"]):
                 return f'''function {func_name}(s: string): number {{
     return s.length;
 }}
 '''
-            
+
             return f'''function {func_name}(): void {{
     // Implementation
 }}
 '''
-        
+
         return f'''const {name}: () => void = () => {{
     // Implementation
 }};
 '''
-    
+
     def _generate_sql(self, specification: str, is_query: bool) -> str:
         """Generate SQL code."""
         spec_lower = specification.lower()
-        
+
         if "select" in spec_lower or "query" in spec_lower:
             if "user" in spec_lower:
                 return "SELECT *\nFROM users;"
             return "SELECT *\nFROM table_name\nWHERE condition;"
-        
+
         if "insert" in spec_lower:
             return "INSERT INTO table_name (column1, column2)\nVALUES (value1, value2);"
-        
+
         if "create" in spec_lower:
             if "user" in spec_lower:
                 return '''CREATE TABLE users (
@@ -813,9 +812,9 @@ class MySQLConnection:
     column1 VARCHAR(255),
     column2 INT
 );'''
-        
+
         return "SELECT * FROM table_name;"
-    
+
     def _generate_java(
         self,
         specification: str,
@@ -832,13 +831,13 @@ class MySQLConnection:
     }}
 }}
 '''
-        
+
         func_name = name
         return f'''public void {func_name}() {{
     // Implementation
 }}
 '''
-    
+
     def _generate_go(
         self,
         specification: str,
@@ -851,7 +850,7 @@ class MySQLConnection:
     // Implementation
 }}
 '''
-    
+
     def _generate_rust(
         self,
         specification: str,
@@ -864,7 +863,7 @@ class MySQLConnection:
     // Implementation
 }}
 '''
-    
+
     def _generate_cpp(
         self,
         specification: str,
@@ -882,13 +881,13 @@ public:
     }}
 }};
 '''
-        
+
         func_name = name.lower().replace(" ", "_")
         return f'''void {func_name}() {{
     // Implementation
 }}
 '''
-    
+
     def _generate_explanation(
         self,
         specification: str,
@@ -898,47 +897,47 @@ public:
     ) -> str:
         """Generate explanation for the code."""
         parts = [f"Generated {language} code from specification."]
-        
+
         if patterns:
             parts.append(f"Followed patterns: {', '.join(patterns)}.")
-        
+
         if constraints:
             parts.append(f"Applied constraints: {', '.join(constraints)}.")
-        
+
         return " ".join(parts)
-    
+
     def _generate_test_hints(self, specification: str) -> list[str]:
         """Generate test hints based on specification."""
         hints = []
         spec_lower = specification.lower()
-        
+
         if any(op in spec_lower for op in ["add", "subtract", "multiply", "divide"]):
             hints.extend([
                 "Test with positive numbers",
                 "Test with negative numbers",
                 "Test with zero",
             ])
-        
+
         if "divide" in spec_lower:
             hints.append("Test division by zero")
-        
+
         if "class" in spec_lower:
             hints.extend([
                 "Test constructor",
                 "Test method outputs",
             ])
-        
+
         if "string" in spec_lower or "concat" in spec_lower:
             hints.extend([
                 "Test with empty strings",
                 "Test with unicode characters",
             ])
-        
+
         if not hints:
             hints = ["Test basic functionality", "Test edge cases"]
-        
+
         return hints
-    
+
     def _generate_test_code(
         self,
         code: str,
@@ -958,18 +957,18 @@ public:
             return self._generate_rust_tests(code, specification)
         else:
             return self._generate_python_tests(code, specification)
-    
+
     def _generate_python_tests(self, code: str, specification: str) -> str:
         """Generate pytest-style tests for Python code."""
         spec_lower = specification.lower()
-        
+
         # Extract function/class name from code
         func_match = re.search(r"def (\w+)\(", code)
         class_match = re.search(r"class (\w+)", code)
-        
+
         if func_match:
             func_name = func_match.group(1)
-            
+
             # Check for arithmetic operations
             if any(op in spec_lower for op in ["add", "sum"]):
                 return f'''import pytest
@@ -986,7 +985,7 @@ def test_{func_name}_negative_numbers():
 def test_{func_name}_with_zero():
     assert {func_name}(0, 5) == 5
 '''
-            
+
             if "subtract" in spec_lower:
                 return f'''import pytest
 
@@ -998,7 +997,7 @@ def test_{func_name}_positive_numbers():
 def test_{func_name}_negative_result():
     assert {func_name}(3, 5) == -2
 '''
-            
+
             if "multiply" in spec_lower:
                 return f'''import pytest
 
@@ -1010,7 +1009,7 @@ def test_{func_name}_positive_numbers():
 def test_{func_name}_with_zero():
     assert {func_name}(0, 5) == 0
 '''
-            
+
             if "divide" in spec_lower:
                 return f'''import pytest
 
@@ -1023,7 +1022,7 @@ def test_{func_name}_division_by_zero():
     with pytest.raises(ValueError):
         {func_name}(1, 0)
 '''
-            
+
             if "square" in spec_lower:
                 return f'''import pytest
 
@@ -1039,7 +1038,7 @@ def test_{func_name}_negative():
 def test_{func_name}_zero():
     assert {func_name}(0) == 0
 '''
-            
+
             if "even" in spec_lower:
                 return f'''import pytest
 
@@ -1055,7 +1054,7 @@ def test_{func_name}_with_odd():
 def test_{func_name}_with_zero():
     assert {func_name}(0) is True
 '''
-            
+
             # Generic function test
             return f'''import pytest
 
@@ -1065,10 +1064,10 @@ def test_{func_name}_basic():
     result = {func_name}()
     assert result is not None
 '''
-        
+
         if class_match:
             class_name = class_match.group(1)
-            
+
             if "calculator" in spec_lower:
                 return f'''import pytest
 
@@ -1077,12 +1076,12 @@ class Test{class_name}:
     def test_add(self):
         calc = {class_name}()
         assert calc.add(1, 2) == 3
-    
+
     def test_subtract(self):
         calc = {class_name}()
         assert calc.subtract(5, 3) == 2
 '''
-            
+
             if "user" in spec_lower:
                 return f'''import pytest
 
@@ -1093,7 +1092,7 @@ class Test{class_name}:
         assert user.name == "John"
         assert user.email == "john@example.com"
 '''
-            
+
             # Generic class test
             return f'''import pytest
 
@@ -1103,7 +1102,7 @@ class Test{class_name}:
         obj = {class_name}()
         assert obj is not None
 '''
-        
+
         return '''import pytest
 
 
@@ -1111,7 +1110,7 @@ def test_implementation():
     # Add tests here
     pass
 '''
-    
+
     def _generate_js_tests(
         self,
         code: str,
@@ -1135,7 +1134,7 @@ def test_implementation():
     });
 });
 '''
-    
+
     def _generate_java_tests(self, code: str, specification: str) -> str:
         """Generate JUnit-style tests for Java."""
         class_match = re.search(r"class (\w+)", code)
@@ -1161,7 +1160,7 @@ class Tests {
     }
 }
 '''
-    
+
     def _generate_go_tests(self, code: str, specification: str) -> str:
         """Generate Go tests."""
         func_match = re.search(r"func (\w+)", code)
@@ -1184,7 +1183,7 @@ func TestMain(t *testing.T) {
     // Add tests
 }
 '''
-    
+
     def _generate_rust_tests(self, code: str, specification: str) -> str:
         """Generate Rust tests."""
         func_match = re.search(r"fn (\w+)", code)
@@ -1193,7 +1192,7 @@ func TestMain(t *testing.T) {
             return f'''#[cfg(test)]
 mod tests {{
     use super::*;
-    
+
     #[test]
     fn test_{func_name}() {{
         {func_name}();
@@ -1208,7 +1207,7 @@ mod tests {
     }
 }
 '''
-    
+
     def _compress_intent(self, specification: str) -> str:
         """Generate compressed intent for downstream validation."""
         # Simple compression: first sentence or first 100 chars

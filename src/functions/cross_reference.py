@@ -112,7 +112,7 @@ class CrossReferenceFunction(AgentFunction):
         """
         self._client = semantic_search_client
 
-    async def run(
+    async def run(  # type: ignore[override]
         self,
         *,
         query_artifact: str,

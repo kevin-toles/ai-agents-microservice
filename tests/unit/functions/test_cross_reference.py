@@ -558,11 +558,14 @@ class TestFakeSemanticSearchClient:
         from src.clients.semantic_search import FakeSemanticSearchClient
         
         client = FakeSemanticSearchClient()
-        results = await client.search(query="repository pattern", top_k=5)
+        response = await client.search(query="repository pattern", top_k=5)
         
-        assert isinstance(results, list)
+        # Response is now a dict with results and total keys
+        assert isinstance(response, dict)
+        assert "results" in response
+        assert "total" in response
         # Should return mock data
-        assert len(results) > 0
+        assert len(response["results"]) > 0
 
     @pytest.mark.asyncio
     async def test_fake_client_search_respects_top_k(self) -> None:
@@ -570,9 +573,9 @@ class TestFakeSemanticSearchClient:
         from src.clients.semantic_search import FakeSemanticSearchClient
         
         client = FakeSemanticSearchClient()
-        results = await client.search(query="test", top_k=2)
+        response = await client.search(query="test", top_k=2)
         
-        assert len(results) <= 2
+        assert len(response["results"]) <= 2
 
     @pytest.mark.asyncio
     async def test_fake_client_allows_custom_responses(self) -> None:
@@ -588,10 +591,10 @@ class TestFakeSemanticSearchClient:
         ]
         
         client = FakeSemanticSearchClient(search_results=custom_results)
-        results = await client.search(query="test", top_k=5)
+        response = await client.search(query="test", top_k=5)
         
-        assert len(results) == 1
-        assert results[0]["source"] == "custom/source.py"
+        assert len(response["results"]) == 1
+        assert response["results"][0]["source"] == "custom/source.py"
 
 
 # =============================================================================

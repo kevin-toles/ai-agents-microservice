@@ -573,11 +573,11 @@ class MSEPOrchestrator:
         # Get SBERT score for this chapter (average of similarities)
         sbert_score = 0.0
         similarity_matrix = dispatch_result.similarity_matrix
-        has_valid_matrix = (
+        if (
             similarity_matrix is not None
             and not (hasattr(similarity_matrix, 'size') and similarity_matrix.size == 0)
-        )
-        if has_valid_matrix and idx < len(similarity_matrix):
+            and idx < len(similarity_matrix)
+        ):
             row = similarity_matrix[idx]
             if len(row) > 0:
                 sbert_score = float(sum(row) / len(row))

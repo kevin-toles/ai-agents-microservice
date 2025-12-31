@@ -2,11 +2,13 @@
 
 WBS: MSE-8.2 - Audit Service Client
 WBS: MSE-8.3 - Fake Audit Client
+WBS: AGT-17.3 - Citation Audit Client
 
 Async client for calling Audit-Service API endpoints.
 Implements connection pooling and retry logic per anti-pattern #12.
 
 Reference: MULTI_STAGE_ENRICHMENT_PIPELINE_WBS.md - MSE-8
+Reference: AGENT_FUNCTIONS_ARCHITECTURE.md - Citation Flow
 Pattern: Protocol duck typing (CODING_PATTERNS_ANALYSIS.md)
 Anti-Pattern Mitigation: #12 (Connection Pooling via shared client)
 """
@@ -15,9 +17,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import httpx
+
+
+if TYPE_CHECKING:
+    from src.schemas.audit import CitationAuditBatch, CitationAuditRecord
 
 from src.agents.msep.constants import (
     ENDPOINT_AUDIT_CROSS_REF,
@@ -204,11 +210,91 @@ class AuditServiceClient:
             json=payload,
         )
 
+    async def _post(
+        self,
+        endpoint: str,
+        json: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Execute POST request with retry logic.
+
+        This is exposed for testing purposes.
+
+        Args:
+            endpoint: API endpoint path
+            json: Request body as JSON
+
+        Returns:
+            Parsed JSON response
+        """
+        return await self._request_with_retry(
+            method="POST",
+            endpoint=endpoint,
+            json=json,
+        )
+
+    async def send_citation_audit(
+        self,
+        record: CitationAuditRecord,
+    ) -> dict[str, Any]:
+        """Send a citation audit record to the audit service.
+
+        WBS: AGT-17.3 - Audit record sent to audit-service:8084
+
+        Args:
+            record: Citation audit record to send
+
+        Returns:
+            Dict with status and created record ID
+
+        Raises:
+            ConnectionError: After exhausting retries
+        """
+
+        endpoint = "/v1/audit/citations"
+        payload = record.model_dump(mode="json")
+
+        try:
+            return await self._post(endpoint, payload)
+        except Exception as e:
+            # Convert to ConnectionError for consistent interface
+            if "unavailable" in str(e).lower():
+                raise ConnectionError(str(e)) from e
+            raise
+
+    async def send_citation_audit_batch(
+        self,
+        batch: CitationAuditBatch,
+    ) -> dict[str, Any]:
+        """Send a batch of citation audit records to the audit service.
+
+        WBS: AGT-17.3 - Batch citation audit
+
+        Args:
+            batch: Batch of citation audit records to send
+
+        Returns:
+            Dict with status and count of created records
+
+        Raises:
+            ConnectionError: After exhausting retries
+        """
+
+        endpoint = "/v1/audit/citations/batch"
+        payload = batch.model_dump(mode="json")
+
+        try:
+            return await self._post(endpoint, payload)
+        except Exception as e:
+            if "unavailable" in str(e).lower():
+                raise ConnectionError(str(e)) from e
+            raise
+
 
 class FakeAuditServiceClient:
     """Fake Audit-Service client for unit testing.
 
     WBS: MSE-8.3 - Fake Audit Client
+    WBS: AGT-17.3 - Fake Citation Audit Client
 
     Returns configurable responses without making HTTP calls.
     Pattern: FakeClient per CODING_PATTERNS_ANALYSIS.md
@@ -217,6 +303,8 @@ class FakeAuditServiceClient:
         should_pass: Whether audit should pass
         best_similarity: Similarity score to return
         should_raise_error: Whether to raise an error
+        should_fail: Whether to simulate connection failures
+        citation_audit_records: Recorded citation audit records
     """
 
     def __init__(
@@ -224,6 +312,7 @@ class FakeAuditServiceClient:
         should_pass: bool = True,
         best_similarity: float = 0.8,
         should_raise_error: bool = False,
+        should_fail: bool = False,
     ) -> None:
         """Initialize fake client.
 
@@ -231,11 +320,14 @@ class FakeAuditServiceClient:
             should_pass: Whether audit should pass
             best_similarity: Similarity score to return
             should_raise_error: Whether to raise AuditServiceUnavailableError
+            should_fail: Whether to raise ConnectionError for citation audits
         """
         self.should_pass = should_pass
         self.best_similarity = best_similarity
         self.should_raise_error = should_raise_error
+        self.should_fail = should_fail
         self._client: httpx.AsyncClient | None = None  # Always None for fake
+        self.citation_audit_records: list[CitationAuditRecord] = []
 
     async def audit_cross_references(
         self,
@@ -289,3 +381,47 @@ class FakeAuditServiceClient:
     async def close(self) -> None:
         """No-op close for fake client."""
         pass
+
+    async def send_citation_audit(
+        self,
+        record: CitationAuditRecord,
+    ) -> dict[str, Any]:
+        """Record citation audit for testing.
+
+        WBS: AGT-17.3 - Fake citation audit
+
+        Args:
+            record: Citation audit record to record
+
+        Returns:
+            Fake success response
+
+        Raises:
+            ConnectionError: If should_fail is True
+        """
+        if self.should_fail:
+            raise ConnectionError("Fake connection failure")
+
+        self.citation_audit_records.append(record)
+        return {"status": "created", "id": f"fake-audit-{len(self.citation_audit_records)}"}
+
+    async def send_citation_audit_batch(
+        self,
+        batch: CitationAuditBatch,
+    ) -> dict[str, Any]:
+        """Record batch citation audit for testing.
+
+        Args:
+            batch: Batch of citation audit records
+
+        Returns:
+            Fake success response
+
+        Raises:
+            ConnectionError: If should_fail is True
+        """
+        if self.should_fail:
+            raise ConnectionError("Fake connection failure")
+
+        self.citation_audit_records.extend(batch.records)
+        return {"status": "created", "count": len(batch.records)}

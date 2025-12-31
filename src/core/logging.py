@@ -14,29 +14,33 @@ Reference: WBS-AGT2 AC-2.2
 
 import logging
 import sys
-from typing import Any
+from collections.abc import MutableMapping
+from typing import TYPE_CHECKING, Any
 
 import structlog
-from structlog.types import Processor
 
 from src.core.config import get_settings
 
 
+if TYPE_CHECKING:
+    from structlog.types import Processor
+
+
 def add_service_context(
-    logger: logging.Logger,
+    logger: Any,
     method_name: str,
-    event_dict: dict[str, Any],
-) -> dict[str, Any]:
+    event_dict: MutableMapping[str, Any],
+) -> MutableMapping[str, Any]:
     """Add service context to all log entries.
-    
+
     Kitchen Brigade Architecture:
         ai-agents is the Expeditor - coordinates pipeline execution.
-    
+
     Args:
         logger: The wrapped logger object.
         method_name: The name of the method called on the logger.
         event_dict: The event dictionary to process.
-    
+
     Returns:
         Updated event dictionary with service context.
     """
@@ -49,18 +53,18 @@ def add_service_context(
 
 def configure_logging() -> None:
     """Configure structured logging for the application.
-    
+
     In development: Human-readable colored output
     In production: JSON-formatted structured logs
-    
+
     Pattern: Structured Logging with Context
     Reference: CODING_PATTERNS_ANALYSIS.md
     """
     settings = get_settings()
-    
+
     # Determine if we should use JSON format
     use_json = settings.environment in ("production", "staging")
-    
+
     # Common processors for all environments
     shared_processors: list[Processor] = [
         structlog.contextvars.merge_contextvars,
@@ -70,7 +74,7 @@ def configure_logging() -> None:
         structlog.processors.StackInfoRenderer(),
         structlog.processors.UnicodeDecoder(),
     ]
-    
+
     if use_json:
         # Production: JSON output
         processors: list[Processor] = [
@@ -78,15 +82,15 @@ def configure_logging() -> None:
             structlog.processors.format_exc_info,
             structlog.processors.JSONRenderer(),
         ]
-        renderer = structlog.processors.JSONRenderer()
+        structlog.processors.JSONRenderer()
     else:
         # Development: Human-readable colored output
         processors = [
             *shared_processors,
             structlog.dev.ConsoleRenderer(colors=True),
         ]
-        renderer = structlog.dev.ConsoleRenderer(colors=True)
-    
+        structlog.dev.ConsoleRenderer(colors=True)
+
     # Configure structlog
     structlog.configure(
         processors=processors,
@@ -97,14 +101,14 @@ def configure_logging() -> None:
         logger_factory=structlog.PrintLoggerFactory(),
         cache_logger_on_first_use=True,
     )
-    
+
     # Configure standard library logging to use structlog
     logging.basicConfig(
         format="%(message)s",
         stream=sys.stdout,
         level=logging.getLevelName(settings.log_level.upper()),
     )
-    
+
     # Reduce noise from third-party libraries
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
@@ -113,17 +117,17 @@ def configure_logging() -> None:
 
 def get_logger(name: str | None = None) -> structlog.BoundLogger:
     """Get a structured logger instance.
-    
+
     Args:
         name: Optional logger name (module name recommended).
-    
+
     Returns:
         Configured structlog BoundLogger instance.
-    
+
     Example:
         ```python
         from src.core.logging import get_logger
-        
+
         logger = get_logger(__name__)
         logger.info("Processing request", request_id="abc123", function="extract_structure")
         ```

@@ -18,8 +18,7 @@ Anti-Patterns Avoided (per CODING_PATTERNS_ANALYSIS.md):
 from __future__ import annotations
 
 import logging
-from dataclasses import asdict
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -31,13 +30,10 @@ from src.agents.msep.exceptions import (
 )
 from src.agents.msep.schemas import (
     ChapterMeta,
-    CrossReference,
-    EnrichedChapter,
     EnrichedMetadata,
-    MergedKeywords,
     MSEPRequest,
-    Provenance,
 )
+
 
 if TYPE_CHECKING:
     from src.agents.msep.orchestrator import MSEPOrchestrator
@@ -118,7 +114,7 @@ class EnrichMetadataRequest(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def lengths_match(self) -> "EnrichMetadataRequest":
+    def lengths_match(self) -> EnrichMetadataRequest:
         """Validate corpus and chapter_index have same length."""
         if len(self.corpus) != len(self.chapter_index):
             raise ValueError(
@@ -202,10 +198,10 @@ class ErrorResponse(BaseModel):
 # Pattern: Factory pattern for testability
 # =============================================================================
 
-_orchestrator: "MSEPOrchestrator | None" = None
+_orchestrator: MSEPOrchestrator | None = None
 
 
-def get_orchestrator() -> "MSEPOrchestrator":
+def get_orchestrator() -> MSEPOrchestrator:
     """Get or create the MSEPOrchestrator instance.
 
     Pattern: Lazy initialization with caching
@@ -222,7 +218,7 @@ def get_orchestrator() -> "MSEPOrchestrator":
     return _orchestrator
 
 
-def set_orchestrator(orchestrator: "MSEPOrchestrator | None") -> None:
+def set_orchestrator(orchestrator: MSEPOrchestrator | None) -> None:
     """Set the orchestrator instance for testing.
 
     Args:

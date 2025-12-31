@@ -12,6 +12,7 @@ from unittest.mock import AsyncMock
 
 from src.agents.cross_reference.agent import CrossReferenceAgent
 from src.agents.cross_reference.state import (
+    CrossReferenceInput,
     CrossReferenceState,
     SourceChapter,
     TraversalConfig,
@@ -139,14 +140,14 @@ class TestFullWorkflowIntegration:
         
         # Create agent and input
         agent = CrossReferenceAgent()
-        input_data = {
-            "book": "A Philosophy of Software Design",
-            "chapter": 2,
-            "title": "The Nature of Complexity",
-            "tier": 1,
-            "content": "Complexity is anything related to software structure...",
-            "keywords": ["complexity"],
-        }
+        input_data = CrossReferenceInput(
+            book="A Philosophy of Software Design",
+            chapter=2,
+            title="The Nature of Complexity",
+            tier=1,
+            content="Complexity is anything related to software structure...",
+            keywords=["complexity"],
+        )
         
         # Run workflow
         result = await agent.run(input_data)
@@ -168,14 +169,14 @@ class TestFullWorkflowIntegration:
     async def test_workflow_without_external_services(self) -> None:
         """Test workflow runs with stub implementations."""
         agent = CrossReferenceAgent()
-        input_data = {
-            "book": "Test Book",
-            "chapter": 1,
-            "title": "Test Chapter",
-            "tier": 1,
-            "content": "Test content",
-            "keywords": ["test"],
-        }
+        input_data = CrossReferenceInput(
+            book="Test Book",
+            chapter=1,
+            title="Test Chapter",
+            tier=1,
+            content="Test content",
+            keywords=["test"],
+        )
         
         # Run workflow (no mocks - uses stubs)
         result = await agent.run(input_data)
@@ -199,18 +200,18 @@ class TestFullWorkflowIntegration:
         set_content_client(mock_content_client)
         
         agent = CrossReferenceAgent()
-        input_data = {
-            "book": "Test Book",
-            "chapter": 1,
-            "title": "Test",
-            "tier": 1,
-            "content": "Test",
-            "config": {
-                "include_tier1": True,
-                "include_tier2": True,
-                "include_tier3": False,  # Exclude tier 3
-            },
-        }
+        input_data = CrossReferenceInput(
+            book="Test Book",
+            chapter=1,
+            title="Test",
+            tier=1,
+            content="Test",
+            config=TraversalConfig(
+                include_tier1=True,
+                include_tier2=True,
+                include_tier3=False,  # Exclude tier 3
+            ),
+        )
         
         await agent.run(input_data)
         
@@ -247,13 +248,13 @@ class TestWorkflowNodeInteraction:
         set_content_client(mock_clients["content"])
         
         agent = CrossReferenceAgent()
-        await agent.run({
-            "book": "Test",
-            "chapter": 1,
-            "title": "Test",
-            "tier": 1,
-            "content": "Test content",
-        })
+        await agent.run(CrossReferenceInput(
+            book="Test",
+            chapter=1,
+            title="Test",
+            tier=1,
+            content="Test content",
+        ))
         
         # Verify search was called with extracted concepts
         search_call = mock_clients["neo4j"].search_chapters.call_args
@@ -269,13 +270,13 @@ class TestWorkflowNodeInteraction:
         set_content_client(mock_clients["content"])
         
         agent = CrossReferenceAgent()
-        await agent.run({
-            "book": "Test",
-            "chapter": 1,
-            "title": "Test",
-            "tier": 1,
-            "content": "Test",
-        })
+        await agent.run(CrossReferenceInput(
+            book="Test",
+            chapter=1,
+            title="Test",
+            tier=1,
+            content="Test",
+        ))
         
         # Verify graph traversal was called (means matches flowed through)
         assert mock_clients["graph"].get_neighbors.called
@@ -313,13 +314,13 @@ class TestCitationGeneration:
         set_llm_client(mock_llm)
         
         agent = CrossReferenceAgent()
-        result = await agent.run({
-            "book": "Test",
-            "chapter": 1,
-            "title": "Test",
-            "tier": 1,
-            "content": "Test content about decomposition",
-        })
+        result = await agent.run(CrossReferenceInput(
+            book="Test",
+            chapter=1,
+            title="Test",
+            tier=1,
+            content="Test content about decomposition",
+        ))
         
         if result.citations:
             citation = result.citations[0]

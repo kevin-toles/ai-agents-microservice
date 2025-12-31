@@ -21,7 +21,7 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 
 # =============================================================================
@@ -30,10 +30,10 @@ from pydantic import BaseModel, Field, field_validator
 
 class Severity(str, Enum):
     """Severity levels for findings and violations.
-    
+
     Ordered from most to least severe for sorting.
     """
-    
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -57,10 +57,10 @@ SEVERITY_ORDER: dict[str, int] = {
 
 class Finding(BaseModel):
     """Individual analysis finding from analyze_artifact.
-    
+
     Represents a quality, security, pattern, or dependency issue
     detected during artifact analysis.
-    
+
     Attributes:
         severity: Issue severity (critical, high, medium, low, info)
         category: Type of finding (quality, security, patterns, etc.)
@@ -69,7 +69,7 @@ class Finding(BaseModel):
         fix_hint: Optional suggestion for remediation
         code_snippet: Optional relevant code excerpt
         rule_id: Optional SonarQube/linter rule ID
-    
+
     Example:
         >>> finding = Finding(
         ...     severity="high",
@@ -79,7 +79,7 @@ class Finding(BaseModel):
         ...     rule_id="S3649",
         ... )
     """
-    
+
     severity: Severity = Field(
         ...,
         description="Severity level: critical, high, medium, low, info",
@@ -108,16 +108,16 @@ class Finding(BaseModel):
         default=None,
         description="SonarQube or linter rule ID, e.g., 'S3776'",
     )
-    
+
     @property
     def severity_order(self) -> int:
         """Return numeric severity for sorting (lower = more severe).
-        
+
         Returns:
             Integer for sorting: 0=critical, 1=high, 2=medium, 3=low, 4=info
         """
         return SEVERITY_ORDER.get(self.severity.value, 5)
-    
+
     model_config = {
         "json_schema_extra": {
             "examples": [
@@ -140,10 +140,10 @@ class Finding(BaseModel):
 
 class Violation(BaseModel):
     """Specification compliance violation from validate_against_spec.
-    
+
     Represents a mismatch between an artifact and its specification
     or acceptance criteria.
-    
+
     Attributes:
         requirement_id: Identifier for the violated requirement
         description: Human-readable description of the violation
@@ -152,7 +152,7 @@ class Violation(BaseModel):
         line_number: Optional line number in artifact
         severity: Violation severity (defaults to medium)
         suggested_fix: Optional fix suggestion
-    
+
     Example:
         >>> violation = Violation(
         ...     requirement_id="REQ-001",
@@ -162,7 +162,7 @@ class Violation(BaseModel):
         ...     line_number=42,
         ... )
     """
-    
+
     requirement_id: str = Field(
         ...,
         description="Requirement or criteria identifier",
@@ -192,10 +192,10 @@ class Violation(BaseModel):
         default=None,
         description="Suggested fix for the violation",
     )
-    
+
     def diff_format(self) -> str:
         """Format violation as expected vs actual diff.
-        
+
         Returns:
             Formatted diff string
         """
@@ -207,7 +207,7 @@ class Violation(BaseModel):
         if self.line_number:
             lines.insert(1, f"Line: {self.line_number}")
         return "\n".join(lines)
-    
+
     model_config = {
         "json_schema_extra": {
             "examples": [
@@ -230,16 +230,16 @@ class Violation(BaseModel):
 
 class AnalysisResult(BaseModel):
     """Container for analyze_artifact output.
-    
+
     Aggregates findings from artifact analysis along with
     metrics and overall pass/fail status.
-    
+
     Attributes:
         findings: List of findings from analysis
         metrics: Optional metrics dict (loc, cc_avg, etc.)
         passed: Overall analysis pass/fail
         compressed_report: Optional summary for downstream
-    
+
     Example:
         >>> result = AnalysisResult(
         ...     findings=[finding1, finding2],
@@ -247,7 +247,7 @@ class AnalysisResult(BaseModel):
         ...     passed=False,
         ... )
     """
-    
+
     # AP-1.5: Use Field(default_factory=list) instead of default=[]
     findings: list[Finding] = Field(
         default_factory=list,
@@ -266,28 +266,28 @@ class AnalysisResult(BaseModel):
         default=None,
         description="Compressed summary for downstream consumption",
     )
-    
+
     @property
     def critical_count(self) -> int:
         """Count of critical severity findings.
-        
+
         Returns:
             Number of critical findings
         """
         return sum(1 for f in self.findings if f.severity == Severity.CRITICAL)
-    
+
     @property
     def high_count(self) -> int:
         """Count of high severity findings.
-        
+
         Returns:
             Number of high findings
         """
         return sum(1 for f in self.findings if f.severity == Severity.HIGH)
-    
+
     def findings_by_severity(self) -> dict[str, list[Finding]]:
         """Group findings by severity level.
-        
+
         Returns:
             Dict mapping severity to list of findings
         """
@@ -295,10 +295,10 @@ class AnalysisResult(BaseModel):
         for finding in self.findings:
             result[finding.severity.value].append(finding)
         return dict(result)
-    
+
     def findings_by_category(self) -> dict[str, list[Finding]]:
         """Group findings by category.
-        
+
         Returns:
             Dict mapping category to list of findings
         """
@@ -306,15 +306,15 @@ class AnalysisResult(BaseModel):
         for finding in self.findings:
             result[finding.category].append(finding)
         return dict(result)
-    
+
     def sorted_findings(self) -> list[Finding]:
         """Return findings sorted by severity (most severe first).
-        
+
         Returns:
             Sorted list of findings
         """
         return sorted(self.findings, key=lambda f: f.severity_order)
-    
+
     model_config = {
         "json_schema_extra": {
             "examples": [
@@ -340,17 +340,17 @@ class AnalysisResult(BaseModel):
 
 class ValidationResult(BaseModel):
     """Container for validate_against_spec output.
-    
+
     Aggregates violations from spec validation along with
     compliance percentage and confidence.
-    
+
     Attributes:
         valid: Overall validation pass/fail
         violations: List of spec violations
         compliance_percentage: Percentage of requirements met (0-100)
         confidence: Model confidence in validation (0.0-1.0)
         remediation_hints: Optional list of fix suggestions
-    
+
     Example:
         >>> result = ValidationResult(
         ...     valid=False,
@@ -359,7 +359,7 @@ class ValidationResult(BaseModel):
         ...     confidence=0.95,
         ... )
     """
-    
+
     valid: bool = Field(
         ...,
         description="Overall validation pass/fail status",
@@ -386,19 +386,19 @@ class ValidationResult(BaseModel):
         default_factory=list,
         description="Suggested remediation steps",
     )
-    
+
     @property
     def is_fully_compliant(self) -> bool:
         """Check if artifact is fully compliant with spec.
-        
+
         Returns:
             True if no violations and 100% compliance
         """
         return self.valid and not self.violations and self.compliance_percentage == 100.0
-    
+
     def violations_by_severity(self) -> dict[str, list[Violation]]:
         """Group violations by severity level.
-        
+
         Returns:
             Dict mapping severity to list of violations
         """
@@ -406,7 +406,7 @@ class ValidationResult(BaseModel):
         for violation in self.violations:
             result[violation.severity.value].append(violation)
         return dict(result)
-    
+
     model_config = {
         "json_schema_extra": {
             "examples": [
@@ -433,13 +433,13 @@ class ValidationResult(BaseModel):
 # =============================================================================
 
 __all__ = [
-    # Enums
-    "Severity",
-    # Models
-    "Finding",
-    "Violation",
-    "AnalysisResult",
-    "ValidationResult",
     # Constants
     "SEVERITY_ORDER",
+    "AnalysisResult",
+    # Models
+    "Finding",
+    # Enums
+    "Severity",
+    "ValidationResult",
+    "Violation",
 ]

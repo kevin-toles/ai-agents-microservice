@@ -11,11 +11,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import httpx
 import numpy as np
-from numpy.typing import NDArray
 
 from src.agents.msep.constants import (
     DEFAULT_TIMEOUT,
@@ -26,6 +25,10 @@ from src.agents.msep.constants import (
     SERVICE_CODE_ORCHESTRATOR,
 )
 from src.agents.msep.exceptions import ServiceUnavailableError
+
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
 
 
 logger = logging.getLogger(__name__)

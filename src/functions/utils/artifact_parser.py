@@ -8,7 +8,6 @@ Anti-Pattern: S1192 (duplicated string literals)
 """
 
 import re
-from typing import Optional
 
 
 # =============================================================================
@@ -62,10 +61,10 @@ SPEC_DOCSTRING_PATTERNS = [
 
 def spec_requires_function(spec_text: str) -> bool:
     """Check if specification text requires a function.
-    
+
     Args:
         spec_text: Specification text (should be lowercase).
-        
+
     Returns:
         True if specification requires a function.
     """
@@ -74,10 +73,10 @@ def spec_requires_function(spec_text: str) -> bool:
 
 def spec_requires_class(spec_text: str) -> bool:
     """Check if specification text requires a class.
-    
+
     Args:
         spec_text: Specification text (should be lowercase).
-        
+
     Returns:
         True if specification requires a class.
     """
@@ -86,10 +85,10 @@ def spec_requires_class(spec_text: str) -> bool:
 
 def spec_requires_docstring(spec_text: str) -> bool:
     """Check if specification text requires a docstring.
-    
+
     Args:
         spec_text: Specification text (should be lowercase).
-        
+
     Returns:
         True if specification requires a docstring.
     """
@@ -102,13 +101,13 @@ def spec_requires_docstring(spec_text: str) -> bool:
 
 def has_function(artifact: str) -> bool:
     """Check if artifact contains any function definition.
-    
+
     Args:
         artifact: Python code to check.
-        
+
     Returns:
         True if artifact contains a function definition.
-        
+
     Example:
         >>> has_function("def foo(): pass")
         True
@@ -120,14 +119,14 @@ def has_function(artifact: str) -> bool:
 
 def has_function_named(artifact: str, name: str) -> bool:
     """Check if artifact has a function with specific name.
-    
+
     Args:
         artifact: Python code to check.
         name: Expected function name.
-        
+
     Returns:
         True if function with given name exists.
-        
+
     Example:
         >>> has_function_named("def calculate(x): pass", "calculate")
         True
@@ -138,10 +137,10 @@ def has_function_named(artifact: str, name: str) -> bool:
 
 def has_async_function(artifact: str) -> bool:
     """Check if artifact contains any async function definition.
-    
+
     Args:
         artifact: Python code to check.
-        
+
     Returns:
         True if artifact contains an async function.
     """
@@ -154,13 +153,13 @@ def has_async_function(artifact: str) -> bool:
 
 def has_class(artifact: str) -> bool:
     """Check if artifact contains any class definition.
-    
+
     Args:
         artifact: Python code to check.
-        
+
     Returns:
         True if artifact contains a class definition.
-        
+
     Example:
         >>> has_class("class Foo: pass")
         True
@@ -172,14 +171,14 @@ def has_class(artifact: str) -> bool:
 
 def has_class_named(artifact: str, name: str) -> bool:
     """Check if artifact has a class with specific name.
-    
+
     Args:
         artifact: Python code to check.
         name: Expected class name.
-        
+
     Returns:
         True if class with given name exists.
-        
+
     Example:
         >>> has_class_named("class Calculator: pass", "Calculator")
         True
@@ -194,13 +193,13 @@ def has_class_named(artifact: str, name: str) -> bool:
 
 def has_docstring(artifact: str) -> bool:
     """Check if artifact contains a docstring after def/class.
-    
+
     Args:
         artifact: Python code to check.
-        
+
     Returns:
         True if artifact has a docstring.
-        
+
     Example:
         >>> has_docstring('def foo():\\n    \"\"\"Doc.\"\"\"\\n    pass')
         True
@@ -214,15 +213,15 @@ def has_docstring(artifact: str) -> bool:
 
 def has_type_hints(artifact: str) -> bool:
     """Check if artifact has type hints.
-    
+
     Checks for parameter type hints or return type annotations.
-    
+
     Args:
         artifact: Python code to check.
-        
+
     Returns:
         True if type hints are present.
-        
+
     Example:
         >>> has_type_hints("def foo(x: int) -> str: pass")
         True
@@ -241,16 +240,16 @@ def has_type_hints(artifact: str) -> bool:
 
 def has_method(artifact: str, method_name: str) -> bool:
     """Check if artifact has a method with specific name.
-    
+
     Methods are functions with 'self' as first parameter.
-    
+
     Args:
         artifact: Python code to check.
         method_name: Expected method name.
-        
+
     Returns:
         True if method exists.
-        
+
     Example:
         >>> has_method("def calculate(self, x): pass", "calculate")
         True
@@ -263,17 +262,17 @@ def has_method(artifact: str, method_name: str) -> bool:
 # Name Extraction
 # =============================================================================
 
-def extract_function_name(text: str) -> Optional[str]:
+def extract_function_name(text: str) -> str | None:
     """Extract expected function name from specification text.
-    
+
     Parses natural language specification to find function name mentions.
-    
+
     Args:
         text: Specification or criterion text.
-        
+
     Returns:
         Function name if found, None otherwise.
-        
+
     Example:
         >>> extract_function_name("Create a function named 'calculate'")
         'calculate'
@@ -294,15 +293,15 @@ def extract_function_name(text: str) -> Optional[str]:
     return None
 
 
-def extract_class_name(text: str) -> Optional[str]:
+def extract_class_name(text: str) -> str | None:
     """Extract expected class name from specification text.
-    
+
     Args:
         text: Specification or criterion text.
-        
+
     Returns:
         Class name if found, None otherwise.
-        
+
     Example:
         >>> extract_class_name("Create a Calculator class")
         'Calculator'
@@ -322,15 +321,15 @@ def extract_class_name(text: str) -> Optional[str]:
     return None
 
 
-def extract_entity_name(text: str, entity_type: str) -> Optional[str]:
+def extract_entity_name(text: str, entity_type: str) -> str | None:
     """Extract entity name from criterion text.
-    
+
     Generic extraction for function, class, method names.
-    
+
     Args:
         text: Criterion or specification text.
         entity_type: Type of entity ("function", "class", "method").
-        
+
     Returns:
         Entity name if found, None otherwise.
     """
@@ -346,12 +345,12 @@ def extract_entity_name(text: str, entity_type: str) -> Optional[str]:
     return None
 
 
-def extract_method_name(text: str) -> Optional[str]:
+def extract_method_name(text: str) -> str | None:
     """Extract method name from criterion text.
-    
+
     Args:
         text: Criterion text.
-        
+
     Returns:
         Method name if found, None otherwise.
     """
@@ -373,67 +372,67 @@ def extract_method_name(text: str) -> Optional[str]:
 
 class ArtifactParser:
     """Object-oriented interface for artifact parsing.
-    
+
     Provides stateful parsing with caching for repeated checks.
-    
+
     Example:
         >>> parser = ArtifactParser("def foo(): pass")
         >>> parser.has_function()
         True
     """
-    
+
     def __init__(self, artifact: str) -> None:
         """Initialize parser with artifact.
-        
+
         Args:
             artifact: Python code to parse.
         """
         self._artifact = artifact
         self._cache: dict[str, bool] = {}
-    
+
     @property
     def artifact(self) -> str:
         """Get the artifact being parsed."""
         return self._artifact
-    
+
     def has_function(self) -> bool:
         """Check if artifact has any function."""
         if "function" not in self._cache:
             self._cache["function"] = has_function(self._artifact)
         return self._cache["function"]
-    
+
     def has_function_named(self, name: str) -> bool:
         """Check if artifact has function with name."""
         key = f"function:{name}"
         if key not in self._cache:
             self._cache[key] = has_function_named(self._artifact, name)
         return self._cache[key]
-    
+
     def has_class(self) -> bool:
         """Check if artifact has any class."""
         if "class" not in self._cache:
             self._cache["class"] = has_class(self._artifact)
         return self._cache["class"]
-    
+
     def has_class_named(self, name: str) -> bool:
         """Check if artifact has class with name."""
         key = f"class:{name}"
         if key not in self._cache:
             self._cache[key] = has_class_named(self._artifact, name)
         return self._cache[key]
-    
+
     def has_docstring(self) -> bool:
         """Check if artifact has docstring."""
         if "docstring" not in self._cache:
             self._cache["docstring"] = has_docstring(self._artifact)
         return self._cache["docstring"]
-    
+
     def has_type_hints(self) -> bool:
         """Check if artifact has type hints."""
         if "type_hints" not in self._cache:
             self._cache["type_hints"] = has_type_hints(self._artifact)
         return self._cache["type_hints"]
-    
+
     def has_method(self, name: str) -> bool:
         """Check if artifact has method with name."""
         key = f"method:{name}"
@@ -448,10 +447,10 @@ class ArtifactParser:
 
 def extract_func_name_from_text(text: str) -> str:
     """Extract function name from violation or error text.
-    
+
     Args:
         text: Text containing function name reference.
-        
+
     Returns:
         Extracted function name or default 'function_name'.
     """
@@ -463,10 +462,10 @@ def extract_func_name_from_text(text: str) -> str:
 
 def extract_class_name_from_text(text: str) -> str:
     """Extract class name from violation or error text.
-    
+
     Args:
         text: Text containing class name reference.
-        
+
     Returns:
         Extracted class name or default 'ClassName'.
     """
@@ -478,10 +477,10 @@ def extract_class_name_from_text(text: str) -> str:
 
 def extract_method_name_from_text(text: str) -> str:
     """Extract method name from violation or error text.
-    
+
     Args:
         text: Text containing method name reference.
-        
+
     Returns:
         Extracted method name or default 'method_name'.
     """
@@ -492,29 +491,29 @@ def extract_method_name_from_text(text: str) -> str:
 
 
 __all__ = [
-    # Specification requirement checking
-    "spec_requires_function",
-    "spec_requires_class",
-    "spec_requires_docstring",
+    # Constants
+    "NON_NAME_WORDS",
     # Artifact checking
     "ArtifactParser",
-    "has_function",
-    "has_function_named",
+    "extract_class_name",
+    "extract_class_name_from_text",
+    "extract_entity_name",
+    # Violation extraction
+    "extract_func_name_from_text",
+    # Name extraction
+    "extract_function_name",
+    "extract_method_name",
+    "extract_method_name_from_text",
     "has_async_function",
     "has_class",
     "has_class_named",
     "has_docstring",
-    "has_type_hints",
+    "has_function",
+    "has_function_named",
     "has_method",
-    # Name extraction
-    "extract_function_name",
-    "extract_class_name",
-    "extract_entity_name",
-    "extract_method_name",
-    # Violation extraction
-    "extract_func_name_from_text",
-    "extract_class_name_from_text",
-    "extract_method_name_from_text",
-    # Constants
-    "NON_NAME_WORDS",
+    "has_type_hints",
+    "spec_requires_class",
+    "spec_requires_docstring",
+    # Specification requirement checking
+    "spec_requires_function",
 ]

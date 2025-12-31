@@ -261,7 +261,7 @@ class TestGetEmbeddings:
 
         mock_post.assert_called_once()
         call_args = mock_post.call_args
-        assert "/v1/sbert/embeddings" in str(call_args)
+        assert "/v1/embeddings" in str(call_args)
 
     @pytest.mark.asyncio
     async def test_get_embeddings_empty_list_returns_empty(
@@ -347,7 +347,7 @@ class TestGetSimilarityMatrix:
 
         mock_post.assert_called_once()
         call_args = mock_post.call_args
-        assert "/v1/sbert/similarity" in str(call_args)
+        assert "/v1/similarity/matrix" in str(call_args)
 
 
 # ==============================================================================
@@ -424,7 +424,7 @@ class TestClusterTopics:
 
         mock_post.assert_called_once()
         call_args = mock_post.call_args
-        assert "/v1/bertopic/cluster" in str(call_args)
+        assert "/api/v1/cluster" in str(call_args)
 
 
 # ==============================================================================
@@ -501,7 +501,7 @@ class TestExtractKeywords:
 
         mock_post.assert_called_once()
         call_args = mock_post.call_args
-        assert "/v1/keywords/extract" in str(call_args)
+        assert "/api/v1/keywords" in str(call_args)
 
     @pytest.mark.asyncio
     async def test_extract_keywords_default_top_k(

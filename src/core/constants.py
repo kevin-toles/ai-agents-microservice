@@ -19,7 +19,7 @@ from enum import IntEnum
 
 class ServicePort(IntEnum):
     """Standard ports for Kitchen Brigade services.
-    
+
     Port allocation:
     - 8080: llm-gateway (Router) - External API entry point
     - 8081: semantic-search-service (Cookbook) - Vector search
@@ -56,7 +56,7 @@ SERVICE_ROLES: dict[str, str] = {
 
 class Timeouts:
     """Default timeout values in seconds.
-    
+
     These can be overridden via Settings or per-request.
     """
     # HTTP client defaults
@@ -64,11 +64,11 @@ class Timeouts:
     HTTP_INFERENCE: float = 120.0  # LLM calls can be slow
     HTTP_SEARCH: float = 10.0
     HTTP_AUDIT: float = 5.0
-    
+
     # Pipeline execution
     PIPELINE_DEFAULT: float = 300.0  # 5 minutes
     PIPELINE_MAX: float = 600.0  # 10 minutes
-    
+
     # Cache TTLs
     CACHE_USER_TTL: int = 86400  # 24 hours (user: prefix)
     CACHE_TEMP_TTL: int = 3600  # 1 hour (temp: prefix)
@@ -81,12 +81,12 @@ class Timeouts:
 
 class StatePrefix:
     """ADK state key prefixes for different storage tiers.
-    
+
     Storage tiers:
     - TEMP: Pipeline-local state, cleared after execution
     - USER: User session state, Redis with 24h TTL
     - APP: Permanent application state, Qdrant/Neo4j
-    
+
     Example:
         ```python
         key = f"{StatePrefix.USER}{user_id}:{resource_type}"
@@ -109,15 +109,15 @@ CHARS_PER_TOKEN: int = 4
 
 def estimate_tokens(text: str) -> int:
     """Estimate token count for text.
-    
+
     Uses the industry standard approximation of ~4 characters per token.
-    
+
     Args:
         text: Text to estimate tokens for.
-        
+
     Returns:
         Estimated token count.
-        
+
     Example:
         >>> estimate_tokens("Hello world!")  # 12 chars
         3
@@ -158,13 +158,13 @@ DEFAULT_CONTEXT_BUDGET: dict[str, int] = {"input": 4096, "output": 2048}
 
 def get_context_budget(function_name: str) -> dict[str, int]:
     """Get the context budget for an agent function.
-    
+
     Args:
         function_name: Name of the agent function.
-    
+
     Returns:
         Dict with 'input' and 'output' token limits.
-    
+
     Example:
         >>> budget = get_context_budget("extract_structure")
         >>> budget

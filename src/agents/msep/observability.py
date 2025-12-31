@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -59,7 +59,7 @@ class MSEPObserver:
             "event": "enrichment_start",
             "correlation_id": self._correlation_id,
             "corpus_size": corpus_size,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
         logger.info(f"MSEP enrichment start: {log_entry}")
         return log_entry
@@ -85,7 +85,7 @@ class MSEPObserver:
             "total_chapters": total_chapters,
             "timing_metrics": self._timing_metrics.copy(),
             "error_counts": self._error_counts.copy(),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
         logger.info(f"MSEP enrichment complete: {log_entry}")
         return log_entry
@@ -115,7 +115,7 @@ class MSEPObserver:
             "endpoint": endpoint,
             "duration_ms": duration_ms,
             "success": success,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
         if success:
             self.record_success(service)
@@ -146,7 +146,7 @@ class MSEPObserver:
             "service": service,
             "endpoint": endpoint,
             "error": error,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
         logger.warning(f"MSEP service error: {log_entry}")
         return log_entry

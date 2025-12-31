@@ -17,16 +17,18 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from numpy.typing import NDArray
 
 from src.agents.msep.exceptions import ServiceUnavailableError
-from src.agents.msep.schemas import MSEPRequest
+
 
 if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
+    from src.agents.msep.schemas import MSEPRequest
     from src.clients.protocols import CodeOrchestratorProtocol, SemanticSearchProtocol
 
 
@@ -76,8 +78,8 @@ class MSEPDispatcher:
 
     def __init__(
         self,
-        code_orchestrator: "CodeOrchestratorProtocol",
-        semantic_search: "SemanticSearchProtocol",
+        code_orchestrator: CodeOrchestratorProtocol,
+        semantic_search: SemanticSearchProtocol,
     ) -> None:
         """Initialize dispatcher with service clients.
 
@@ -132,7 +134,7 @@ class MSEPDispatcher:
             {"book": ch.book, "chapter": ch.chapter, "title": ch.title}
             for ch in request.chapter_index
         ]
-        
+
         tasks: list[asyncio.Task[Any]] = [
             asyncio.create_task(self._get_embeddings(request.corpus)),
             asyncio.create_task(self._get_similarity(request.corpus)),
@@ -263,7 +265,7 @@ class MSEPDispatcher:
             )
         # Client returns numpy array directly, not a dict
         if isinstance(result, np.ndarray):
-            dispatch_result.embeddings = result
+            dispatch_result.embeddings = result.tolist()
         else:
             dispatch_result.embeddings = result.get("embeddings", [])
 
@@ -287,7 +289,7 @@ class MSEPDispatcher:
             )
         # Client returns numpy array directly, not a dict
         if isinstance(result, np.ndarray):
-            dispatch_result.similarity_matrix = result
+            dispatch_result.similarity_matrix = result.tolist()
         else:
             dispatch_result.similarity_matrix = result.get("similarity_matrix", [])
 

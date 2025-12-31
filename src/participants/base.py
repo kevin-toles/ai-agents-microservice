@@ -7,17 +7,19 @@ All participant adapters must implement this interface.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from src.conversation.models import Conversation, Participant
+
+if TYPE_CHECKING:
+    from src.conversation.models import Conversation, Participant
 
 
 class BaseParticipant(ABC):
     """Abstract base class for conversation participants.
-    
+
     All participant adapters (LLM, Tool) must implement this interface.
     """
-    
+
     @abstractmethod
     async def respond(
         self,
@@ -25,11 +27,11 @@ class BaseParticipant(ABC):
         participant: Participant,
     ) -> dict[str, Any]:
         """Generate a response from this participant.
-        
+
         Args:
             conversation: Current conversation state.
             participant: The participant definition.
-            
+
         Returns:
             Dict with:
                 - content: str - The response content
@@ -38,11 +40,11 @@ class BaseParticipant(ABC):
                 - metadata: dict - Additional metadata
         """
         pass
-    
+
     @abstractmethod
     async def health_check(self) -> bool:
         """Check if the participant service is healthy.
-        
+
         Returns:
             True if healthy, False otherwise.
         """

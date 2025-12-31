@@ -16,7 +16,6 @@ Anti-Patterns Avoided:
 """
 
 import logging
-from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -24,6 +23,7 @@ from pydantic import BaseModel, Field
 from src.agents.cross_reference.agent import CrossReferenceAgent
 from src.agents.cross_reference.state import (
     Citation,
+    CrossReferenceInput,
     CrossReferenceResult,
     SourceChapter,
     TierCoverage,
@@ -52,10 +52,10 @@ router = APIRouter(
 
 class CrossReferenceRequest(BaseModel):
     """Request model for cross-reference endpoint.
-    
+
     Pattern: Pydantic request validation (Sinha pp. 193-195)
     """
-    
+
     source: SourceChapter = Field(..., description="Source chapter to cross-reference")
     config: TraversalConfig = Field(
         default_factory=TraversalConfig,
@@ -66,10 +66,10 @@ class CrossReferenceRequest(BaseModel):
 
 class CrossReferenceResponse(BaseModel):
     """Response model for cross-reference endpoint.
-    
+
     Pattern: Structured API response
     """
-    
+
     annotation: str = Field(..., description="Scholarly annotation with inline citations")
     citations: list[Citation] = Field(default_factory=list, description="List of citations")
     tier_coverage: list[TierCoverage] = Field(
@@ -81,14 +81,14 @@ class CrossReferenceResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     """Response model for health check endpoint."""
-    
+
     status: str = Field(..., description="Health status (healthy/unhealthy)")
     agent: str = Field(default="cross-reference", description="Agent name")
 
 
 class ErrorResponse(BaseModel):
     """Response model for error responses."""
-    
+
     error: str = Field(..., description="Error type")
     detail: str = Field(..., description="Error details")
 
@@ -103,9 +103,9 @@ _agent: CrossReferenceAgent | None = None
 
 def get_agent() -> CrossReferenceAgent:
     """Get or create the CrossReferenceAgent instance.
-    
+
     Pattern: Lazy initialization with caching
-    
+
     Returns:
         Configured CrossReferenceAgent instance
     """
@@ -117,7 +117,7 @@ def get_agent() -> CrossReferenceAgent:
 
 def set_agent(agent: CrossReferenceAgent | None) -> None:
     """Set the agent instance for testing.
-    
+
     Args:
         agent: Agent instance to use, or None to reset
     """
@@ -141,48 +141,48 @@ def set_agent(agent: CrossReferenceAgent | None) -> None:
 )
 async def create_cross_reference(request: CrossReferenceRequest) -> CrossReferenceResponse:
     """Generate cross-references for a source chapter.
-    
+
     This endpoint executes the full cross-reference workflow:
     1. Analyze source chapter concepts
     2. Search taxonomy for matches
     3. Traverse spider web graph
     4. Retrieve content for matched chapters
     5. Synthesize scholarly annotation
-    
+
     Args:
         request: Cross-reference request with source chapter and config
-        
+
     Returns:
         CrossReferenceResponse with annotation, citations, and tier coverage
-        
+
     Raises:
         HTTPException: On validation or processing errors
     """
     try:
         agent = get_agent()
-        
-        # Build input dict for agent (per agent.run() signature)
-        input_data = {
-            "book": request.source.book,
-            "chapter": request.source.chapter,
-            "title": request.source.title,
-            "tier": request.source.tier,
-            "content": request.source.content,
-            "keywords": request.source.keywords,
-            "concepts": request.source.concepts,
-            "config": {
-                "max_hops": request.config.max_hops,
-                "min_similarity": request.config.min_similarity,
-                "include_tier1": request.config.include_tier1,
-                "include_tier2": request.config.include_tier2,
-                "include_tier3": request.config.include_tier3,
-            },
-            "taxonomy_id": request.taxonomy_id,
-        }
-        
+
+        # Build input for agent using CrossReferenceInput model
+        traversal_config = TraversalConfig(
+            max_hops=request.config.max_hops,
+            min_similarity=request.config.min_similarity,
+            include_tier1=request.config.include_tier1,
+            include_tier2=request.config.include_tier2,
+            include_tier3=request.config.include_tier3,
+        )
+        input_data = CrossReferenceInput(
+            book=request.source.book,
+            chapter=request.source.chapter,
+            title=request.source.title,
+            tier=request.source.tier,
+            content=request.source.content,
+            keywords=request.source.keywords,
+            concepts=request.source.concepts,
+            config=traversal_config,
+        )
+
         # Run the agent workflow
         result: CrossReferenceResult = await agent.run(input_data)
-        
+
         # Convert to response model
         return CrossReferenceResponse(
             annotation=result.annotation,
@@ -191,7 +191,7 @@ async def create_cross_reference(request: CrossReferenceRequest) -> CrossReferen
             processing_time_ms=result.processing_time_ms,
             model_used=result.model_used,
         )
-        
+
     except ValueError as e:
         # Validation errors - return 400
         logger.warning(f"Validation error in cross-reference: {e}")
@@ -199,7 +199,7 @@ async def create_cross_reference(request: CrossReferenceRequest) -> CrossReferen
             status_code=400,
             detail=str(e),
         ) from e
-        
+
     except Exception as e:
         # Unexpected errors - return 500
         logger.exception(f"Error in cross-reference agent: {e}")
@@ -215,7 +215,7 @@ async def create_cross_reference(request: CrossReferenceRequest) -> CrossReferen
 )
 async def health_check() -> HealthResponse:
     """Health check endpoint for the cross-reference agent.
-    
+
     Returns:
         HealthResponse with status and agent information
     """

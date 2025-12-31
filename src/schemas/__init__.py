@@ -13,38 +13,38 @@ Reference: AGENT_FUNCTIONS_ARCHITECTURE.md → Pydantic Schemas
 """
 
 # Citation and provenance schemas (AC-4.1, AC-4.2, AC-4.3)
+# Analysis schemas (AC-4.4)
+from src.schemas.analysis import (
+    SEVERITY_ORDER,
+    AnalysisResult,
+    Finding,
+    Severity,
+    ValidationResult,
+    Violation,
+)
 from src.schemas.citations import (
-    SourceType,
-    SourceMetadata,
     Citation,
     CitedContent,
+    SourceMetadata,
+    SourceType,
     create_citation_from_retrieval,
     merge_citations,
 )
 
-# Analysis schemas (AC-4.4)
-from src.schemas.analysis import (
-    Severity,
-    Finding,
-    Violation,
-    AnalysisResult,
-    ValidationResult,
-    SEVERITY_ORDER,
-)
 
 __all__: list[str] = [
-    # Citation schemas
-    "SourceType",
-    "SourceMetadata",
+    "SEVERITY_ORDER",
+    "AnalysisResult",
     "Citation",
     "CitedContent",
-    "create_citation_from_retrieval",
-    "merge_citations",
+    "Finding",
     # Analysis schemas
     "Severity",
-    "Finding",
-    "Violation",
-    "AnalysisResult",
+    "SourceMetadata",
+    # Citation schemas
+    "SourceType",
     "ValidationResult",
-    "SEVERITY_ORDER",
+    "Violation",
+    "create_citation_from_retrieval",
+    "merge_citations",
 ]

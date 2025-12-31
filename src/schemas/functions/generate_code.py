@@ -12,7 +12,6 @@ Acceptance Criteria:
 """
 
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -21,7 +20,7 @@ from src.schemas.citations import Citation
 
 class TargetLanguage(str, Enum):
     """Target programming language for code generation.
-    
+
     Supported languages for AC-8.5:
     - python: Default, generates type-hinted Python 3.10+
     - javascript: ES6+ JavaScript
@@ -44,9 +43,9 @@ class TargetLanguage(str, Enum):
 
 class GenerateCodeInput(BaseModel):
     """Input schema for generate_code function.
-    
+
     Reference: AGENT_FUNCTIONS_ARCHITECTURE.md → Agent Function 3
-    
+
     Attributes:
         specification: Natural language description of what to build
         target_language: Programming language for output (AC-8.5)
@@ -80,7 +79,7 @@ class GenerateCodeInput(BaseModel):
         default_factory=list,
         description="Must-have requirements (e.g., 'Must use async/await')",
     )
-    
+
     model_config = {
         "json_schema_extra": {
             "examples": [
@@ -104,9 +103,9 @@ class GenerateCodeInput(BaseModel):
 
 class CodeOutput(BaseModel):
     """Output schema for generate_code function.
-    
+
     Reference: AGENT_FUNCTIONS_ARCHITECTURE.md → Agent Function 3
-    
+
     Attributes:
         code: Generated code
         language: Programming language of the code
@@ -124,7 +123,7 @@ class CodeOutput(BaseModel):
         default="python",
         description="Programming language of the generated code",
     )
-    explanation: Optional[str] = Field(
+    explanation: str | None = Field(
         default=None,
         description="Explanation of implementation choices",
     )
@@ -132,11 +131,11 @@ class CodeOutput(BaseModel):
         default_factory=list,
         description="Suggested test cases for the generated code",
     )
-    test_code: Optional[str] = Field(
+    test_code: str | None = Field(
         default=None,
         description="Generated test code (when include_tests=True)",
     )
-    compressed_intent: Optional[str] = Field(
+    compressed_intent: str | None = Field(
         default=None,
         description="Compressed intent for downstream validation",
     )
@@ -144,7 +143,7 @@ class CodeOutput(BaseModel):
         default_factory=list,
         description="Citations to sources used in generation",
     )
-    
+
     model_config = {
         "json_schema_extra": {
             "examples": [

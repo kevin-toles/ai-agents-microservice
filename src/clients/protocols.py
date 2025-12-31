@@ -9,9 +9,11 @@ Anti-Pattern Mitigation: #12 (Connection Pooling via shared client)
 
 from __future__ import annotations
 
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
-from numpy.typing import NDArray
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
 
 
 @runtime_checkable

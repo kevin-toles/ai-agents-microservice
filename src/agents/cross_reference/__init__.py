@@ -7,22 +7,23 @@ Pattern: LangGraph StateGraph Workflow
 Source: ARCHITECTURE.md (ai-agents), TIER_RELATIONSHIP_DIAGRAM.md
 """
 
+from src.agents.cross_reference.agent import CrossReferenceAgent
 from src.agents.cross_reference.state import (
+    Citation,
+    CrossReferenceResult,
     CrossReferenceState,
     SourceChapter,
-    TraversalConfig,
-    CrossReferenceResult,
-    Citation,
     TierCoverage,
+    TraversalConfig,
 )
-from src.agents.cross_reference.agent import CrossReferenceAgent
+
 
 __all__ = [
+    "Citation",
     "CrossReferenceAgent",
+    "CrossReferenceResult",
     "CrossReferenceState",
     "SourceChapter",
-    "TraversalConfig",
-    "CrossReferenceResult",
-    "Citation",
     "TierCoverage",
+    "TraversalConfig",
 ]

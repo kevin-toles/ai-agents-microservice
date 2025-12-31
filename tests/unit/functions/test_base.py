@@ -438,13 +438,13 @@ class TestFakeAgentFunction:
         assert fake.call_args[0] == {"content": "first"}
         assert fake.call_args[1] == {"content": "second"}
     
-    def test_fake_agent_function_reset(self) -> None:
+    @pytest.mark.asyncio
+    async def test_fake_agent_function_reset(self) -> None:
         """FakeAgentFunction.reset() clears tracking."""
         from tests.unit.functions.fake_agent import FakeAgentFunction
-        import asyncio
         
         fake = FakeAgentFunction()
-        asyncio.get_event_loop().run_until_complete(fake.run())
+        await fake.run()
         
         assert fake.call_count == 1
         

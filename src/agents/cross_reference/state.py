@@ -9,9 +9,9 @@ Source: ARCHITECTURE.md (ai-agents), Generative AI with LangChain Ch. "MessagesS
 
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Any
 
 from pydantic import BaseModel, Field
+
 
 # Constants for Field descriptions (SonarQube S1192 - duplicated literals)
 _DESC_CHAPTER_TITLE = "Chapter title"
@@ -21,11 +21,11 @@ _DESC_TIER_LEVEL = "Tier level"
 
 class RelationshipType(str, Enum):
     """Tier relationship types per TIER_RELATIONSHIP_DIAGRAM.md.
-    
+
     Spider Web Model: All relationships are BIDIRECTIONAL.
     The graph is a web, not a one-way hierarchy.
     """
-    
+
     PARALLEL = "parallel"           # Same tier (horizontal)
     PERPENDICULAR = "perpendicular" # Adjacent tier ±1 (vertical)
     SKIP_TIER = "skip_tier"         # Non-adjacent tier ±2+ (diagonal)
@@ -33,10 +33,10 @@ class RelationshipType(str, Enum):
 
 class SourceChapter(BaseModel):
     """Input model representing the source chapter to cross-reference.
-    
+
     This is the starting point for the cross-reference workflow.
     """
-    
+
     book: str = Field(..., description="Source book title")
     chapter: int = Field(..., ge=1, description=f"{_DESC_CHAPTER_NUMBER} (1-indexed)")
     title: str = Field(..., description=_DESC_CHAPTER_TITLE)
@@ -49,10 +49,10 @@ class SourceChapter(BaseModel):
 
 class TraversalConfig(BaseModel):
     """Configuration for spider web graph traversal.
-    
+
     Controls how the agent navigates the taxonomy graph.
     """
-    
+
     max_hops: int = Field(default=3, ge=1, le=10, description="Maximum traversal depth")
     relationship_types: list[RelationshipType] = Field(
         default_factory=lambda: [
@@ -70,9 +70,25 @@ class TraversalConfig(BaseModel):
     include_tier3: bool = Field(default=True, description="Include Tier 3 (Engineering Practices)")
 
 
+class CrossReferenceInput(BaseModel):
+    """Input model for Cross-Reference Agent.
+
+    Contains source chapter information and traversal configuration.
+    """
+
+    book: str = Field(..., description="Source book title")
+    chapter: int = Field(..., ge=1, description="Chapter number")
+    title: str = Field(..., description="Chapter title")
+    tier: int = Field(..., ge=1, le=3, description="Tier level")
+    content: str | None = Field(default=None, description="Chapter content (optional)")
+    keywords: list[str] = Field(default_factory=list, description="Extracted keywords")
+    concepts: list[str] = Field(default_factory=list, description="Key concepts")
+    config: TraversalConfig = Field(default_factory=TraversalConfig, description="Traversal configuration")
+
+
 class GraphNode(BaseModel):
     """A node in the traversal path (book + chapter)."""
-    
+
     book: str = Field(..., description="Book title")
     chapter: int = Field(..., ge=1, description=_DESC_CHAPTER_NUMBER)
     tier: int = Field(..., ge=1, le=3, description=_DESC_TIER_LEVEL)
@@ -83,15 +99,16 @@ class GraphNode(BaseModel):
 
 class TraversalPath(BaseModel):
     """A complete traversal path through the taxonomy graph."""
-    
+
     nodes: list[GraphNode] = Field(default_factory=list, description="Nodes in traversal order")
+    relationships: list[RelationshipType] = Field(default_factory=list, description="Relationship types between nodes")
     total_similarity: float = Field(default=0.0, ge=0.0, description="Aggregate similarity score")
     path_type: str = Field(default="linear", description="Path type (linear, non_linear, cyclic)")
 
 
 class ChapterMatch(BaseModel):
     """A matched chapter from search/traversal."""
-    
+
     book: str = Field(..., description="Book title")
     chapter: int = Field(..., description=_DESC_CHAPTER_NUMBER)
     title: str = Field(..., description=_DESC_CHAPTER_TITLE)
@@ -105,23 +122,23 @@ class ChapterMatch(BaseModel):
 
 class Citation(BaseModel):
     """A Chicago-style citation for cross-reference output.
-    
+
     Format: Author, *Book Title*, Chapter N, pp. X-Y.
     """
-    
+
     author: str | None = Field(default=None, description="Author name(s)")
     book: str = Field(..., description="Book title (italicized in output)")
     chapter: int = Field(..., description=_DESC_CHAPTER_NUMBER)
     chapter_title: str = Field(default="", description=_DESC_CHAPTER_TITLE)
     pages: str | None = Field(default=None, description="Page range (e.g., '33-58')")
     tier: int = Field(..., ge=1, le=3, description=f"{_DESC_TIER_LEVEL} for ordering")
-    
+
     def to_chicago_format(self, footnote_number: int) -> str:
         """Format citation in Chicago style.
-        
+
         Args:
             footnote_number: Footnote number for the citation
-            
+
         Returns:
             Formatted citation string
         """
@@ -134,14 +151,14 @@ class Citation(BaseModel):
         parts.append(f"Ch. {self.chapter}")
         if self.pages:
             parts.append(f"pp. {self.pages}")
-        
+
         citation_text = ", ".join(parts)
         return f"[^{footnote_number}]: {citation_text}."
 
 
 class TierCoverage(BaseModel):
     """Coverage statistics for each tier in the cross-reference."""
-    
+
     tier: int = Field(..., ge=1, le=3, description=_DESC_TIER_LEVEL)
     tier_name: str = Field(..., description="Tier name (e.g., 'Architecture Spine')")
     books_referenced: int = Field(default=0, ge=0, description="Number of books referenced")
@@ -151,11 +168,11 @@ class TierCoverage(BaseModel):
 
 class CrossReferenceResult(BaseModel):
     """Output model for cross-reference agent.
-    
+
     Contains the scholarly annotation, citations, and metadata
     about the cross-referencing process.
     """
-    
+
     annotation: str = Field(..., description="Scholarly annotation with inline citations")
     citations: list[Citation] = Field(default_factory=list, description="List of citations")
     traversal_paths: list[TraversalPath] = Field(default_factory=list, description="Paths followed during traversal")
@@ -167,35 +184,35 @@ class CrossReferenceResult(BaseModel):
 
 class CrossReferenceState(BaseModel):
     """LangGraph state model for Cross-Reference Agent workflow.
-    
+
     This state flows through the workflow nodes:
     analyze_source → search_taxonomy → traverse_graph → retrieve_content → synthesize
-    
+
     Pattern: LangGraph StateGraph state model
     Source: ARCHITECTURE.md (ai-agents), Generative AI with LangChain 2e
     """
-    
+
     # Input
     source: SourceChapter = Field(..., description="Source chapter to cross-reference")
     config: TraversalConfig = Field(default_factory=TraversalConfig, description="Traversal configuration")
     taxonomy_id: str = Field(default="ai-ml", description="Taxonomy identifier")
-    
+
     # Processing state (populated by workflow nodes)
     analyzed_concepts: list[str] = Field(default_factory=list, description="Concepts extracted from source")
     taxonomy_matches: list[ChapterMatch] = Field(default_factory=list, description="Matches from taxonomy search")
     traversal_paths: list[TraversalPath] = Field(default_factory=list, description="Completed traversal paths")
     retrieved_chapters: list[ChapterMatch] = Field(default_factory=list, description="Chapters with content retrieved")
     validated_matches: list[ChapterMatch] = Field(default_factory=list, description="Matches validated as relevant")
-    
+
     # Output (populated by synthesize node)
     result: CrossReferenceResult | None = Field(default=None, description="Final result")
-    
+
     # Metadata
     started_at: datetime = Field(default_factory=lambda: datetime.now(UTC), description="Workflow start time")
     current_node: str = Field(default="", description="Current workflow node")
     errors: list[str] = Field(default_factory=list, description="Errors encountered during processing")
-    
+
     class Config:
         """Pydantic config."""
-        
+
         arbitrary_types_allowed = True

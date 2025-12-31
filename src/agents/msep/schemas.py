@@ -158,14 +158,14 @@ class EnrichedChapter:
     chapter: int
     title: str
     chapter_id: str
-    summary: str
-    content: str
-    similar_chapters: list[CrossReference]
-    keywords: MergedKeywords
-    topic_id: int | None
-    topic_name: str | None
-    graph_relationships: list[str]
-    provenance: Provenance
+    summary: str = ""
+    content: str = ""
+    similar_chapters: list[CrossReference] = field(default_factory=list)
+    keywords: MergedKeywords = field(default_factory=lambda: MergedKeywords(tfidf=[], semantic=[], merged=[]))
+    topic_id: int | None = None
+    topic_name: str | None = None
+    graph_relationships: list[str] = field(default_factory=list)
+    provenance: Provenance = field(default_factory=lambda: Provenance(methods_used=[], sbert_score=0.0, topic_boost=0.0, timestamp=""))
 
 
 @dataclass

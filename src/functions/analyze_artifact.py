@@ -37,38 +37,38 @@ OUTPUT_BUDGET_TOKENS = 2048
 
 class AnalyzeArtifactFunction(AgentFunction):
     """Analyze code/document for patterns, issues, quality.
-    
+
     Reference: AGENT_FUNCTIONS_ARCHITECTURE.md → Agent Function 4
-    
+
     Acceptance Criteria:
     - AC-9.1: Analyzes code/docs for quality, patterns, issues
     - AC-9.2: Returns AnalysisResult with findings list
     - AC-9.3: Context budget: 16384 input / 2048 output
     - AC-9.4: Default preset: D4 (Standard)
     - AC-9.5: Supports analysis_type parameter (quality/security/patterns)
-    
+
     Exit Criteria:
     - Each Finding has severity, category, description, location
     - analysis_type="security" flags common vulnerabilities
     - analysis_type="patterns" identifies design patterns
     """
-    
+
     name: str = "analyze_artifact"
-    
+
     # AC-9.4: Default preset D4 (Standard)
     default_preset: str = "D4"
-    
+
     # Preset options from architecture doc
     available_presets: dict[str, str] = {
         "code": "D4",      # Think + Code critique
         "security": "D3",  # Debate for high-stakes
         "quick": "S3",     # Qwen solo for speed
     }
-    
+
     # =========================================================================
     # Security Patterns (for analysis_type="security")
     # =========================================================================
-    
+
     SECURITY_PATTERNS: dict[str, dict[str, Any]] = {
         "hardcoded_password": {
             "patterns": [
@@ -148,11 +148,11 @@ class AnalyzeArtifactFunction(AgentFunction):
             "fix_hint": "Use SHA-256 or stronger algorithms for hashing; use AES for encryption",
         },
     }
-    
+
     # =========================================================================
     # Design Pattern Signatures (for analysis_type="patterns")
     # =========================================================================
-    
+
     DESIGN_PATTERNS: dict[str, dict[str, Any]] = {
         "singleton": {
             "patterns": [
@@ -219,30 +219,30 @@ class AnalyzeArtifactFunction(AgentFunction):
             "description": "Decorator pattern detected - adds behavior dynamically",
         },
     }
-    
+
     # =========================================================================
     # Quality Check Thresholds
     # =========================================================================
-    
+
     QUALITY_THRESHOLDS: dict[str, int] = {
         "max_function_lines": 20,
         "max_complexity": 10,
         "max_class_methods": 10,
         "max_parameters": 5,
     }
-    
+
     async def run(self, **kwargs: Any) -> AnalysisResult:
         """Analyze artifact for quality, security, or patterns.
-        
+
         Args:
             artifact: Code or document content to analyze
             artifact_type: Type of artifact (code/document/config)
             analysis_type: Type of analysis (quality/security/patterns/dependencies)
             checklist: Optional list of specific checks to perform
-            
+
         Returns:
             AnalysisResult with findings, metrics, pass status, and compressed report
-            
+
         Raises:
             ContextBudgetExceededError: If input exceeds budget
         """
@@ -250,13 +250,13 @@ class AnalyzeArtifactFunction(AgentFunction):
         artifact_type = kwargs.get("artifact_type", ArtifactKind.CODE)
         analysis_type = kwargs.get("analysis_type", AnalysisType.QUALITY)
         checklist: list[str] = kwargs.get("checklist", [])
-        
+
         # Convert enum if passed as string
         if isinstance(artifact_type, str):
             artifact_type = ArtifactKind(artifact_type)
         if isinstance(analysis_type, str):
             analysis_type = AnalysisType(analysis_type)
-        
+
         # AC-9.3: Enforce input budget - using shared utility
         input_tokens = estimate_tokens(artifact)
         if input_tokens > INPUT_BUDGET_TOKENS:
@@ -265,7 +265,7 @@ class AnalyzeArtifactFunction(AgentFunction):
                 actual=input_tokens,
                 limit=INPUT_BUDGET_TOKENS,
             )
-        
+
         # Handle empty artifact
         if not artifact.strip():
             return AnalysisResult(
@@ -274,7 +274,7 @@ class AnalyzeArtifactFunction(AgentFunction):
                 passed=True,
                 compressed_report="Empty artifact - no analysis performed",
             )
-        
+
         # Dispatch to appropriate analyzer
         if analysis_type == AnalysisType.QUALITY:
             return self._analyze_quality(artifact, artifact_type, checklist)
@@ -287,11 +287,11 @@ class AnalyzeArtifactFunction(AgentFunction):
         else:
             # Default to quality analysis
             return self._analyze_quality(artifact, artifact_type, checklist)
-    
+
     # =========================================================================
     # Quality Analysis
     # =========================================================================
-    
+
     def _analyze_quality(
         self,
         artifact: str,
@@ -299,7 +299,7 @@ class AnalyzeArtifactFunction(AgentFunction):
         checklist: list[str],
     ) -> AnalysisResult:
         """Analyze artifact for code quality issues.
-        
+
         Checks for:
         - Long functions
         - Missing docstrings
@@ -308,52 +308,52 @@ class AnalyzeArtifactFunction(AgentFunction):
         """
         findings: list[Finding] = []
         metrics: dict[str, Any] = {}
-        
+
         # Calculate basic metrics
         lines = artifact.split("\n")
         metrics["loc"] = len(lines)
         metrics["blank_lines"] = sum(1 for line in lines if not line.strip())
-        
+
         if artifact_type == ArtifactKind.CODE:
             # Find functions
             functions = self._extract_functions(artifact)
             metrics["functions"] = len(functions)
-            
+
             # Find classes
             classes = self._extract_classes(artifact)
             metrics["classes"] = len(classes)
-            
+
             # Check for long functions
             findings.extend(self._check_long_functions(artifact, functions))
-            
+
             # Check for missing docstrings
             if not checklist or "docstrings" in checklist:
                 findings.extend(self._check_missing_docstrings(artifact, functions, classes))
-            
+
             # Check for too many parameters
             findings.extend(self._check_parameter_count(artifact, functions))
-        
+
         # Calculate passed status (no HIGH or CRITICAL issues)
         passed = not any(
             f.severity in [Severity.HIGH, Severity.CRITICAL]
             for f in findings
         )
-        
+
         # Generate compressed report
         compressed_report = self._generate_quality_report(findings, metrics)
-        
+
         return AnalysisResult(
             findings=findings,
             metrics=metrics,
             passed=passed,
             compressed_report=compressed_report,
         )
-    
+
     def _extract_functions(self, code: str) -> list[dict[str, Any]]:
         """Extract function definitions from code."""
         functions = []
         pattern = r'^\s*(async\s+)?def\s+(\w+)\s*\(([^)]*)\):'
-        
+
         for i, line in enumerate(code.split("\n"), 1):
             match = re.match(pattern, line)
             if match:
@@ -363,14 +363,14 @@ class AnalyzeArtifactFunction(AgentFunction):
                     "params": match.group(3),
                     "is_async": bool(match.group(1)),
                 })
-        
+
         return functions
-    
+
     def _extract_classes(self, code: str) -> list[dict[str, Any]]:
         """Extract class definitions from code."""
         classes = []
         pattern = r'^\s*class\s+(\w+)\s*[:\(]'
-        
+
         for i, line in enumerate(code.split("\n"), 1):
             match = re.match(pattern, line)
             if match:
@@ -378,9 +378,9 @@ class AnalyzeArtifactFunction(AgentFunction):
                     "name": match.group(1),
                     "line": i,
                 })
-        
+
         return classes
-    
+
     def _check_long_functions(
         self,
         code: str,
@@ -389,22 +389,22 @@ class AnalyzeArtifactFunction(AgentFunction):
         """Check for functions that are too long."""
         findings = []
         lines = code.split("\n")
-        
+
         for i, func in enumerate(functions):
             start_line = func["line"]
-            
+
             # Find function end (next function or class at same/lower indent, or EOF)
             end_line = len(lines)
             if i + 1 < len(functions):
                 end_line = min(end_line, functions[i + 1]["line"] - 1)
-            
+
             # Count function lines
             func_lines = 0
             for j in range(start_line - 1, min(end_line, len(lines))):
                 line = lines[j]
                 if line.strip() and not line.strip().startswith("#"):
                     func_lines += 1
-            
+
             if func_lines > self.QUALITY_THRESHOLDS["max_function_lines"]:
                 findings.append(Finding(
                     severity=Severity.MEDIUM,
@@ -414,9 +414,9 @@ class AnalyzeArtifactFunction(AgentFunction):
                     line_number=func["line"],
                     fix_hint="Consider breaking into smaller functions",
                 ))
-        
+
         return findings
-    
+
     def _check_missing_docstrings(
         self,
         code: str,
@@ -426,17 +426,17 @@ class AnalyzeArtifactFunction(AgentFunction):
         """Check for missing docstrings on functions and classes."""
         findings = []
         lines = code.split("\n")
-        
+
         # Check functions
         for func in functions:
             if func["name"].startswith("_") and func["name"] != "__init__":
                 continue  # Skip private functions except __init__
-            
+
             line_idx = func["line"]  # 1-indexed
             if line_idx < len(lines):
                 next_line = lines[line_idx].strip() if line_idx < len(lines) else ""
                 has_docstring = next_line.startswith('"""') or next_line.startswith("'''")
-                
+
                 if not has_docstring:
                     findings.append(Finding(
                         severity=Severity.LOW,
@@ -446,14 +446,14 @@ class AnalyzeArtifactFunction(AgentFunction):
                         line_number=func["line"],
                         fix_hint="Add a docstring describing the function's purpose",
                     ))
-        
+
         # Check classes
         for cls in classes:
             line_idx = cls["line"]
             if line_idx < len(lines):
                 next_line = lines[line_idx].strip() if line_idx < len(lines) else ""
                 has_docstring = next_line.startswith('"""') or next_line.startswith("'''")
-                
+
                 if not has_docstring:
                     findings.append(Finding(
                         severity=Severity.LOW,
@@ -463,9 +463,9 @@ class AnalyzeArtifactFunction(AgentFunction):
                         line_number=cls["line"],
                         fix_hint="Add a docstring describing the class's purpose",
                     ))
-        
+
         return findings
-    
+
     def _check_parameter_count(
         self,
         code: str,
@@ -473,17 +473,17 @@ class AnalyzeArtifactFunction(AgentFunction):
     ) -> list[Finding]:
         """Check for functions with too many parameters."""
         findings = []
-        
+
         for func in functions:
             params_str = func.get("params", "")
             if not params_str:
                 continue
-            
+
             # Count parameters (excluding self, cls, *args, **kwargs)
             params = [p.strip() for p in params_str.split(",") if p.strip()]
-            params = [p for p in params if p not in ("self", "cls") 
+            params = [p for p in params if p not in ("self", "cls")
                       and not p.startswith("*")]
-            
+
             if len(params) > self.QUALITY_THRESHOLDS["max_parameters"]:
                 findings.append(Finding(
                     severity=Severity.LOW,
@@ -493,9 +493,9 @@ class AnalyzeArtifactFunction(AgentFunction):
                     line_number=func["line"],
                     fix_hint="Consider using a configuration object or data class",
                 ))
-        
+
         return findings
-    
+
     def _generate_quality_report(
         self,
         findings: list[Finding],
@@ -506,16 +506,16 @@ class AnalyzeArtifactFunction(AgentFunction):
         high_count = sum(1 for f in findings if f.severity == Severity.HIGH)
         medium_count = sum(1 for f in findings if f.severity == Severity.MEDIUM)
         low_count = sum(1 for f in findings if f.severity == Severity.LOW)
-        
+
         parts = [f"Quality analysis: {len(findings)} issues found"]
-        
+
         if metrics:
             parts.append(f"LOC: {metrics.get('loc', 'N/A')}")
             if "functions" in metrics:
                 parts.append(f"Functions: {metrics['functions']}")
             if "classes" in metrics:
                 parts.append(f"Classes: {metrics['classes']}")
-        
+
         if findings:
             severity_summary = []
             if critical_count:
@@ -527,36 +527,36 @@ class AnalyzeArtifactFunction(AgentFunction):
             if low_count:
                 severity_summary.append(f"{low_count} low")
             parts.append(f"Severity: {', '.join(severity_summary)}")
-        
+
         return " | ".join(parts)
-    
+
     # =========================================================================
     # Security Analysis
     # =========================================================================
-    
+
     def _analyze_security(
         self,
         artifact: str,
         artifact_type: ArtifactKind,
     ) -> AnalysisResult:
         """Analyze artifact for security vulnerabilities.
-        
+
         Exit Criteria: analysis_type="security" flags common vulnerabilities
         """
         findings: list[Finding] = []
         metrics: dict[str, Any] = {"checks_performed": 0}
-        
+
         # Run all security pattern checks
-        for check_name, check_config in self.SECURITY_PATTERNS.items():
+        for _check_name, check_config in self.SECURITY_PATTERNS.items():
             metrics["checks_performed"] += 1
-            
+
             for pattern in check_config["patterns"]:
                 matches = list(re.finditer(pattern, artifact, re.IGNORECASE | re.MULTILINE))
-                
+
                 for match in matches:
                     # Calculate line number
                     line_number = artifact[:match.start()].count("\n") + 1
-                    
+
                     findings.append(Finding(
                         severity=check_config["severity"],
                         category=check_config["category"],
@@ -565,7 +565,7 @@ class AnalyzeArtifactFunction(AgentFunction):
                         line_number=line_number,
                         fix_hint=check_config.get("fix_hint"),
                     ))
-        
+
         # Remove duplicate findings on same line
         seen: set[tuple[str, int]] = set()
         unique_findings: list[Finding] = []
@@ -574,25 +574,25 @@ class AnalyzeArtifactFunction(AgentFunction):
             if key not in seen:
                 seen.add(key)
                 unique_findings.append(f)
-        
+
         findings = unique_findings
-        
+
         # Calculate passed status
         passed = not any(
             f.severity in [Severity.HIGH, Severity.CRITICAL]
             for f in findings
         )
-        
+
         # Generate compressed report
         compressed_report = self._generate_security_report(findings, metrics)
-        
+
         return AnalysisResult(
             findings=findings,
             metrics=metrics,
             passed=passed,
             compressed_report=compressed_report,
         )
-    
+
     def _generate_security_report(
         self,
         findings: list[Finding],
@@ -601,72 +601,72 @@ class AnalyzeArtifactFunction(AgentFunction):
         """Generate compressed security report."""
         if not findings:
             return f"Security analysis: No vulnerabilities found ({metrics.get('checks_performed', 0)} checks performed)"
-        
+
         critical_count = sum(1 for f in findings if f.severity == Severity.CRITICAL)
         high_count = sum(1 for f in findings if f.severity == Severity.HIGH)
-        
+
         parts = [f"Security analysis: {len(findings)} vulnerabilities found"]
-        
+
         if critical_count:
             parts.append(f"CRITICAL: {critical_count}")
         if high_count:
             parts.append(f"HIGH: {high_count}")
-        
-        categories = set(f.category for f in findings)
+
+        categories = {f.category for f in findings}
         parts.append(f"Categories: {', '.join(categories)}")
-        
+
         return " | ".join(parts)
-    
+
     # =========================================================================
     # Pattern Detection
     # =========================================================================
-    
+
     def _analyze_patterns(
         self,
         artifact: str,
         artifact_type: ArtifactKind,
     ) -> AnalysisResult:
         """Analyze artifact for design patterns.
-        
+
         Exit Criteria: analysis_type="patterns" identifies design patterns
-        
+
         Note: Pattern findings have INFO severity (informational, not issues).
         """
         findings: list[Finding] = []
         metrics: dict[str, Any] = {"patterns_detected": []}
-        
+
         for pattern_name, pattern_config in self.DESIGN_PATTERNS.items():
             match_count = 0
-            
+
             for pattern in pattern_config["patterns"]:
                 if re.search(pattern, artifact, re.IGNORECASE | re.MULTILINE):
                     match_count += 1
-            
+
             required_matches = pattern_config.get("required_matches", 1)
-            
+
             if match_count >= required_matches:
                 metrics["patterns_detected"].append(pattern_name)
-                
+
                 findings.append(Finding(
                     severity=Severity.INFO,  # Patterns are informational
                     category=pattern_config["category"],
                     description=f"{pattern_name.replace('_', ' ').title()} pattern: {pattern_config['description']}",
                     location="code structure",
                 ))
-        
+
         # Pattern analysis always passes (it's informational)
         passed = True
-        
+
         # Generate compressed report
         compressed_report = self._generate_patterns_report(findings, metrics)
-        
+
         return AnalysisResult(
             findings=findings,
             metrics=metrics,
             passed=passed,
             compressed_report=compressed_report,
         )
-    
+
     def _generate_patterns_report(
         self,
         findings: list[Finding],
@@ -674,17 +674,17 @@ class AnalyzeArtifactFunction(AgentFunction):
     ) -> str:
         """Generate compressed patterns report."""
         patterns = metrics.get("patterns_detected", [])
-        
+
         if not patterns:
             return "Pattern analysis: No design patterns detected"
-        
+
         pattern_names = ", ".join(p.replace("_", " ").title() for p in patterns)
         return f"Pattern analysis: Detected {len(patterns)} patterns ({pattern_names})"
-    
+
     # =========================================================================
     # Dependency Analysis
     # =========================================================================
-    
+
     def _analyze_dependencies(
         self,
         artifact: str,
@@ -697,20 +697,20 @@ class AnalyzeArtifactFunction(AgentFunction):
             "stdlib_imports": 0,
             "third_party_imports": 0,
         }
-        
+
         # Extract import statements
         import_patterns = [
             r'^import\s+(\w+)',
             r'^from\s+(\w+)',
         ]
-        
+
         stdlib_modules = {
             "os", "sys", "re", "json", "typing", "abc", "asyncio", "collections",
             "datetime", "functools", "itertools", "math", "pathlib", "subprocess",
             "tempfile", "threading", "time", "unittest", "uuid", "logging",
             "dataclasses", "enum", "contextlib", "copy", "hashlib", "base64",
         }
-        
+
         lines = artifact.split("\n")
         for i, line in enumerate(lines, 1):
             for pattern in import_patterns:
@@ -718,12 +718,12 @@ class AnalyzeArtifactFunction(AgentFunction):
                 if match:
                     module = match.group(1)
                     metrics["imports"].append(module)
-                    
+
                     if module in stdlib_modules:
                         metrics["stdlib_imports"] += 1
                     else:
                         metrics["third_party_imports"] += 1
-                        
+
                         # Flag certain risky imports
                         if module in ("pickle", "marshal"):
                             findings.append(Finding(
@@ -734,13 +734,13 @@ class AnalyzeArtifactFunction(AgentFunction):
                                 line_number=i,
                                 fix_hint="Ensure data is from trusted sources",
                             ))
-        
+
         # Generate compressed report
         compressed_report = (
             f"Dependency analysis: {len(metrics['imports'])} imports "
             f"({metrics['stdlib_imports']} stdlib, {metrics['third_party_imports']} third-party)"
         )
-        
+
         return AnalysisResult(
             findings=findings,
             metrics=metrics,

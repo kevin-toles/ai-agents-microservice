@@ -14,15 +14,16 @@ import logging
 import os
 from typing import Any
 
+
 logger = logging.getLogger(__name__)
 
 
 class RealNeo4jClient:
     """Neo4j client implementing the Neo4jClient protocol.
-    
+
     Provides search_chapters method for taxonomy-based chapter lookup.
     Uses Neo4j's full-text search and graph relationships.
-    
+
     Attributes:
         _driver: Neo4j driver instance
         _uri: Neo4j Bolt URI
@@ -30,14 +31,14 @@ class RealNeo4jClient:
 
     def __init__(self, uri: str, user: str, password: str) -> None:
         """Initialize Neo4j driver.
-        
+
         Args:
             uri: Neo4j Bolt URI (e.g., bolt://localhost:7687)
             user: Neo4j username
             password: Neo4j password
         """
         from neo4j import GraphDatabase
-        
+
         self._driver = GraphDatabase.driver(uri, auth=(user, password))
         self._uri = uri
         logger.info("Initialized Neo4j client: %s", uri)
@@ -50,7 +51,7 @@ class RealNeo4jClient:
 
     async def health_check(self) -> bool:
         """Check if Neo4j is reachable.
-        
+
         Returns:
             True if connection successful, False otherwise
         """
@@ -68,7 +69,8 @@ class RealNeo4jClient:
         """Synchronous health check."""
         with self._driver.session() as session:
             result = session.run("RETURN 1 as n")
-            return result.single()["n"] == 1
+            record = result.single()
+            return record is not None and record["n"] == 1
 
     async def search_chapters(
         self,
@@ -77,16 +79,16 @@ class RealNeo4jClient:
         limit: int = 10,
     ) -> list[dict[str, Any]]:
         """Search chapters by concepts and optional tier filter.
-        
+
         This method searches the Neo4j graph for chapters that match
         the given concepts. It uses full-text search on chapter content
         and keywords, then filters by tier if specified.
-        
+
         Args:
             concepts: List of concepts to search for
             tiers: Optional list of tiers to filter by (1, 2, or 3)
             limit: Maximum results to return
-            
+
         Returns:
             List of chapter dicts with:
                 - book: Book title
@@ -114,7 +116,7 @@ class RealNeo4jClient:
         limit: int,
     ) -> list[dict[str, Any]]:
         """Synchronous chapter search implementation.
-        
+
         Note: The actual Neo4j schema uses:
             - book_id (not book)
             - number (not chapter_number)
@@ -127,7 +129,7 @@ class RealNeo4jClient:
         cypher = """
         MATCH (c:Chapter)
         WHERE (
-            ANY(keyword IN coalesce(c.keywords, []) WHERE 
+            ANY(keyword IN coalesce(c.keywords, []) WHERE
                 ANY(concept IN $concepts WHERE toLower(keyword) CONTAINS toLower(concept))
             )
             OR ANY(stored_concept IN coalesce(c.concepts, []) WHERE
@@ -136,8 +138,8 @@ class RealNeo4jClient:
             OR ANY(concept IN $concepts WHERE toLower(coalesce(c.title, '')) CONTAINS toLower(concept))
             OR ANY(concept IN $concepts WHERE toLower(coalesce(c.summary, '')) CONTAINS toLower(concept))
         )
-        WITH c, 
-             size([keyword IN coalesce(c.keywords, []) WHERE 
+        WITH c,
+             size([keyword IN coalesce(c.keywords, []) WHERE
                 ANY(concept IN $concepts WHERE toLower(keyword) CONTAINS toLower(concept))
              ]) as keyword_matches,
              size([stored_concept IN coalesce(c.concepts, []) WHERE
@@ -156,7 +158,7 @@ class RealNeo4jClient:
         ORDER BY similarity DESC
         LIMIT $limit
         """
-        
+
         try:
             with self._driver.session() as session:
                 result = session.run(
@@ -164,7 +166,7 @@ class RealNeo4jClient:
                     concepts=concepts,
                     limit=limit,
                 )
-                
+
                 matches = []
                 for record in result:
                     match = {
@@ -177,14 +179,14 @@ class RealNeo4jClient:
                         "relevance_reason": f"Matched concepts: {', '.join(concepts[:3])}",
                     }
                     matches.append(match)
-                
+
                 logger.info(
                     "Neo4j search found %d chapters for concepts: %s",
                     len(matches),
                     concepts[:3],
                 )
                 return matches
-                
+
         except Exception as e:
             logger.warning("Neo4j query failed, returning empty: %s", e)
             # Return empty list on query failure (graceful degradation)
@@ -205,7 +207,7 @@ def get_neo4j_client() -> RealNeo4jClient | None:
 
 def set_neo4j_client(client: RealNeo4jClient | None) -> None:
     """Set the Neo4j client.
-    
+
     Args:
         client: RealNeo4jClient instance or None to reset
     """
@@ -215,27 +217,27 @@ def set_neo4j_client(client: RealNeo4jClient | None) -> None:
 
 def create_neo4j_client_from_env() -> RealNeo4jClient | None:
     """Create Neo4j client from environment variables.
-    
+
     Expected environment variables:
         - NEO4J_URL: Bolt URI (e.g., bolt://neo4j:7687)
         - NEO4J_USER: Username (default: neo4j)
         - NEO4J_PASSWORD: Password
-        
+
     Returns:
         RealNeo4jClient if all env vars present, None otherwise
     """
     uri = os.getenv("NEO4J_URL")
     user = os.getenv("NEO4J_USER", "neo4j")
     password = os.getenv("NEO4J_PASSWORD")
-    
+
     if not uri:
         logger.warning("NEO4J_URL not set, Neo4j client not initialized")
         return None
-    
+
     if not password:
         logger.warning("NEO4J_PASSWORD not set, Neo4j client not initialized")
         return None
-    
+
     try:
         client = RealNeo4jClient(uri=uri, user=user, password=password)
         logger.info("Created Neo4j client from environment")

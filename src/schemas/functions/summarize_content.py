@@ -11,7 +11,7 @@ Reference: AGENT_FUNCTIONS_ARCHITECTURE.md → Agent Function 2
 """
 
 from enum import Enum
-from typing import Optional
+
 from pydantic import BaseModel, Field
 
 from src.schemas.citations import Citation, CitedContent, SourceMetadata
@@ -19,12 +19,12 @@ from src.schemas.citations import Citation, CitedContent, SourceMetadata
 
 class DetailLevel(str, Enum):
     """Detail level for summarization.
-    
+
     Controls output length and detail:
     - brief: <500 tokens, key points only
     - standard: Balanced summary
     - comprehensive: Detailed with context
-    
+
     Reference: AC-7.5
     """
     BRIEF = "brief"
@@ -34,7 +34,7 @@ class DetailLevel(str, Enum):
 
 class SummaryStyle(str, Enum):
     """Style of summary output.
-    
+
     From AGENT_FUNCTIONS_ARCHITECTURE.md:
     - technical: Technical prose
     - executive: Business-focused summary
@@ -47,7 +47,7 @@ class SummaryStyle(str, Enum):
 
 class SummarizeContentInput(BaseModel):
     """Input schema for summarize_content function.
-    
+
     Reference: AC-7.1, AC-7.5
     """
     content: str = Field(
@@ -58,7 +58,7 @@ class SummarizeContentInput(BaseModel):
         default=DetailLevel.STANDARD,
         description="Level of detail (brief/standard/comprehensive)",
     )
-    target_tokens: Optional[int] = Field(
+    target_tokens: int | None = Field(
         default=None,
         description="Target output token count (overrides detail_level if set)",
     )
@@ -78,7 +78,7 @@ class SummarizeContentInput(BaseModel):
 
 class SummarizeContentOutput(BaseModel):
     """Output schema for summarize_content function.
-    
+
     Reference: AC-7.1, AC-7.2
     """
     summary: str = Field(
@@ -93,20 +93,20 @@ class SummarizeContentOutput(BaseModel):
         default_factory=list,
         description="Key facts preserved in summary (for validation)",
     )
-    compression_ratio: Optional[float] = Field(
+    compression_ratio: float | None = Field(
         default=None,
         ge=0.0,
         description="Output/input token ratio (can exceed 1.0 with citation markers)",
     )
-    token_count: Optional[int] = Field(
+    token_count: int | None = Field(
         default=None,
         ge=0,
         description="Token count of summary",
     )
-    
+
     def to_cited_content(self) -> CitedContent:
         """Convert to CitedContent for pipeline handoff.
-        
+
         Returns:
             CitedContent with text and citations
         """

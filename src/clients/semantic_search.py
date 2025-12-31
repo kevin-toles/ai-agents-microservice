@@ -18,14 +18,13 @@ from typing import Any
 
 import httpx
 
-from src.clients.protocols import SemanticSearchProtocol
-
 from src.agents.msep.constants import (
     DEFAULT_TIMEOUT,
     ENDPOINT_GRAPH_RELATIONSHIPS,
     ENDPOINT_GRAPH_RELATIONSHIPS_BATCH,
     ENDPOINT_SEARCH_HYBRID,
 )
+from src.clients.protocols import SemanticSearchProtocol
 
 
 logger = logging.getLogger(__name__)
@@ -245,23 +244,22 @@ class FakeSemanticSearchClient(SemanticSearchProtocol):
 
     async def search(
         self, query: str, top_k: int = 5
-    ) -> list[dict[str, Any]]:
+    ) -> dict[str, Any]:
         """Return configured mock search results.
 
-        Note: Returns list directly for cross_reference function compatibility.
-        The real MSEPSemanticSearchClient returns a dict with 'results' key,
-        but cross_reference extracts the results list internally.
+        Note: Returns dict with 'results' key to match protocol.
+        The cross_reference function extracts the results list internally.
 
         Args:
             query: Search query (ignored for fake)
             top_k: Maximum results to return
 
         Returns:
-            List of mock search result dicts, limited by top_k.
+            Dict with results list, limited by top_k.
         """
         # Simulate async behavior
         await asyncio.sleep(0)
-        return self._search_results[:top_k]
+        return {"results": self._search_results[:top_k], "total": len(self._search_results)}
 
     async def get_relationships(self, chapter_id: str) -> dict[str, Any]:
         """Return configured mock relationships.

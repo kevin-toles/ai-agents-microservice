@@ -11,4 +11,11 @@ Pattern: Provenance Tracking
 Reference: AGENT_FUNCTIONS_ARCHITECTURE.md → Citation Flow
 """
 
-__all__: list[str] = []
+from src.citations.formatter import ChicagoFormatter
+from src.citations.manager import CitationManager
+
+
+__all__ = [
+    "ChicagoFormatter",
+    "CitationManager",
+]

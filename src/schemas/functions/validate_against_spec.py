@@ -9,14 +9,13 @@ Reference: AGENT_FUNCTIONS_ARCHITECTURE.md → Agent Function 5
 """
 
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
 
 class ViolationSeverity(str, Enum):
     """Severity level for a validation violation."""
-    
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -25,10 +24,10 @@ class ViolationSeverity(str, Enum):
 
 class Violation(BaseModel):
     """A single violation detected during validation.
-    
+
     AC-10.5: Violations include line_number, expected, actual.
     Each violation must have an expected vs actual comparison.
-    
+
     Attributes:
         expected: What was expected according to the specification
         actual: What was actually found in the artifact
@@ -37,7 +36,7 @@ class Violation(BaseModel):
         severity: Severity level of the violation
         criterion_id: Optional ID linking to specific acceptance criterion
     """
-    
+
     expected: str = Field(
         ...,
         description="What was expected according to the specification",
@@ -50,7 +49,7 @@ class Violation(BaseModel):
         ...,
         description="Human-readable description of the violation",
     )
-    line_number: Optional[int] = Field(
+    line_number: int | None = Field(
         default=None,
         description="Line number where violation occurs",
     )
@@ -58,7 +57,7 @@ class Violation(BaseModel):
         default=ViolationSeverity.ERROR,
         description="Severity level of the violation",
     )
-    criterion_id: Optional[str] = Field(
+    criterion_id: str | None = Field(
         default=None,
         description="ID linking to specific acceptance criterion",
     )
@@ -66,14 +65,14 @@ class Violation(BaseModel):
 
 class ValidationResult(BaseModel):
     """Result of validating an artifact against a specification.
-    
+
     AC-10.2: Returns ValidationResult with compliance %, violations.
-    
+
     Exit Criteria:
     - compliance_percentage is 0-100 float
     - Each Violation has expected vs actual comparison
     - Empty violations list → compliance_percentage = 100.0
-    
+
     Attributes:
         valid: Whether the artifact passes validation
         violations: List of violations found
@@ -81,7 +80,7 @@ class ValidationResult(BaseModel):
         confidence: Confidence level of the validation (0.0-1.0)
         remediation_hints: List of hints to fix violations
     """
-    
+
     valid: bool = Field(
         default=True,
         description="Whether the artifact passes validation",
@@ -106,7 +105,7 @@ class ValidationResult(BaseModel):
         default_factory=list,
         description="List of hints to fix violations",
     )
-    
+
     @field_validator("compliance_percentage")
     @classmethod
     def validate_compliance_percentage(cls, v: float) -> float:
@@ -114,7 +113,7 @@ class ValidationResult(BaseModel):
         if v < 0.0 or v > 100.0:
             raise ValueError("compliance_percentage must be between 0 and 100")
         return v
-    
+
     @field_validator("confidence")
     @classmethod
     def validate_confidence(cls, v: float) -> float:
@@ -126,16 +125,16 @@ class ValidationResult(BaseModel):
 
 class ValidateAgainstSpecInput(BaseModel):
     """Input schema for validate_against_spec function.
-    
+
     AC-10.1: Compares artifact against specification.
-    
+
     Attributes:
         artifact: The code or content to validate
         specification: The original requirement/specification
         invariants: List of invariants from upstream summarize_content
         acceptance_criteria: List of acceptance criteria to check
     """
-    
+
     artifact: str = Field(
         ...,
         description="The code or content to validate",
@@ -155,8 +154,8 @@ class ValidateAgainstSpecInput(BaseModel):
 
 
 __all__ = [
-    "ViolationSeverity",
-    "Violation",
-    "ValidationResult",
     "ValidateAgainstSpecInput",
+    "ValidationResult",
+    "Violation",
+    "ViolationSeverity",
 ]

@@ -10,6 +10,8 @@ Anti-Patterns Avoided (per CODING_PATTERNS_ANALYSIS.md):
 
 from __future__ import annotations
 
+import os
+
 
 # =============================================================================
 # Taxonomy Constants (AC-TAX-2)
@@ -172,9 +174,6 @@ ENDPOINT_GRAPH_RELATIONSHIPS_BATCH: str = "/v1/graph/relationships/batch"
 # =============================================================================
 # Service Base URLs (Environment-Configurable)
 # =============================================================================
-
-import os
-
 
 SERVICE_CODE_ORCHESTRATOR_URL: str = os.environ.get(
     "CODE_ORCHESTRATOR_URL", "http://localhost:8083"

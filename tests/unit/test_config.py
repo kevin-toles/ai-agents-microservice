@@ -16,15 +16,21 @@ class TestSettings:
     """Tests for Settings configuration class."""
     
     def test_settings_default_values(self) -> None:
-        """Test that Settings has sensible defaults."""
-        settings = Settings()
+        """Test that Settings has sensible defaults.
         
-        assert settings.neo4j_uri == "bolt://localhost:7687"
-        assert settings.neo4j_user == "neo4j"
-        assert settings.llm_gateway_url == "http://localhost:8080"
-        assert settings.semantic_search_url == "http://localhost:8081"
-        assert settings.log_level == "INFO"
-        assert settings.environment == "development"
+        Note: Environment variables may override defaults, so we check the
+        Field defaults from the model rather than instantiated values.
+        """
+        # Check the Field defaults directly
+        from src.core.config import Settings as SettingsClass
+        
+        fields = SettingsClass.model_fields
+        assert fields["neo4j_uri"].default == "bolt://localhost:7687"
+        assert fields["neo4j_user"].default == "neo4j"
+        assert fields["llm_gateway_url"].default == "http://localhost:8080"
+        assert fields["semantic_search_url"].default == "http://localhost:8081"
+        assert fields["log_level"].default == "INFO"
+        assert fields["environment"].default == "development"
     
     def test_settings_from_environment(self) -> None:
         """Test that Settings loads from environment variables."""

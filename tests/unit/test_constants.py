@@ -102,30 +102,30 @@ class TestContextBudgetDefaults:
     def test_defaults_defined(self) -> None:
         """Test context budget defaults are defined."""
         assert "extract_structure" in CONTEXT_BUDGET_DEFAULTS
-        assert "identify_patterns" in CONTEXT_BUDGET_DEFAULTS
-        assert "summarize_module" in CONTEXT_BUDGET_DEFAULTS
-        assert "default" in CONTEXT_BUDGET_DEFAULTS
+        assert "summarize_content" in CONTEXT_BUDGET_DEFAULTS
+        assert "cross_reference" in CONTEXT_BUDGET_DEFAULTS
     
     def test_budget_format(self) -> None:
-        """Test budget values are tuples of (input, output)."""
+        """Test budget values are dicts with input/output keys."""
         budget = CONTEXT_BUDGET_DEFAULTS["extract_structure"]
-        assert isinstance(budget, tuple)
-        assert len(budget) == 2
-        assert budget == (16384, 2048)
+        assert isinstance(budget, dict)
+        assert "input" in budget
+        assert "output" in budget
+        assert budget == {"input": 16384, "output": 2048}
     
     def test_get_context_budget_known_function(self) -> None:
         """Test get_context_budget returns correct budget for known function."""
-        input_limit, output_limit = get_context_budget("extract_structure")
+        budget = get_context_budget("extract_structure")
         
-        assert input_limit == 16384
-        assert output_limit == 2048
+        assert budget["input"] == 16384
+        assert budget["output"] == 2048
     
     def test_get_context_budget_unknown_function(self) -> None:
         """Test get_context_budget returns default for unknown function."""
-        input_limit, output_limit = get_context_budget("unknown_function")
+        budget = get_context_budget("unknown_function")
         
-        assert input_limit == 8192  # default input
-        assert output_limit == 1024  # default output
+        assert budget["input"] == 4096  # default input
+        assert budget["output"] == 2048  # default output
 
 
 class TestAPIConstants:

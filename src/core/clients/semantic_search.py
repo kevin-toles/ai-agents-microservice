@@ -257,42 +257,42 @@ class SemanticSearchClient:
         chapter_number: int,
     ) -> dict[str, Any] | None:
         """Retrieve chapter content from semantic-search.
-        
+
         This follows the Kitchen Brigade architecture where ai-agents
         (Expeditor) retrieves content through semantic-search (Cookbook).
-        
+
         Args:
             book_id: Book identifier (e.g., "test_book_metadata")
             chapter_number: Chapter number (1-indexed)
-            
+
         Returns:
             Dict with chapter content and metadata, or None if not found.
-            Keys: book_id, chapter_number, title, summary, keywords, 
+            Keys: book_id, chapter_number, title, summary, keywords,
                   concepts, page_range, found
         """
         client = await self._get_client()
-        
+
         logger.debug(
             "Chapter content request",
             extra={"book_id": book_id, "chapter_number": chapter_number},
         )
-        
+
         try:
             response = await client.get(
                 f"/v1/chapters/{book_id}/{chapter_number}"
             )
             response.raise_for_status()
             data = response.json()
-            
+
             # Check if chapter was found
             if not data.get("found", False):
                 logger.info(
                     "Chapter not found: %s/%d", book_id, chapter_number
                 )
                 return None
-            
+
             return data
-            
+
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
                 logger.info(

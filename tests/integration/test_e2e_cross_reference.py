@@ -20,6 +20,7 @@ from src.agents.cross_reference.agent import CrossReferenceAgent
 from src.agents.cross_reference.state import (
     ChapterMatch,
     Citation,
+    CrossReferenceInput,
     CrossReferenceResult,
     SourceChapter,
     TierCoverage,
@@ -447,18 +448,16 @@ class TestE2EWorkflowSteps:
         )
         
         agent = CrossReferenceAgent()
-        input_data = {
-            "book": "A Philosophy of Software Design",
-            "chapter": 3,
-            "title": "Working Code Isn't Enough",
-            "tier": 1,
-        }
+        input_data = CrossReferenceInput(
+            book="A Philosophy of Software Design",
+            chapter=3,
+            title="Working Code Isn't Enough",
+            tier=1,
+        )
         
         # Run synchronously since we're using mock
         import asyncio
-        result = asyncio.get_event_loop().run_until_complete(
-            agent.run(input_data)
-        )
+        result = asyncio.run(agent.run(input_data))
         
         # Result should be returned (workflow completed)
         assert result is not None
@@ -484,17 +483,15 @@ class TestE2EWorkflowSteps:
         )
         
         agent = CrossReferenceAgent()
-        input_data = {
-            "book": "A Philosophy of Software Design",
-            "chapter": 3,
-            "title": "Working Code Isn't Enough",
-            "tier": 1,
-        }
+        input_data = CrossReferenceInput(
+            book="A Philosophy of Software Design",
+            chapter=3,
+            title="Working Code Isn't Enough",
+            tier=1,
+        )
         
         import asyncio
-        result = asyncio.get_event_loop().run_until_complete(
-            agent.run(input_data)
-        )
+        result = asyncio.run(agent.run(input_data))
         
         # Result should have tier coverage for all 3 tiers
         assert result is not None

@@ -1,6 +1,6 @@
 """MSEP module for Multi-Stage Enrichment Pipeline.
 
-This module contains all MSEP-related schemas, configuration, constants, 
+This module contains all MSEP-related schemas, configuration, constants,
 and exceptions for the ai-agents service (Expeditor role in Kitchen Brigade).
 
 Kitchen Brigade Role: EXPEDITOR
@@ -12,47 +12,48 @@ Kitchen Brigade Role: EXPEDITOR
 from __future__ import annotations
 
 from src.agents.msep.constants import (
-    SAME_TOPIC_BOOST,
     DEFAULT_THRESHOLD,
-    DEFAULT_TOP_K,
     DEFAULT_TIMEOUT,
-    MIN_THRESHOLD,
-    MAX_THRESHOLD,
-    THRESHOLD_ADJUSTMENT,
-    SMALL_CORPUS_THRESHOLD,
+    DEFAULT_TOP_K,
     LARGE_CORPUS_THRESHOLD,
-    SERVICE_CODE_ORCHESTRATOR,
-    SERVICE_SEMANTIC_SEARCH,
-    METHOD_SBERT,
-    METHOD_TFIDF,
+    MAX_THRESHOLD,
     METHOD_BERTOPIC,
     METHOD_HYBRID,
+    METHOD_SBERT,
+    METHOD_TFIDF,
+    MIN_THRESHOLD,
+    SAME_TOPIC_BOOST,
+    SERVICE_CODE_ORCHESTRATOR,
+    SERVICE_SEMANTIC_SEARCH,
+    SMALL_CORPUS_THRESHOLD,
+    THRESHOLD_ADJUSTMENT,
 )
 from src.agents.msep.exceptions import (
-    MSEPError,
     EnrichmentTimeoutError,
+    MSEPError,
     ServiceUnavailableError,
 )
 
+
 __all__ = [
-    # Constants
-    "SAME_TOPIC_BOOST",
     "DEFAULT_THRESHOLD",
-    "DEFAULT_TOP_K",
     "DEFAULT_TIMEOUT",
-    "MIN_THRESHOLD",
-    "MAX_THRESHOLD",
-    "THRESHOLD_ADJUSTMENT",
-    "SMALL_CORPUS_THRESHOLD",
+    "DEFAULT_TOP_K",
     "LARGE_CORPUS_THRESHOLD",
-    "SERVICE_CODE_ORCHESTRATOR",
-    "SERVICE_SEMANTIC_SEARCH",
-    "METHOD_SBERT",
-    "METHOD_TFIDF",
+    "MAX_THRESHOLD",
     "METHOD_BERTOPIC",
     "METHOD_HYBRID",
+    "METHOD_SBERT",
+    "METHOD_TFIDF",
+    "MIN_THRESHOLD",
+    # Constants
+    "SAME_TOPIC_BOOST",
+    "SERVICE_CODE_ORCHESTRATOR",
+    "SERVICE_SEMANTIC_SEARCH",
+    "SMALL_CORPUS_THRESHOLD",
+    "THRESHOLD_ADJUSTMENT",
+    "EnrichmentTimeoutError",
     # Exceptions
     "MSEPError",
-    "EnrichmentTimeoutError",
     "ServiceUnavailableError",
 ]

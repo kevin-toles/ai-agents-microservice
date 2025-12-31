@@ -28,13 +28,13 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 class MatchType(str, Enum):
     """Match type enum for cross_reference search.
-    
+
     Per architecture:
     - semantic: Vector similarity search
     - keyword: Traditional keyword/BM25 search
     - hybrid: Combination of semantic and keyword
     """
-    
+
     SEMANTIC = "semantic"
     KEYWORD = "keyword"
     HYBRID = "hybrid"

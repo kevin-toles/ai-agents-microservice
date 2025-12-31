@@ -6,13 +6,13 @@ Reference: AGENT_FUNCTIONS_ARCHITECTURE.md → Agent Function 1
 """
 
 from enum import Enum
-from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
 class ArtifactType(str, Enum):
     """Type of artifact being processed.
-    
+
     Controls the parsing strategy:
     - AUTO: Detect type from content
     - JSON: Parse as JSON structure
@@ -27,7 +27,7 @@ class ArtifactType(str, Enum):
 
 class ExtractionType(str, Enum):
     """Type of extraction to perform.
-    
+
     From AGENT_FUNCTIONS_ARCHITECTURE.md:
     - keywords: Extract key terms
     - concepts: Extract domain concepts
@@ -42,7 +42,7 @@ class ExtractionType(str, Enum):
 
 class ExtractStructureInput(BaseModel):
     """Input schema for extract_structure function.
-    
+
     Reference: AC-6.1, AC-6.5
     """
     content: str = Field(
@@ -65,7 +65,7 @@ class ExtractStructureInput(BaseModel):
 
 class Heading(BaseModel):
     """Heading extracted from document structure.
-    
+
     Reference: AC-6.2 - Markdown H1-H6 support
     """
     level: int = Field(
@@ -78,7 +78,7 @@ class Heading(BaseModel):
         ...,
         description="Heading text content",
     )
-    line_number: Optional[int] = Field(
+    line_number: int | None = Field(
         default=None,
         description="Line number in source for audit",
     )
@@ -90,7 +90,7 @@ class Heading(BaseModel):
 
 class Section(BaseModel):
     """Section extracted from document structure.
-    
+
     Reference: AC-6.2 - Sections with depth tracking
     """
     title: str = Field(
@@ -106,11 +106,11 @@ class Section(BaseModel):
         ge=0,
         description="Nesting depth (0 = top level)",
     )
-    start_line: Optional[int] = Field(
+    start_line: int | None = Field(
         default=None,
         description="Starting line number for audit",
     )
-    end_line: Optional[int] = Field(
+    end_line: int | None = Field(
         default=None,
         description="Ending line number for audit",
     )
@@ -118,22 +118,22 @@ class Section(BaseModel):
 
 class CodeBlock(BaseModel):
     """Code block extracted from content.
-    
+
     Reference: AC-6.2 - code_blocks in output
     """
     code: str = Field(
         ...,
         description="Code content",
     )
-    language: Optional[str] = Field(
+    language: str | None = Field(
         default=None,
         description="Programming language (if detected)",
     )
-    start_line: Optional[int] = Field(
+    start_line: int | None = Field(
         default=None,
         description="Starting line number",
     )
-    end_line: Optional[int] = Field(
+    end_line: int | None = Field(
         default=None,
         description="Ending line number",
     )
@@ -141,7 +141,7 @@ class CodeBlock(BaseModel):
 
 class ExtractedItem(BaseModel):
     """Extracted item for keywords/concepts/entities.
-    
+
     From AGENT_FUNCTIONS_ARCHITECTURE.md:
     - Structured items with confidence scores
     - Source locations for audit
@@ -156,7 +156,7 @@ class ExtractedItem(BaseModel):
         le=1.0,
         description="Confidence score (0.0 to 1.0)",
     )
-    category: Optional[str] = Field(
+    category: str | None = Field(
         default=None,
         description="Category or type of the extracted item",
     )
@@ -168,9 +168,9 @@ class ExtractedItem(BaseModel):
 
 class StructuredOutput(BaseModel):
     """Output schema for extract_structure function.
-    
+
     Reference: AC-6.2 - headings, sections, code_blocks
-    
+
     From AGENT_FUNCTIONS_ARCHITECTURE.md:
     - extracted: list[dict] → Structured items with confidence scores
     - raw_positions: list → Source locations for audit
@@ -196,7 +196,7 @@ class StructuredOutput(BaseModel):
         default_factory=list,
         description="Source positions for audit",
     )
-    compressed_summary: Optional[str] = Field(
+    compressed_summary: str | None = Field(
         default=None,
         description="Compressed summary for downstream (max 500 tokens)",
     )

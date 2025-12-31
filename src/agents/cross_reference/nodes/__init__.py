@@ -16,47 +16,48 @@ from src.agents.cross_reference.nodes.analyze_source import (
     get_llm_client,
     set_llm_client,
 )
-from src.agents.cross_reference.nodes.search_taxonomy import (
-    search_taxonomy,
-    get_neo4j_client,
-    set_neo4j_client,
-)
-from src.agents.cross_reference.nodes.traverse_graph import (
-    traverse_graph,
-    get_graph_client,
-    set_graph_client,
-)
 from src.agents.cross_reference.nodes.retrieve_content import (
-    retrieve_content,
     get_content_client,
+    retrieve_content,
     set_content_client,
 )
+from src.agents.cross_reference.nodes.search_taxonomy import (
+    get_neo4j_client,
+    search_taxonomy,
+    set_neo4j_client,
+)
 from src.agents.cross_reference.nodes.synthesize import (
-    synthesize,
     get_synthesis_client,
     set_synthesis_client,
+    synthesize,
 )
+from src.agents.cross_reference.nodes.traverse_graph import (
+    get_graph_client,
+    set_graph_client,
+    traverse_graph,
+)
+
 
 __all__ = [
     # Workflow nodes
     "analyze_source",
-    "search_taxonomy",
-    "traverse_graph",
-    "retrieve_content",
-    "synthesize",
-    # Dependency injection - LLM
-    "get_llm_client",
-    "set_llm_client",
-    # Dependency injection - Neo4j
-    "get_neo4j_client",
-    "set_neo4j_client",
-    # Dependency injection - Graph
-    "get_graph_client",
-    "set_graph_client",
     # Dependency injection - Content
     "get_content_client",
-    "set_content_client",
+    # Dependency injection - Graph
+    "get_graph_client",
+    # Dependency injection - LLM
+    "get_llm_client",
+    # Dependency injection - Neo4j
+    "get_neo4j_client",
     # Dependency injection - Synthesis
     "get_synthesis_client",
+    "retrieve_content",
+    "search_taxonomy",
+    "set_content_client",
+    "set_graph_client",
+    "set_llm_client",
+    "set_neo4j_client",
     "set_synthesis_client",
+    "synthesize",
+    "traverse_graph",
 ]

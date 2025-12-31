@@ -71,7 +71,7 @@ class DecomposeTaskFunction(AgentFunction):
     name: str = "decompose_task"
     default_preset: str = "S2"  # DeepSeek for chain-of-thought
 
-    async def run(
+    async def run(  # type: ignore[override]
         self,
         *,
         task: str,
@@ -238,9 +238,9 @@ class DecomposeTaskFunction(AgentFunction):
         parts = re.split(r'\s+(?:and|then|,)\s+', task, flags=re.IGNORECASE)
 
         for part in parts:
-            part = part.strip()
-            if part and len(part) > 5:  # Skip very short fragments
-                actions.append(part)
+            stripped_part = part.strip()
+            if stripped_part and len(stripped_part) > 5:  # Skip very short fragments
+                actions.append(stripped_part)
 
         # If no split occurred but task is complex, create logical steps
         if len(actions) <= 1 and len(task) > 50:

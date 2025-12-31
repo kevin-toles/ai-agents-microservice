@@ -1,0 +1,117 @@
+# Docker Compose - Integration Test Environment
+#
+# WBS Reference: WBS-AGT20 Integration Testing (AGT20.8)
+# Purpose: Define test environment for integration tests
+#
+# Usage:
+#   docker-compose -f docker/docker-compose.test.yml up -d
+#   pytest tests/integration/ -m "not slow"
+#   docker-compose -f docker/docker-compose.test.yml down
+
+version: "3.8"
+
+services:
+  # AI Agents Service (main service under test)
+  ai-agents:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: ai-agents-test
+    ports:
+      - "8082:8082"
+    environment:
+      - ENV=test
+      - LOG_LEVEL=DEBUG
+      - INFERENCE_SERVICE_URL=http://inference-service:8085
+      - SEMANTIC_SEARCH_URL=http://semantic-search:8081
+      - AUDIT_SERVICE_URL=http://audit-service:8084
+    depends_on:
+      - inference-service
+      - semantic-search
+      - audit-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - ai-agents-test-network
+
+  # Inference Service (mock or real)
+  inference-service:
+    image: inference-service:test
+    build:
+      context: ../../inference-service
+      dockerfile: docker/Dockerfile
+      args:
+        - BUILD_ENV=test
+    container_name: inference-service-test
+    ports:
+      - "8085:8085"
+    environment:
+      - ENV=test
+      - LOG_LEVEL=DEBUG
+      - MODEL_PATH=/models
+    volumes:
+      - inference-models:/models:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - ai-agents-test-network
+
+  # Semantic Search Service
+  semantic-search:
+    image: semantic-search-service:test
+    build:
+      context: ../../semantic-search-service
+      dockerfile: Dockerfile
+      args:
+        - BUILD_ENV=test
+    container_name: semantic-search-test
+    ports:
+      - "8081:8081"
+    environment:
+      - ENV=test
+      - LOG_LEVEL=DEBUG
+      - EMBEDDING_MODEL=all-MiniLM-L6-v2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - ai-agents-test-network
+
+  # Audit Service (mock for testing)
+  audit-service:
+    image: audit-service:test
+    build:
+      context: ../../llm-gateway
+      dockerfile: Dockerfile
+      args:
+        - BUILD_ENV=test
+    container_name: audit-service-test
+    ports:
+      - "8084:8084"
+    environment:
+      - ENV=test
+      - LOG_LEVEL=DEBUG
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - ai-agents-test-network
+
+networks:
+  ai-agents-test-network:
+    driver: bridge
+    name: ai-agents-test-network
+
+volumes:
+  inference-models:
+    name: ai-agents-test-models

@@ -12,14 +12,14 @@ from typing import Any
 
 class AgentError(Exception):
     """Base exception for all agent-related errors.
-    
+
     All agent exceptions inherit from this class to enable
     catching any agent error with a single except clause.
     """
-    
+
     def __init__(self, message: str, agent_name: str | None = None) -> None:
         """Initialize agent error.
-        
+
         Args:
             message: Error description
             agent_name: Name of the agent that raised the error
@@ -30,11 +30,11 @@ class AgentError(Exception):
 
 class AgentConnectionError(AgentError):
     """Raised when connection to an external service fails.
-    
+
     Distinct from Python's built-in ConnectionError to avoid
     exception shadowing (Comp_Static_Analysis #7).
     """
-    
+
     def __init__(
         self,
         message: str,
@@ -44,7 +44,7 @@ class AgentConnectionError(AgentError):
         agent_name: str | None = None,
     ) -> None:
         """Initialize connection error.
-        
+
         Args:
             message: Error description
             service: Name of the service that failed
@@ -60,11 +60,11 @@ class AgentConnectionError(AgentError):
 
 class AgentExecutionError(AgentError):
     """Raised when agent execution fails.
-    
+
     This covers general execution failures that don't fit
     more specific error categories.
     """
-    
+
     def __init__(
         self,
         message: str,
@@ -73,7 +73,7 @@ class AgentExecutionError(AgentError):
         agent_name: str | None = None,
     ) -> None:
         """Initialize execution error.
-        
+
         Args:
             message: Error description
             step: The workflow step that failed
@@ -89,11 +89,11 @@ class AgentExecutionError(AgentError):
 
 class AgentValidationError(AgentError):
     """Raised when input validation fails.
-    
+
     Distinct from Python's built-in ValueError to provide
     structured error information for API responses.
     """
-    
+
     def __init__(
         self,
         message: str,
@@ -103,7 +103,7 @@ class AgentValidationError(AgentError):
         agent_name: str | None = None,
     ) -> None:
         """Initialize validation error.
-        
+
         Args:
             message: Error description
             field: The field that failed validation
@@ -119,11 +119,11 @@ class AgentValidationError(AgentError):
 
 class AgentTimeoutError(AgentError):
     """Raised when agent execution exceeds timeout.
-    
+
     Distinct from Python's built-in TimeoutError to avoid
     exception shadowing (Comp_Static_Analysis #7).
     """
-    
+
     def __init__(
         self,
         message: str,
@@ -133,7 +133,7 @@ class AgentTimeoutError(AgentError):
         agent_name: str | None = None,
     ) -> None:
         """Initialize timeout error.
-        
+
         Args:
             message: Error description
             operation: The operation that timed out
@@ -149,11 +149,11 @@ class AgentTimeoutError(AgentError):
 
 class ToolExecutionError(AgentError):
     """Raised when a tool execution fails.
-    
+
     Tools are the functions that agents can invoke to
     interact with external systems (search, graph, etc.).
     """
-    
+
     def __init__(
         self,
         message: str,
@@ -161,7 +161,7 @@ class ToolExecutionError(AgentError):
         agent_name: str | None = None,
     ) -> None:
         """Initialize tool error.
-        
+
         Args:
             message: Error description
             tool_name: Name of the tool that failed
@@ -173,11 +173,11 @@ class ToolExecutionError(AgentError):
 
 class PlanningError(AgentError):
     """Raised when agent planning fails.
-    
+
     Planning errors occur when the agent cannot create
     a valid execution plan for the given task.
     """
-    
+
     def __init__(
         self,
         message: str,
@@ -185,7 +185,7 @@ class PlanningError(AgentError):
         agent_name: str | None = None,
     ) -> None:
         """Initialize planning error.
-        
+
         Args:
             message: Error description
             task: The task that failed planning
@@ -197,10 +197,10 @@ class PlanningError(AgentError):
 
 class ClientError(AgentError):
     """Raised when an external service client fails.
-    
+
     This is the base class for service-specific client errors.
     """
-    
+
     def __init__(
         self,
         message: str,
@@ -208,7 +208,7 @@ class ClientError(AgentError):
         status_code: int | None = None,
     ) -> None:
         """Initialize client error.
-        
+
         Args:
             message: Error description
             service_name: Name of the external service
@@ -221,20 +221,20 @@ class ClientError(AgentError):
 
 class GatewayClientError(ClientError):
     """Raised when LLM Gateway client fails."""
-    
+
     def __init__(self, message: str, status_code: int | None = None) -> None:
         super().__init__(message, "llm-gateway", status_code)
 
 
 class SearchClientError(ClientError):
     """Raised when Semantic Search client fails."""
-    
+
     def __init__(self, message: str, status_code: int | None = None) -> None:
         super().__init__(message, "semantic-search", status_code)
 
 
 class GraphClientError(ClientError):
     """Raised when Graph (Neo4j) client fails."""
-    
+
     def __init__(self, message: str, status_code: int | None = None) -> None:
         super().__init__(message, "neo4j", status_code)

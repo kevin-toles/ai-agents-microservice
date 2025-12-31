@@ -16,14 +16,13 @@ Anti-Patterns Avoided (per CODING_PATTERNS_ANALYSIS.md):
 from __future__ import annotations
 
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from src.agents.msep.constants import (
     LARGE_CORPUS_THRESHOLD,
     MAX_THRESHOLD,
     METHOD_BERTOPIC,
     METHOD_SBERT,
-    METHOD_TFIDF,
     MIN_THRESHOLD,
     SAME_TOPIC_BOOST,
     SMALL_CORPUS_THRESHOLD,
@@ -500,7 +499,7 @@ def build_provenance(
     Returns:
         Provenance dataclass with timestamp.
     """
-    timestamp = datetime.now(timezone.utc).isoformat()
+    timestamp = datetime.now(UTC).isoformat()
 
     return Provenance(
         methods_used=methods_used,
