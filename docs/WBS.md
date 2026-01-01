@@ -1063,3 +1063,43 @@ AGT6    AGT7   AGT8   AGT9  AGT10  AGT11  AGT12  AGT13
 |---------|------|---------|
 | 1.0.0 | 2025-12-29 | Initial WBS based on AGENT_FUNCTIONS_ARCHITECTURE.md v1.2.0 |
 | 1.1.0 | 2025-12-29 | Added WBS-AGT21-24: Code Reference Engine, Neo4j, Book/JSON, and Unified Knowledge Retrieval integration |
+| 1.2.0 | 2025-12-31 | Added forward reference to WBS_KITCHEN_BRIGADE.md for iterative discussion pipeline |
+
+---
+
+## Forward Reference: Kitchen Brigade Architecture
+
+This WBS provides the **foundation** for the Kitchen Brigade Architecture. For the **iterative LLM discussion pipeline** that enables agents to work alongside VS Code Copilot, see:
+
+**[WBS_KITCHEN_BRIGADE.md](./WBS_KITCHEN_BRIGADE.md)**
+
+The Kitchen Brigade WBS builds upon:
+- **WBS-AGT14** (Pipeline Orchestrator) — for ParallelAgent composition
+- **WBS-AGT17** (Citation Flow) — for provenance tracking
+- **WBS-AGT20** (Integration Testing) — extended with discussion-specific tests
+- **WBS-AGT21-24** (Knowledge Retrieval) — for evidence gathering
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    THIS WBS (Foundation)                        │
+│                                                                 │
+│   AGT1-5 → AGT6-13 → AGT14 → AGT15-17 → AGT18-20               │
+│                 │                                               │
+│                 ├────────────────────────────────────┐         │
+│                 │                                    │         │
+│                 ▼                                    ▼         │
+│           AGT21-24                           (Extension)       │
+│           (Knowledge)                              │           │
+│                 │                                  │           │
+└─────────────────┼──────────────────────────────────┼───────────┘
+                  │                                  │
+                  └──────────────┬───────────────────┘
+                                 │
+                                 ▼
+                  ┌──────────────────────────────────┐
+                  │    WBS_KITCHEN_BRIGADE.md        │
+                  │    (Iterative Discussion)        │
+                  │                                  │
+                  │    KB1-4 → KB5-6 → KB7-8 → KB9   │
+                  └──────────────────────────────────┘
+```
