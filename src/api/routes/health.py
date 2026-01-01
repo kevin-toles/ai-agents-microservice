@@ -196,19 +196,53 @@ def get_uptime_seconds() -> float | None:
 # Dependency Checks
 # =============================================================================
 
+import httpx
+
+# Dependency URLs (configurable via env vars)
+# Use container names for Docker network communication
+# Reference: ai-platform-data/docs/NETWORK_ARCHITECTURE.md
+LLM_GATEWAY_URL = os.environ.get("AI_AGENTS_LLM_GATEWAY_URL", "http://llm-gateway-standalone:8080")
+SEMANTIC_SEARCH_URL = os.environ.get("SEMANTIC_SEARCH_URL", "http://semantic-search-service:8081")
+NEO4J_URL = os.environ.get("AI_AGENTS_NEO4J_URI", "bolt://neo4j:7687")
+
+
 async def check_llm_gateway() -> DependencyHealth:
     """Check LLM Gateway connectivity.
 
     Returns:
         DependencyHealth for llm-gateway
     """
-    # For now, return a placeholder
-    # Real implementation would make HTTP call to llm-gateway:8081/health
-    return DependencyHealth(
-        name="llm-gateway",
-        status=DependencyStatus.UNKNOWN,
-        message="Health check not implemented",
-    )
+    try:
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            start = datetime.now(UTC)
+            response = await client.get(f"{LLM_GATEWAY_URL}/health")
+            latency = (datetime.now(UTC) - start).total_seconds() * 1000
+            
+            if response.status_code == 200:
+                return DependencyHealth(
+                    name="llm-gateway",
+                    status=DependencyStatus.UP,
+                    latency_ms=latency,
+                    message="OK",
+                )
+            return DependencyHealth(
+                name="llm-gateway",
+                status=DependencyStatus.DOWN,
+                latency_ms=latency,
+                message=f"HTTP {response.status_code}",
+            )
+    except httpx.ConnectError:
+        return DependencyHealth(
+            name="llm-gateway",
+            status=DependencyStatus.DOWN,
+            message="Connection refused",
+        )
+    except Exception as e:
+        return DependencyHealth(
+            name="llm-gateway",
+            status=DependencyStatus.DOWN,
+            message=str(e)[:50],
+        )
 
 
 async def check_semantic_search() -> DependencyHealth:
@@ -217,13 +251,37 @@ async def check_semantic_search() -> DependencyHealth:
     Returns:
         DependencyHealth for semantic-search-service
     """
-    # For now, return a placeholder
-    # Real implementation would make HTTP call to semantic-search-service:8084/health
-    return DependencyHealth(
-        name="semantic-search-service",
-        status=DependencyStatus.UNKNOWN,
-        message="Health check not implemented",
-    )
+    try:
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            start = datetime.now(UTC)
+            response = await client.get(f"{SEMANTIC_SEARCH_URL}/health")
+            latency = (datetime.now(UTC) - start).total_seconds() * 1000
+            
+            if response.status_code == 200:
+                return DependencyHealth(
+                    name="semantic-search-service",
+                    status=DependencyStatus.UP,
+                    latency_ms=latency,
+                    message="OK",
+                )
+            return DependencyHealth(
+                name="semantic-search-service",
+                status=DependencyStatus.DOWN,
+                latency_ms=latency,
+                message=f"HTTP {response.status_code}",
+            )
+    except httpx.ConnectError:
+        return DependencyHealth(
+            name="semantic-search-service",
+            status=DependencyStatus.DOWN,
+            message="Connection refused",
+        )
+    except Exception as e:
+        return DependencyHealth(
+            name="semantic-search-service",
+            status=DependencyStatus.DOWN,
+            message=str(e)[:50],
+        )
 
 
 async def check_neo4j() -> DependencyHealth:
@@ -231,13 +289,21 @@ async def check_neo4j() -> DependencyHealth:
 
     Returns:
         DependencyHealth for neo4j
+
+    Note: Neo4j check is optional - returns UP if not configured
     """
-    # For now, return a placeholder
-    # Real implementation would query Neo4j
+    # Neo4j is optional for basic operation
+    # TODO: Implement actual Neo4j driver ping if neo4j is configured
+    if NEO4J_URL == "bolt://localhost:7687":
+        return DependencyHealth(
+            name="neo4j",
+            status=DependencyStatus.UP,
+            message="Optional (not configured)",
+        )
     return DependencyHealth(
         name="neo4j",
         status=DependencyStatus.UNKNOWN,
-        message="Health check not implemented",
+        message="Neo4j check not implemented",
     )
 
 

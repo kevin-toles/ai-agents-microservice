@@ -37,16 +37,16 @@ services:
       AI_AGENTS_ENVIRONMENT: ${AI_AGENTS_ENVIRONMENT:-development}
       AI_AGENTS_LOG_LEVEL: ${AI_AGENTS_LOG_LEVEL:-INFO}
       
-      # External service URLs - Kitchen Brigade dependencies
+      # External service URLs - Kitchen Brigade dependencies (use container names)
       # Code-Orchestrator-Service (Sous Chef) on port 8083
-      CODE_ORCHESTRATOR_URL: ${CODE_ORCHESTRATOR_URL:-http://host.docker.internal:8083}
+      CODE_ORCHESTRATOR_URL: ${CODE_ORCHESTRATOR_URL:-http://code-orchestrator-service:8083}
       # semantic-search-service (Cookbook) on port 8081
-      SEMANTIC_SEARCH_URL: ${SEMANTIC_SEARCH_URL:-http://host.docker.internal:8081}
+      SEMANTIC_SEARCH_URL: ${SEMANTIC_SEARCH_URL:-http://semantic-search-service:8081}
       # llm-gateway (Router) on port 8080
-      AI_AGENTS_LLM_GATEWAY_URL: ${AI_AGENTS_LLM_GATEWAY_URL:-http://host.docker.internal:8080}
+      AI_AGENTS_LLM_GATEWAY_URL: ${AI_AGENTS_LLM_GATEWAY_URL:-http://llm-gateway-standalone:8080}
       
-      # Neo4j configuration
-      AI_AGENTS_NEO4J_URI: ${AI_AGENTS_NEO4J_URI:-bolt://host.docker.internal:7687}
+      # Neo4j configuration (use container name on data-network)
+      AI_AGENTS_NEO4J_URI: ${AI_AGENTS_NEO4J_URI:-bolt://neo4j:7687}
       AI_AGENTS_NEO4J_USER: ${AI_AGENTS_NEO4J_USER:-neo4j}
       AI_AGENTS_NEO4J_PASSWORD: ${AI_AGENTS_NEO4J_PASSWORD:-devpassword}
       
@@ -67,8 +67,9 @@ services:
       start_period: 10s
     restart: unless-stopped
     networks:
-      - ai-agents-network
-    # For connecting to host services (llm-gateway, semantic-search, neo4j)
+      - ai-platform-network
+      - data-network
+    # For connecting to host services (inference-service)
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -96,20 +97,20 @@ services:
       start_period: 30s
     restart: unless-stopped
     networks:
-      - ai-agents-network
+      - data-network
     profiles:
       - standalone
 
 # ==============================================================================
-# Networks
+# Networks - Tiered network architecture
+# Reference: ai-platform-data/docs/NETWORK_ARCHITECTURE.md
 # ==============================================================================
 networks:
-  ai-agents-network:
-    name: ai-agents-network
-    driver: bridge
-  # Connect to llm-gateway network if it exists
-  llm-network:
-    name: llm-network
+  ai-platform-network:
+    name: ai-platform-network
+    external: true
+  data-network:
+    name: data-network
     external: true
 
 # ==============================================================================
