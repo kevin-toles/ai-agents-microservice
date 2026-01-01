@@ -131,10 +131,11 @@ Each WBS block can be **closed independently**:
 | WBS-KB7 | Code-Orchestrator Tool Integration | WBS-KB6 | 12 hours | CodeT5+, GraphCodeBERT |
 | WBS-KB8 | VS Code MCP Server | WBS-KB6 | 16 hours | Copilot replacement/tandem |
 | WBS-KB9 | End-to-End Validation | All prior, **WBS-AGT20** | 12 hours | Production-ready |
+| WBS-KB10 | Summarization Pipeline (Map-Reduce) | WBS-KB1, WBS-AGT14 | 8 hours | Long content summarization |
 
-**Total Estimated Effort:** ~100 hours (on top of WBS.md ~136 hours)
+**Total Estimated Effort:** ~108 hours (on top of WBS.md ~136 hours)
 
-**Combined Total:** ~236 hours for complete Kitchen Brigade implementation
+**Combined Total:** ~244 hours for complete Kitchen Brigade implementation
 
 ---
 
@@ -633,6 +634,120 @@ Validate the entire system works **end-to-end** for the core use case: answering
 
 ---
 
+## WBS-KB10: Summarization Pipeline (Map-Reduce)
+
+**Dependencies:** WBS-KB1 (Discussion Loop), WBS-AGT14 (Pipeline Orchestrator)  
+**Reference:** AGENT_FUNCTIONS_ARCHITECTURE.md → Map-Reduce Pattern
+
+### Purpose
+
+Handle **long content summarization** that exceeds single-LLM context windows. This implements the **Map-Reduce pattern**: decompose → parallel summarize chunks → synthesize final summary.
+
+### Problem Statement
+
+When content (e.g., 50K+ token documents, multi-file analysis) exceeds the LLM context budget:
+- Single-pass summarization fails or truncates
+- Quality degrades with naive chunking
+- Thinking models (DeepSeek-R1) may spend 80% of tokens on `<think>` reasoning
+
+### Solution Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          SummarizationPipeline                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────┐    ┌─────────────────────────────────────┐               │
+│  │  Long Input  │───►│  ChunkingStrategy                   │               │
+│  │  (50K+ tokens)    │  - semantic_boundary (prefer)       │               │
+│  └──────────────┘    │  - sliding_window (fallback)        │               │
+│                      │  - overlap_tokens: 200              │               │
+│                      └──────────────┬──────────────────────┘               │
+│                                     │                                       │
+│                                     ▼                                       │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │                   ParallelAgent + summarize_content                  │  │
+│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐    │  │
+│  │  │ Chunk 1 │  │ Chunk 2 │  │ Chunk 3 │  │ Chunk 4 │  │ Chunk N │    │  │
+│  │  │ Summary │  │ Summary │  │ Summary │  │ Summary │  │ Summary │    │  │
+│  │  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘    │  │
+│  └───────┼───────────┼───────────┼───────────┼───────────┼─────────────┘  │
+│          │           │           │           │           │                 │
+│          └───────────┴───────────┴───────────┴───────────┘                 │
+│                                  │                                          │
+│                                  ▼                                          │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │                        synthesize_outputs                            │  │
+│  │  - Merge chunk summaries into coherent final summary                 │  │
+│  │  - Preserve key concepts across all chunks                           │  │
+│  │  - Respect output token budget (default 4096)                        │  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
+│                                  │                                          │
+│                                  ▼                                          │
+│  ┌──────────────┐    ┌──────────────────────────────────────────────────┐  │
+│  │ Final Summary│◄───│  CompressionCache (optional)                     │  │
+│  │ (fits budget)│    │  - Cache for user session reuse (24h TTL)        │  │
+│  └──────────────┘    └──────────────────────────────────────────────────┘  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Acceptance Criteria
+
+| ID | Requirement | Validation Method |
+|----|-------------|-------------------|
+| AC-KB10.1 | `ChunkingStrategy.chunk()` splits content at semantic boundaries (paragraphs, sections) | Unit test: chunks don't split mid-sentence |
+| AC-KB10.2 | Chunk overlap configurable (default 200 tokens) to preserve context | Unit test: overlap included |
+| AC-KB10.3 | `SummarizationPipeline.run()` handles input >50K tokens | Integration test: large doc processed |
+| AC-KB10.4 | ParallelAgent executes chunk summaries concurrently (max 4 parallel) | Unit test: parallel execution |
+| AC-KB10.5 | `synthesize_outputs` merges chunk summaries preserving key concepts | Unit test: no information loss |
+| AC-KB10.6 | Final output respects token budget (configurable, default 4096) | Unit test: output within budget |
+| AC-KB10.7 | Think tags (`<think>...</think>`) stripped from intermediate outputs | Unit test: no think tags in final |
+| AC-KB10.8 | Pipeline gracefully degrades if LLM unavailable (uses fallback) | Integration test: fallback works |
+| AC-KB10.9 | CompressionCache stores summaries for reuse within session | Unit test: cache hit returns stored |
+| AC-KB10.10 | Pipeline registered as `/v1/pipelines/summarize/run` | Integration test: API endpoint works |
+
+### WBS Tasks
+
+| ID | Task | AC | File(s) |
+|----|------|-----|---------|
+| KB10.1 | Create `ChunkingStrategy` class with semantic boundary detection | AC-KB10.1, AC-KB10.2 | `src/pipelines/chunking.py` |
+| KB10.2 | Implement `sliding_window` fallback chunker | AC-KB10.1 | `src/pipelines/chunking.py` |
+| KB10.3 | Implement configurable overlap tokens | AC-KB10.2 | `src/pipelines/chunking.py` |
+| KB10.4 | Create `SummarizationPipeline` class | AC-KB10.3 | `src/pipelines/summarization_pipeline.py` |
+| KB10.5 | Implement parallel chunk summarization via ParallelAgent | AC-KB10.4 | `src/pipelines/summarization_pipeline.py` |
+| KB10.6 | Integrate `summarize_content` function for each chunk | AC-KB10.4 | `src/pipelines/summarization_pipeline.py` |
+| KB10.7 | Implement `synthesize_outputs` for final merge | AC-KB10.5 | `src/pipelines/summarization_pipeline.py` |
+| KB10.8 | Add token budget enforcement to synthesis | AC-KB10.6 | `src/pipelines/summarization_pipeline.py` |
+| KB10.9 | Implement `_strip_think_tags()` helper | AC-KB10.7 | `src/utils/text_processing.py` |
+| KB10.10 | Implement graceful degradation for LLM failures | AC-KB10.8 | `src/pipelines/summarization_pipeline.py` |
+| KB10.11 | Integrate CompressionCache for session reuse | AC-KB10.9 | `src/pipelines/summarization_pipeline.py` |
+| KB10.12 | Register `/v1/pipelines/summarize/run` endpoint | AC-KB10.10 | `src/api/routes/pipelines.py` |
+| KB10.13 | Unit tests for ChunkingStrategy | AC-KB10.1-2 | `tests/unit/pipelines/test_chunking.py` |
+| KB10.14 | Unit tests for SummarizationPipeline | AC-KB10.3-9 | `tests/unit/pipelines/test_summarization_pipeline.py` |
+| KB10.15 | Integration test: 50K+ token document | AC-KB10.3, AC-KB10.10 | `tests/integration/test_summarization_large.py` |
+
+### Integration with Existing Components
+
+| Component | Role in WBS-KB10 |
+|-----------|------------------|
+| `summarize_content` (WBS-AGT2) | Per-chunk summarization function |
+| `synthesize_outputs` (WBS-AGT4) | Final merge of chunk summaries |
+| `ParallelAgent` (WBS-AGT14) | Concurrent chunk processing |
+| `CompressionCache` (WBS-AGT9) | Session-level summary caching |
+| `InferenceClient` | LLM calls with graceful degradation |
+
+### Exit Criteria
+
+- [ ] `pytest tests/unit/pipelines/test_chunking.py` passes with 100% coverage
+- [ ] `pytest tests/unit/pipelines/test_summarization_pipeline.py` passes
+- [ ] 50K token document summarized to <4096 tokens without truncation
+- [ ] Parallel processing completes 5 chunks in <30s (vs ~2min sequential)
+- [ ] Think tags never appear in final output
+- [ ] **DEMO:** Submit a full textbook chapter → receive coherent summary with key concepts preserved
+
+---
+
 ## Milestone Summary
 
 | Phase | Blocks | Milestone | User Capability |
@@ -640,6 +755,7 @@ Validate the entire system works **end-to-end** for the core use case: answering
 | **Phase 1** | WBS-KB1-4 | LLM Discussion Foundation | Multiple LLMs debate and reach consensus |
 | **Phase 2** | WBS-KB5-7 | Grounding & Validation | All claims validated against sources + code tools |
 | **Phase 3** | WBS-KB8-9 | Production Readiness | VS Code integration, works alongside Copilot |
+| **Phase 4** | WBS-KB10 | Long Content Processing | Map-Reduce summarization for large documents |
 
 ### Phase 1 Completion Criteria
 > "I can run a query and see multiple LLMs discuss, request more info, and eventually agree on an answer."
@@ -649,6 +765,9 @@ Validate the entire system works **end-to-end** for the core use case: answering
 
 ### Phase 3 Completion Criteria
 > "I can use this in VS Code instead of (or with) Copilot for complex code questions."
+
+### Phase 4 Completion Criteria
+> "I can submit long documents (50K+ tokens) and receive coherent summaries without truncation or quality loss."
 
 ---
 
@@ -670,6 +789,7 @@ Validate the entire system works **end-to-end** for the core use case: answering
 |---------|------|---------|
 | 1.0.0 | 2025-12-31 | Initial WBS based on KITCHEN_BRIGADE_ARCHITECTURE.md |
 | 1.1.0 | 2025-12-31 | Added "Relationship to WBS.md" section; clarified dependencies on WBS-AGT17, WBS-AGT20, WBS-AGT21-24; updated WBS-KB9 to show extension of WBS-AGT20 |
+| 1.2.0 | 2025-01-05 | Added WBS-KB10: Summarization Pipeline (Map-Reduce) for long content handling; added Phase 4 milestone |
 
 ---
 

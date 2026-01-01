@@ -18,6 +18,62 @@ This document tracks all implementation changes, their rationale, and git commit
 
 ---
 
+## 2025-01-05
+
+### CL-016: WBS-KB10 Summarization Pipeline & Graceful Degradation
+
+| Field | Value |
+|-------|-------|
+| **Date/Time** | 2025-01-05 |
+| **WBS Item** | WBS-KB10 (Summarization Pipeline) |
+| **Change Type** | Feature / Documentation |
+| **Summary** | Added WBS-KB10: Summarization Pipeline (Map-Reduce) to WBS_KITCHEN_BRIGADE.md for handling long content that exceeds LLM context windows. Also implemented graceful degradation in inference-service and Code-Orchestrator-Service. |
+| **Files Changed** | `docs/WBS_KITCHEN_BRIGADE.md`, `inference-service/src/services/model_manager.py` (graceful degradation), `Code-Orchestrator-Service/src/clients/inference_client.py` (model resolution + think tag stripping) |
+| **Rationale** | Map-Reduce summarization pattern was not covered by WBS-KB1-9. Long documents (50K+ tokens) require chunking → parallel summarize → synthesize. Graceful degradation ensures system uses whatever LLM is currently loaded rather than failing. |
+| **Git Commit** | Pending |
+
+**WBS-KB10 Overview:**
+
+| Component | Purpose |
+|-----------|---------|
+| `ChunkingStrategy` | Semantic boundary detection for splitting long content |
+| `SummarizationPipeline` | Orchestrates Map-Reduce flow |
+| `ParallelAgent` | Concurrent chunk summarization |
+| `synthesize_outputs` | Merge chunk summaries into final output |
+| `CompressionCache` | Session-level summary caching |
+
+**Graceful Degradation Implementation:**
+
+1. **inference-service ModelManager** (`get_provider()`):
+   - If requested model not loaded, uses any loaded model
+   - Logs warning when falling back to different model
+   - Returns clear error if no models loaded
+
+2. **Code-Orchestrator InferenceClient**:
+   - Removed hardcoded `DEFAULT_MODEL = "qwen2.5-7b"`
+   - Added `get_loaded_models()` to query inference-service
+   - Added `_resolve_model()` for graceful degradation
+   - Added `_strip_think_tags()` for DeepSeek-R1 output
+   - Increased `max_tokens` from 500 to 1500 (thinking models need more)
+
+**Architecture Flow:**
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   Map-Reduce Summarization                      │
+│                                                                 │
+│  Long Input ─► ChunkingStrategy ─► ParallelAgent + summarize   │
+│                                          │                      │
+│                                          ▼                      │
+│                              synthesize_outputs ─► Final Summary │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Anti-Patterns Avoided:**
+- #12: Graceful degradation prevents hard failures on model mismatch
+- #42: Think tag stripping handles DeepSeek-R1 reasoning tokens cleanly
+
+---
+
 ## 2025-12-19
 
 ### CL-015: Gateway-First Communication Pattern Documentation
