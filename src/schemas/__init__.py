@@ -5,6 +5,7 @@ This package contains Pydantic models for:
 - Citation and provenance tracking
 - Analysis findings and violations
 - Pipeline state and handoff
+- Graph reference models (WBS-AGT22)
 
 All schemas support JSON Schema export via model_json_schema().
 
@@ -30,14 +31,60 @@ from src.schemas.citations import (
     create_citation_from_retrieval,
     merge_citations,
 )
+# Graph reference models (WBS-AGT22)
+from src.schemas.graph_models import (
+    ChapterReference,
+    CodeFileReference,
+    CodeQueryResult,
+    Concept,
+    ConceptQueryResult,
+    GraphReference,
+    PatternQueryResult,
+    PatternRelationship,
+)
+# Passage models (WBS-AGT23)
+from src.schemas.passage_models import (
+    BookPassage,
+    ChapterPassageRef,
+    PassageFilter,
+    PassageMetadata,
+    PassageSearchResult,
+)
+# Retrieval models (WBS-AGT24)
+from src.schemas.retrieval_models import (
+    RetrievalItem,
+    RetrievalOptions,
+    RetrievalResult,
+    RetrievalScope,
+    SourceType as RetrievalSourceType,
+)
 
 
 __all__: list[str] = [
     "SEVERITY_ORDER",
     "AnalysisResult",
+    "BookPassage",
+    "ChapterPassageRef",
+    "ChapterReference",
     "Citation",
     "CitedContent",
+    "CodeFileReference",
+    "CodeQueryResult",
+    "Concept",
+    "ConceptQueryResult",
     "Finding",
+    "GraphReference",
+    "PassageFilter",
+    "PassageMetadata",
+    "PassageSearchResult",
+    "PatternQueryResult",
+    "PatternRelationship",
+    # Retrieval models (WBS-AGT24)
+    "RetrievalItem",
+    "RetrievalOptions",
+    "RetrievalResult",
+    "RetrievalScope",
+    "RetrievalSourceType",
     # Analysis schemas
     "Severity",
     "SourceMetadata",

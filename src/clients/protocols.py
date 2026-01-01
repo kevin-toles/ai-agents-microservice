@@ -177,3 +177,383 @@ class AuditServiceProtocol(Protocol):
     async def close(self) -> None:
         """Release HTTP client resources."""
         ...
+
+
+@runtime_checkable
+class CodeReferenceProtocol(Protocol):
+    """Protocol for Code Reference Engine client.
+
+    WBS: WBS-AGT21 - Code Reference Engine Client
+    Defines the interface for clients wrapping CodeReferenceEngine from ai-platform-data.
+    Enables duck typing for test doubles (FakeCodeReferenceClient).
+
+    Acceptance Criteria:
+        AC-21.1: Client wraps CodeReferenceEngine from ai-platform-data
+        AC-21.2: Async interface for search, get_metadata, fetch_file
+        AC-21.3: Integration with Qdrant for semantic code search
+        AC-21.4: Integration with GitHub API for on-demand file retrieval
+        AC-21.5: Returns CodeContext with citations for downstream
+
+    Methods:
+        search: Semantic search across code repositories
+        search_by_concept: Search by concept name (e.g., "event-driven")
+        search_by_pattern: Search by design pattern (e.g., "repository")
+        get_metadata: Get repository metadata by ID
+        fetch_file: Fetch file content from GitHub
+        close: Release HTTP client resources
+    """
+
+    async def search(
+        self,
+        query: str,
+        domains: list[str] | None = None,
+        concepts: list[str] | None = None,
+        top_k: int = 10,
+    ) -> Any:
+        """Semantic search across code repositories.
+
+        Uses 3-layer retrieval: Qdrant semantic → GitHub API → Neo4j graph.
+
+        Args:
+            query: Natural language search query
+            domains: Optional list of domains to filter (e.g., ["backend-frameworks"])
+            concepts: Optional list of concepts to filter (e.g., ["ddd", "cqrs"])
+            top_k: Maximum number of results to return
+
+        Returns:
+            CodeContext with primary_references, domains_searched, citations
+        """
+        ...
+
+    async def search_by_concept(
+        self,
+        concept: str,
+        top_k: int = 10,
+    ) -> Any:
+        """Search by concept name.
+
+        Args:
+            concept: Concept name (e.g., "event-driven", "microservices")
+            top_k: Maximum number of results to return
+
+        Returns:
+            CodeContext with matching code references
+        """
+        ...
+
+    async def search_by_pattern(
+        self,
+        pattern: str,
+        top_k: int = 10,
+    ) -> Any:
+        """Search by design pattern name.
+
+        Args:
+            pattern: Design pattern name (e.g., "repository", "saga", "cqrs")
+            top_k: Maximum number of results to return
+
+        Returns:
+            CodeContext with matching code references
+        """
+        ...
+
+    async def get_metadata(self, repo_id: str) -> dict[str, Any] | None:
+        """Get repository metadata by ID.
+
+        Args:
+            repo_id: Repository identifier
+
+        Returns:
+            Dict with id, name, domain, concepts, patterns, tags, or None if not found
+        """
+        ...
+
+    async def fetch_file(
+        self,
+        file_path: str,
+        start_line: int | None = None,
+        end_line: int | None = None,
+    ) -> str | None:
+        """Fetch file content from GitHub.
+
+        Args:
+            file_path: Path to file within repository
+            start_line: Optional start line for partial fetch
+            end_line: Optional end line for partial fetch
+
+        Returns:
+            File content as string, or None if not found
+        """
+        ...
+
+    async def close(self) -> None:
+        """Release HTTP client resources."""
+        ...
+
+
+@runtime_checkable
+class Neo4jClientProtocol(Protocol):
+    """Protocol for Neo4j Graph Client.
+
+    WBS: WBS-AGT22 - Neo4j Graph Integration
+    Defines the interface for clients connecting to Neo4j for graph traversal.
+    Enables duck typing for test doubles (FakeNeo4jClient).
+
+    Acceptance Criteria:
+        AC-22.1: Client connects to Neo4j for graph traversal
+        AC-22.2: Query book → chapter → concept relationships
+        AC-22.3: Query concept → code-reference-engine file mappings
+        AC-22.4: Query cross-repo pattern relationships
+        AC-22.5: Results include metadata for citation generation
+
+    Reference: TIER_RELATIONSHIP_DIAGRAM.md - Spider web taxonomy structure
+
+    Methods:
+        connect: Establish connection to Neo4j
+        close: Close connection and release resources
+        health_check: Verify connection is healthy
+        get_concepts_for_chapter: Get concepts linked to a chapter
+        get_code_for_concept: Get code files implementing a concept
+        get_related_patterns: Get cross-repo pattern relationships
+        get_chapters_for_concept: Get chapters covering a concept
+    """
+
+    async def connect(self) -> None:
+        """Establish connection to Neo4j.
+
+        Raises:
+            Neo4jConnectionError: If connection fails
+        """
+        ...
+
+    async def close(self) -> None:
+        """Close connection and release resources."""
+        ...
+
+    async def health_check(self) -> bool:
+        """Verify connection is healthy.
+
+        Returns:
+            True if connected and healthy, False otherwise
+        """
+        ...
+
+    async def get_concepts_for_chapter(
+        self,
+        chapter_id: str,
+    ) -> list[Any]:
+        """Get concepts linked to a chapter.
+
+        AC-22.2: Query book → chapter → concept relationships
+
+        Args:
+            chapter_id: Unique chapter identifier
+
+        Returns:
+            List of Concept objects linked to the chapter
+        """
+        ...
+
+    async def get_code_for_concept(
+        self,
+        concept: str,
+    ) -> list[Any]:
+        """Get code file references for a concept.
+
+        AC-22.3: Query concept → code-reference-engine file mappings
+
+        Args:
+            concept: Concept identifier (e.g., "repository-pattern")
+
+        Returns:
+            List of CodeFileReference objects
+        """
+        ...
+
+    async def get_related_patterns(
+        self,
+        pattern: str,
+    ) -> list[Any]:
+        """Get cross-repo pattern relationships.
+
+        AC-22.4: Query cross-repo pattern relationships
+
+        Args:
+            pattern: Design pattern name (e.g., "saga")
+
+        Returns:
+            List of PatternRelationship objects
+        """
+        ...
+
+    async def get_chapters_for_concept(
+        self,
+        concept: str,
+        limit: int = 10,
+    ) -> list[dict[str, Any]]:
+        """Get chapters covering a concept.
+
+        Args:
+            concept: Concept name or identifier
+            limit: Maximum results to return
+
+        Returns:
+            List of chapter dicts with chapter_id, title, book_id, tier
+        """
+        ...
+
+
+@runtime_checkable
+class BookPassageClientProtocol(Protocol):
+    """Protocol for Book Passage Client.
+
+    WBS: WBS-AGT23 - Book/JSON Passage Retrieval
+    Defines the interface for clients retrieving passages from enriched book JSON files.
+    Enables duck typing for test doubles (FakeBookPassageClient).
+
+    Acceptance Criteria:
+        AC-23.1: Retrieve passages from enriched book JSON files
+        AC-23.2: Query passages via Qdrant vector similarity
+        AC-23.3: Cross-reference passages with Neo4j concept nodes
+        AC-23.4: Return structured BookPassage with citation metadata
+        AC-23.5: Support filtering by book, chapter, concept
+
+    Methods:
+        connect: Establish connection to Qdrant/storage
+        close: Close connection and release resources
+        health_check: Verify connection is healthy
+        search_passages: Search passages via Qdrant vector similarity
+        get_passage_by_id: Get passage by ID from JSON lookup
+        get_passages_for_concept: Get passages linked via Neo4j
+        get_passages_for_book: Get all passages for a book
+        filter_by_book: Filter passages by book ID
+        filter_by_chapter: Filter passages by chapter number
+    """
+
+    async def connect(self) -> None:
+        """Establish connection to Qdrant and storage.
+
+        Raises:
+            ConnectionError: If connection fails
+        """
+        ...
+
+    async def close(self) -> None:
+        """Close connection and release resources."""
+        ...
+
+    async def health_check(self) -> bool:
+        """Verify connection is healthy.
+
+        Returns:
+            True if connected and healthy, False otherwise
+        """
+        ...
+
+    async def search_passages(
+        self,
+        query: str,
+        top_k: int = 10,
+        filters: Any = None,
+    ) -> list[Any]:
+        """Search passages via Qdrant vector similarity.
+
+        AC-23.2: Query passages via Qdrant vector similarity
+
+        Args:
+            query: Natural language search query
+            top_k: Maximum number of results to return
+            filters: Optional PassageFilter for filtering
+
+        Returns:
+            List of BookPassage objects sorted by relevance
+        """
+        ...
+
+    async def get_passage_by_id(
+        self,
+        passage_id: str,
+    ) -> Any | None:
+        """Get passage by ID from JSON lookup.
+
+        AC-23.1: Retrieve passages from enriched book JSON files
+
+        Args:
+            passage_id: Unique passage identifier
+
+        Returns:
+            BookPassage if found, None otherwise
+        """
+        ...
+
+    async def get_passages_for_concept(
+        self,
+        concept: str,
+        limit: int = 10,
+    ) -> list[Any]:
+        """Get passages linked to a concept via Neo4j.
+
+        AC-23.3: Cross-reference passages with Neo4j concept nodes
+
+        Args:
+            concept: Concept identifier (e.g., "ddd", "repository-pattern")
+            limit: Maximum results to return
+
+        Returns:
+            List of BookPassage objects linked to the concept
+        """
+        ...
+
+    async def get_passages_for_book(
+        self,
+        book_id: str,
+        limit: int = 100,
+    ) -> list[Any]:
+        """Get all passages for a book.
+
+        AC-23.5: Support filtering by book
+
+        Args:
+            book_id: Book identifier
+            limit: Maximum results to return
+
+        Returns:
+            List of BookPassage objects from the book
+        """
+        ...
+
+    async def filter_by_book(
+        self,
+        passages: list[Any],
+        book_id: str,
+    ) -> list[Any]:
+        """Filter passages by book ID.
+
+        AC-23.5: Support filtering by book
+
+        Args:
+            passages: List of passages to filter
+            book_id: Book identifier to filter by
+
+        Returns:
+            Filtered list of passages
+        """
+        ...
+
+    async def filter_by_chapter(
+        self,
+        passages: list[Any],
+        chapter_number: int,
+    ) -> list[Any]:
+        """Filter passages by chapter number.
+
+        AC-23.5: Support filtering by chapter
+
+        Args:
+            passages: List of passages to filter
+            chapter_number: Chapter number to filter by
+
+        Returns:
+            Filtered list of passages
+        """
+        ...

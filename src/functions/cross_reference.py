@@ -1,6 +1,7 @@
 """CrossReference Agent Function.
 
 WBS-AGT13: cross_reference Function
+WBS-AGT24: Unified Knowledge Retrieval Integration (AC-24.5)
 
 This module implements the CrossReferenceFunction which finds related
 content across knowledge bases via semantic search.
@@ -11,11 +12,13 @@ Acceptance Criteria:
 - AC-13.3: Context budget: 2048 input / 4096 output
 - AC-13.4: Default preset: S4
 - AC-13.5: Integrates with Qdrant via semantic-search-service
+- AC-24.5: cross_reference agent function uses UnifiedRetriever
 
 Exit Criteria:
 - Each Match has source, content, relevance_score (0.0-1.0)
 - FakeSemanticSearchClient used in unit tests
 - Integration test hits real semantic-search-service:8081
+- cross_reference("repository pattern") returns mixed results
 
 Reference: AGENT_FUNCTIONS_ARCHITECTURE.md → Agent Function 8
 
@@ -25,8 +28,10 @@ Anti-Pattern Compliance:
 - S1192: Context budget from constants.py
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from src.clients.protocols import SemanticSearchProtocol
 from src.functions.base import AgentFunction
@@ -38,6 +43,10 @@ from src.schemas.functions.cross_reference import (
     MatchType,
     Reference,
 )
+
+if TYPE_CHECKING:
+    from src.retrieval.unified_retriever import UnifiedRetrieverProtocol
+    from src.schemas.retrieval_models import RetrievalScope
 
 
 @dataclass(frozen=True)
@@ -103,14 +112,18 @@ class CrossReferenceFunction(AgentFunction):
     def __init__(
         self,
         semantic_search_client: SemanticSearchProtocol | None = None,
+        unified_retriever: UnifiedRetrieverProtocol | None = None,
     ) -> None:
         """Initialize the cross_reference function.
 
         Args:
             semantic_search_client: Client for semantic-search-service.
                 If None, must be provided at execute time.
+            unified_retriever: Optional UnifiedRetriever for multi-source search.
+                When provided, enables AC-24.5 unified retrieval.
         """
         self._client = semantic_search_client
+        self._unified_retriever = unified_retriever
 
     async def run(  # type: ignore[override]
         self,
@@ -119,17 +132,22 @@ class CrossReferenceFunction(AgentFunction):
         search_scope: list[str] | None = None,
         match_type: MatchType | str = MatchType.SEMANTIC,
         top_k: int = 10,
+        use_unified: bool = False,
+        retrieval_scope: RetrievalScope | str | None = None,
         **kwargs: Any,
     ) -> CrossReferenceResult:
         """Find related content via semantic search.
 
         AC-13.1: Queries semantic-search-service for related content.
+        AC-24.5: Optionally uses UnifiedRetriever for multi-source search.
 
         Args:
             query_artifact: Source content to find related content for
             search_scope: List of repository names to search (empty = all)
             match_type: Type of matching algorithm to use
             top_k: Maximum number of results to return
+            use_unified: If True and unified_retriever provided, use multi-source
+            retrieval_scope: Scope for unified retrieval (all, code_only, books_only)
             **kwargs: Additional arguments for extensibility
 
         Returns:
@@ -152,6 +170,13 @@ class CrossReferenceFunction(AgentFunction):
             match_type=match_type,
             top_k=top_k,
         )
+
+        # Use unified retriever if requested and available
+        if use_unified and self._unified_retriever is not None:
+            return await self._execute_unified(
+                input_data,
+                retrieval_scope=retrieval_scope,
+            )
 
         return await self.execute(input_data)
 
@@ -357,3 +382,81 @@ class CrossReferenceFunction(AgentFunction):
             )
 
         return citations
+
+    async def _execute_unified(
+        self,
+        input_data: CrossReferenceInput,
+        retrieval_scope: RetrievalScope | str | None = None,
+    ) -> CrossReferenceResult:
+        """Execute cross_reference using UnifiedRetriever.
+
+        AC-24.5: cross_reference agent function uses UnifiedRetriever.
+        EC: cross_reference("repository pattern") returns mixed results.
+
+        Args:
+            input_data: Validated CrossReferenceInput
+            retrieval_scope: Scope for retrieval (all, code_only, books_only)
+
+        Returns:
+            CrossReferenceResult with results from all knowledge sources.
+        """
+        from src.schemas.retrieval_models import RetrievalScope
+
+        if self._unified_retriever is None:
+            raise ValueError("unified_retriever must be provided for unified search")
+
+        # Truncate query to input budget if needed
+        query = self._truncate_to_budget(input_data.query_artifact)
+
+        # Convert scope string to enum if needed
+        scope = RetrievalScope.ALL
+        if retrieval_scope is not None:
+            if isinstance(retrieval_scope, str):
+                scope = RetrievalScope(retrieval_scope)
+            else:
+                scope = retrieval_scope
+
+        # Execute unified retrieval
+        retrieval_result = await self._unified_retriever.retrieve(
+            query=query,
+            scope=scope,
+            top_k=input_data.top_k,
+        )
+
+        # Convert retrieval items to References
+        references = []
+        similarity_scores = []
+
+        for item in retrieval_result.results:
+            score = self._normalize_score(item.relevance_score)
+            ref = Reference(
+                source=item.source_id,
+                content=item.content,
+                relevance_score=score,
+                source_type=item.source_type.value,
+                line_range=item.metadata.get("line_range"),
+                commit_hash=item.metadata.get("commit_hash"),
+            )
+            references.append(ref)
+            similarity_scores.append(score)
+
+        # Generate compressed context
+        compressed_context = self._generate_compressed_context(references)
+
+        # Convert MixedCitations to Citation objects
+        citations = []
+        for i, mixed in enumerate(retrieval_result.citations, 1):
+            citations.append(
+                Citation(
+                    marker=f"^{i}",
+                    formatted_citation=mixed.display_text,
+                    reference_source=mixed.source_id,
+                )
+            )
+
+        return CrossReferenceResult(
+            references=references,
+            similarity_scores=similarity_scores,
+            compressed_context=compressed_context,
+            citations=citations,
+        )
