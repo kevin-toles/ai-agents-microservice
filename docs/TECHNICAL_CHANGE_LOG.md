@@ -18,7 +18,134 @@ This document tracks all implementation changes, their rationale, and git commit
 
 ---
 
+## 2026-01-01
+
+### CL-018: Platform Consolidation (PCON-1 through PCON-9)
+
+| Field | Value |
+|-------|-------|
+| **Date/Time** | 2026-01-01 |
+| **WBS Item** | PCON-1 through PCON-9 |
+| **Change Type** | Feature, Fix, Documentation |
+| **Summary** | Platform consolidation to resolve infrastructure issues, schema mismatches, and unwired WBS-AGT21-24 code |
+| **Files Changed** | `src/clients/neo4j_client.py`, `src/api/routes/health.py`, `tests/integration/test_neo4j_connection.py` (NEW), `tests/integration/test_qdrant_connection.py` (NEW), `scripts/verify_platform_health.sh` (NEW) |
+| **Rationale** | Critical platform integrity issues discovered during reliability audit. Multiple services using FAKE backends instead of real infrastructure. |
+| **Git Commit** | Pending |
+
+**PCON Completion Summary:**
+
+| Block | Name | Status | Key Changes |
+|-------|------|--------|-------------|
+| PCON-1 | Start Infrastructure | ✅ Complete | Neo4j, Qdrant, Redis running on ai-platform-network |
+| PCON-2 | Expand Schema | ✅ Complete | Added CodeFile, Pattern, Repository nodes |
+| PCON-3 | Re-seed Database | ✅ Complete | Books, Chapters, Concepts seeded with keywords |
+| PCON-4 | Consolidate Neo4j Client | ✅ Complete | Single `Neo4jClient` with `search_chapters()` method |
+| PCON-5 | Wire WBS-AGT21-24 | ✅ Complete | CodeReferenceClient, BookPassageClient, UnifiedRetriever in main.py |
+| PCON-6 | Align Embedding Model | ✅ Complete | all-MiniLM-L6-v2 (384 dimensions) across platform |
+| PCON-7 | Configure Real Backends | ✅ Complete | semantic-search-service using real Neo4j and Qdrant |
+| PCON-8 | Integration Testing | ✅ Complete | 11 tests passing (5 Neo4j, 6 Qdrant via semantic-search) |
+| PCON-9 | Documentation Update | ✅ Complete | All architecture docs updated |
+
+**Health Check Fix:**
+
+| Issue | Fix |
+|-------|-----|
+| ai-agents health returned "degraded" | Implemented actual Neo4j health check in `check_neo4j()` |
+| Neo4j status "unknown" | Added AsyncGraphDatabase driver ping with `RETURN 1` query |
+
+**Integration Tests Created:**
+
+| Test File | Tests | Purpose |
+|-----------|-------|----------|
+| `test_neo4j_connection.py` | 5 | Direct driver connection, schema verification, client health |
+| `test_qdrant_connection.py` | 7 | Embedding dimensions, search functionality, health endpoints |
+
+**Exit Criteria Verified:**
+- ✅ All health endpoints return "healthy"
+- ✅ 11 integration tests passing (1 skipped)
+- ✅ Single Neo4j client in use
+- ✅ Schema reference doc exists
+- ✅ Embedding model documented
+
+---
+
 ## 2025-01-05
+
+### CL-017: WBS-KB10 Summarization Pipeline Implementation (TDD)
+
+| Field | Value |
+|-------|-------|
+| **Date/Time** | 2025-01-05 |
+| **WBS Item** | WBS-KB10.1-15 (Summarization Pipeline Map-Reduce) |
+| **Change Type** | Feature |
+| **Summary** | Full TDD implementation of Map-Reduce summarization pipeline for handling long documents (50K+ tokens). Includes ChunkingStrategy with semantic boundary detection, SummarizationPipeline with parallel processing, think tag stripping, and caching integration. |
+| **Files Changed** | `src/pipelines/chunking.py` (NEW), `src/pipelines/summarization_pipeline.py` (NEW), `src/api/routes/pipelines.py` (updated), `tests/unit/pipelines/test_chunking.py` (NEW - 25 tests), `tests/unit/pipelines/test_summarization_pipeline.py` (NEW - 26 tests), `tests/integration/test_summarization_large.py` (NEW - 13 tests) |
+| **Rationale** | Long documents exceed LLM context windows (e.g., 32K tokens). Map-Reduce pattern decomposes content into manageable chunks, summarizes in parallel, then synthesizes final output. |
+| **Git Commit** | Pending |
+
+**Implementation Summary:**
+
+| Component | File | Description |
+|-----------|------|-------------|
+| `ChunkingConfig` | `src/pipelines/chunking.py` | Configurable target size (4096), overlap (200), method selection |
+| `Chunk` | `src/pipelines/chunking.py` | Dataclass with start_idx, end_idx, text, estimated_tokens |
+| `SemanticBoundaryChunker` | `src/pipelines/chunking.py` | Detects paragraphs, sections, sentences for clean splits |
+| `SlidingWindowChunker` | `src/pipelines/chunking.py` | Fallback for content without semantic boundaries |
+| `ChunkingStrategy` | `src/pipelines/chunking.py` | Orchestrates chunking with fallback logic |
+| `SummarizationConfig` | `src/pipelines/summarization_pipeline.py` | Max parallel (4), token budget (4096), retries (3) |
+| `ChunkSummary` | `src/pipelines/summarization_pipeline.py` | Per-chunk result with text, tokens, success flag |
+| `SummarizationResult` | `src/pipelines/summarization_pipeline.py` | Final output with synthesis, chunk summaries, metrics |
+| `SummarizationPipeline` | `src/pipelines/summarization_pipeline.py` | Main orchestrator with Map-Reduce flow |
+| `CompressionCacheIntegration` | `src/pipelines/summarization_pipeline.py` | SHA256 content hashing for cache keys |
+| `_strip_think_tags()` | `src/pipelines/summarization_pipeline.py` | Regex removal of DeepSeek-R1 `<think>...</think>` |
+
+**Test Coverage:**
+
+| Test File | Tests | Coverage |
+|-----------|-------|----------|
+| `test_chunking.py` | 25 | ChunkingConfig, Chunk, SemanticBoundary, SlidingWindow, Strategy |
+| `test_summarization_pipeline.py` | 26 | Pipeline core, parallel, synthesis, think tags, cache, degradation |
+| `test_summarization_large.py` | 13 | 50K+ tokens, 100K+ tokens, API endpoint, resilience |
+
+**Exit Criteria Verified:**
+- ✅ `pytest tests/unit/pipelines/test_chunking.py` - 25 passed
+- ✅ `pytest tests/unit/pipelines/test_summarization_pipeline.py` - 26 passed  
+- ✅ `pytest tests/integration/test_summarization_large.py` - 13 passed
+- ✅ 50K token document processed without truncation
+- ✅ Parallel processing with semaphore limiting (max 4)
+- ✅ Think tags never appear in final output
+- ✅ API endpoint `/v1/pipelines/summarize/run` registered
+
+**Architecture Flow:**
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                    Map-Reduce Summarization Pipeline                   │
+│                                                                        │
+│  Long Doc (50K+) ──► ChunkingStrategy ──► Chunks (4096 tokens each)   │
+│                           │                       │                    │
+│                           │              ┌────────┴────────┐           │
+│                           │              │   Parallel      │           │
+│                           │              │  Summarization  │           │
+│                           │              │  (max 4 conc.)  │           │
+│                           │              └────────┬────────┘           │
+│                           │                       │                    │
+│                           ▼                       ▼                    │
+│                    Cache Check ◄───────── ChunkSummaries              │
+│                           │                       │                    │
+│                           ▼                       ▼                    │
+│                    _synthesize_outputs() ──► Final Summary (<4096)    │
+│                           │                                            │
+│                           ▼                                            │
+│                    _strip_think_tags() ──► Clean Output               │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+**Anti-Patterns Avoided:**
+- #12: Graceful degradation on chunk failures (partial summaries still returned)
+- #42: Think tag stripping for DeepSeek-R1 reasoning tokens
+- #7: Proper async/await patterns with semaphore limiting
+
+---
 
 ### CL-016: WBS-KB10 Summarization Pipeline & Graceful Degradation
 

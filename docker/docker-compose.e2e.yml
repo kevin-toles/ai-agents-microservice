@@ -1,0 +1,199 @@
+# Docker Compose for E2E Testing
+# WBS Reference: WBS-KB9 - End-to-End Validation
+#
+# This compose file brings up all services needed for Kitchen Brigade E2E tests.
+#
+# Usage:
+#   docker-compose -f docker/docker-compose.e2e.yml up -d
+#   export KB_E2E_SERVICES=true
+#   pytest tests/e2e/test_kitchen_brigade_e2e.py -v
+#
+# Services:
+#   - inference-service: LLM inference (qwen2.5-7b, deepseek-r1-7b)
+#   - semantic-search-service: Qdrant-based semantic search
+#   - code-orchestrator: CodeT5+, GraphCodeBERT, SonarQube integration
+#   - audit-service: Citation validation
+#   - ai-agents: Main agent service (optional, for API tests)
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # Infrastructure
+  # ==========================================================================
+  
+  qdrant:
+    image: qdrant/qdrant:v1.7.4
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/readiness"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  neo4j:
+    image: neo4j:5.15.0
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/password
+      NEO4J_PLUGINS: '["apoc"]'
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7474"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================================================
+  # AI Platform Services
+  # ==========================================================================
+  
+  inference-service:
+    build:
+      context: ../../inference-service
+      dockerfile: Dockerfile
+    ports:
+      - "8085:8085"
+    environment:
+      - INFERENCE_PORT=8085
+      - MODEL_PRIMARY=qwen2.5-7b
+      - MODEL_SECONDARY=deepseek-r1-7b
+      - LOG_LEVEL=INFO
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  semantic-search-service:
+    build:
+      context: ../../semantic-search-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - SERVICE_PORT=8081
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - LOG_LEVEL=INFO
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  code-orchestrator:
+    build:
+      context: ../../Code-Orchestrator-Service
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      - SERVICE_PORT=8083
+      - CODET5_ENABLED=true
+      - GRAPHCODEBERT_ENABLED=true
+      - LOG_LEVEL=INFO
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  audit-service:
+    build:
+      context: ../../audit-service
+      dockerfile: deploy/docker/Dockerfile
+    ports:
+      - "8084:8084"
+    environment:
+      - SERVICE_PORT=8084
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=password
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - LOG_LEVEL=INFO
+    depends_on:
+      neo4j:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==========================================================================
+  # Main Agent Service (Optional)
+  # ==========================================================================
+  
+  ai-agents:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVICE_PORT=8080
+      - INFERENCE_SERVICE_URL=http://inference-service:8085
+      - SEMANTIC_SEARCH_URL=http://semantic-search-service:8081
+      - CODE_ORCHESTRATOR_URL=http://code-orchestrator:8083
+      - AUDIT_SERVICE_URL=http://audit-service:8084
+      - LOG_LEVEL=INFO
+    depends_on:
+      inference-service:
+        condition: service_healthy
+      semantic-search-service:
+        condition: service_healthy
+      code-orchestrator:
+        condition: service_healthy
+      audit-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  qdrant_data:
+  neo4j_data:
+
+networks:
+  default:
+    name: kitchen-brigade-e2e

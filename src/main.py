@@ -8,6 +8,7 @@ Kitchen Brigade Architecture:
     execution and coordinating with downstream services.
 
 Reference: WBS-AGT2 AC-2.3, WBS-AGT18, AGENT_FUNCTIONS_ARCHITECTURE.md
+PCON-4: Consolidated Neo4j client from src/clients/neo4j_client.py
 """
 
 from collections.abc import AsyncGenerator
@@ -30,15 +31,20 @@ from src.api.routes.health import router as health_router
 from src.api.routes.health import set_service_start_time
 from src.api.routes.pipelines import router as pipelines_router
 from src.core.clients.content_adapter import SemanticSearchContentAdapter
-from src.core.clients.neo4j import (
+# PCON-4: Use consolidated Neo4j client from src/clients/
+from src.clients.neo4j_client import (
+    Neo4jClient,
     create_neo4j_client_from_env,
-)
-from src.core.clients.neo4j import (
     set_neo4j_client as set_global_neo4j_client,
 )
 from src.core.clients.semantic_search import SemanticSearchClient
 from src.core.config import get_settings
 from src.core.logging import configure_logging, get_logger
+
+# PCON-5: WBS-AGT21-24 client imports
+from src.clients.code_reference import CodeReferenceClient, CodeReferenceConfig
+from src.clients.book_passage import BookPassageClient, BookPassageClientConfig
+from src.retrieval.unified_retriever import UnifiedRetriever, UnifiedRetrieverConfig
 
 
 # Configure structured logging on module load
@@ -59,6 +65,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     - SemanticSearchClient: Content retrieval via semantic-search-service
 
     WBS-AGT18: Sets service start time for health endpoint uptime tracking.
+    PCON-4: Uses consolidated Neo4jClient from src/clients/neo4j_client.py
     """
     settings = get_settings()
     logger.info("Starting ai-agents service", port=settings.port, role="Expeditor")
@@ -66,8 +73,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Set service start time for health endpoint
     set_service_start_time()
 
-    # Initialize Neo4j client
-    neo4j_client = create_neo4j_client_from_env()
+    # Initialize Neo4j client (PCON-4: consolidated client)
+    neo4j_client = await create_neo4j_client_from_env()
     if neo4j_client:
         # Set client in both locations for compatibility
         set_global_neo4j_client(neo4j_client)
@@ -98,19 +105,86 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     app.state.semantic_search_client = semantic_search_client
     logger.info("SemanticSearch content client initialized")
 
+    # =========================================================================
+    # PCON-5: Initialize WBS-AGT21-24 Clients
+    # =========================================================================
+
+    # Initialize CodeReferenceClient (WBS-AGT21)
+    code_ref_config = CodeReferenceConfig.from_env()
+    code_ref_client = None
+    if code_ref_config.registry_path:
+        try:
+            code_ref_client = CodeReferenceClient(code_ref_config)
+            await code_ref_client.__aenter__()  # Initialize HTTP client
+            logger.info("CodeReferenceClient initialized")
+        except Exception as e:
+            logger.warning("CodeReferenceClient initialization failed", error=str(e))
+            code_ref_client = None
+    else:
+        logger.warning("CodeReferenceClient not configured (missing CODE_REFERENCE_REGISTRY)")
+    app.state.code_ref_client = code_ref_client
+
+    # Initialize BookPassageClient (WBS-AGT23)
+    book_passage_config = BookPassageClientConfig(
+        qdrant_url=settings.qdrant_url,
+        qdrant_collection=settings.book_passages_collection,
+        books_dir=settings.book_passages_dir,
+        neo4j_uri=settings.neo4j_uri,
+        neo4j_user=settings.neo4j_user,
+        neo4j_password=settings.neo4j_password.get_secret_value(),
+        embedding_model=settings.embedding_model,
+    )
+    book_passage_client = None
+    try:
+        book_passage_client = BookPassageClient(book_passage_config)
+        await book_passage_client.connect()
+        logger.info("BookPassageClient initialized")
+    except Exception as e:
+        logger.warning("BookPassageClient initialization failed", error=str(e))
+        book_passage_client = None
+    app.state.book_passage_client = book_passage_client
+
+    # Initialize UnifiedRetriever (WBS-AGT24)
+    unified_retriever = UnifiedRetriever(
+        config=UnifiedRetrieverConfig(),
+        code_client=code_ref_client,
+        neo4j_client=neo4j_client,
+        book_client=book_passage_client,
+    )
+    app.state.unified_retriever = unified_retriever
+    logger.info("UnifiedRetriever initialized", 
+                code_client=code_ref_client is not None,
+                neo4j_client=neo4j_client is not None,
+                book_client=book_passage_client is not None)
+
     yield
 
     # Cleanup on shutdown
     logger.info("Shutting down ai-agents service")
+
+    # PCON-5: Close WBS-AGT21-24 clients
+    if code_ref_client:
+        try:
+            await code_ref_client.__aexit__(None, None, None)
+            logger.info("CodeReferenceClient closed")
+        except Exception as e:
+            logger.warning("CodeReferenceClient close failed", error=str(e))
+
+    if book_passage_client:
+        try:
+            await book_passage_client.close()
+            logger.info("BookPassageClient closed")
+        except Exception as e:
+            logger.warning("BookPassageClient close failed", error=str(e))
 
     # Close semantic search client
     if semantic_search_client:
         await semantic_search_client.close()
         logger.info("SemanticSearch client closed")
 
-    # Close Neo4j
+    # Close Neo4j (PCON-4: async close)
     if neo4j_client:
-        neo4j_client.close()
+        await neo4j_client.close()
         logger.info("Neo4j driver closed")
 
 

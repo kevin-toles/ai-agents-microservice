@@ -37,6 +37,14 @@ from src.schemas.functions.summarize_content import (
     SummarizeContentOutput,
     SummaryStyle,
 )
+from src.schemas.functions.synthesize_outputs import (
+    Conflict,
+    ConflictPolicy,
+    OutputItem,
+    SynthesisStrategy,
+    SynthesizedOutput,
+    SynthesizeOutputsInput,
+)
 from src.schemas.functions.validate_against_spec import (
     ValidateAgainstSpecInput,
     ValidationResult,
@@ -55,6 +63,9 @@ __all__ = [
     "ArtifactType",
     "CodeBlock",
     "CodeOutput",
+    # synthesize_outputs
+    "Conflict",
+    "ConflictPolicy",
     # decompose_task
     "DecomposeTaskInput",
     # summarize_content
@@ -65,6 +76,7 @@ __all__ = [
     "Finding",
     "GenerateCodeInput",
     "Heading",
+    "OutputItem",
     "Section",
     "Severity",
     "StructuredOutput",
@@ -72,6 +84,9 @@ __all__ = [
     "SummarizeContentInput",
     "SummarizeContentOutput",
     "SummaryStyle",
+    "SynthesisStrategy",
+    "SynthesizedOutput",
+    "SynthesizeOutputsInput",
     # generate_code
     "TargetLanguage",
     "TaskDecomposition",

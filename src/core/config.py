@@ -129,6 +129,27 @@ class Settings(BaseSettings):
     qdrant_host: str = Field(default="localhost", description="Qdrant host")
     qdrant_port: int = Field(default=6333, description="Qdrant port")
 
+    @property
+    def qdrant_url(self) -> str:
+        """Construct Qdrant URL from host and port."""
+        return f"http://{self.qdrant_host}:{self.qdrant_port}"
+
+    # ==========================================================================
+    # Book Passage Client Configuration (WBS-AGT23 / PCON-5)
+    # ==========================================================================
+    book_passages_collection: str = Field(
+        default="book_passages",
+        description="Qdrant collection name for book passages"
+    )
+    book_passages_dir: str = Field(
+        default="",
+        description="Path to enriched book JSON files"
+    )
+    embedding_model: str = Field(
+        default="sentence-transformers/all-MiniLM-L6-v2",
+        description="Embedding model for vector search"
+    )
+
     # ==========================================================================
     # Cache Configuration (Redis for user: prefix tier)
     # ==========================================================================

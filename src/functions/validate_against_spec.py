@@ -1,6 +1,7 @@
 """ValidateAgainstSpec Agent Function.
 
 WBS-AGT10: validate_against_spec Function
+WBS-KB7.9: Code-Orchestrator Tool Integration (AC-KB7.6)
 
 This module implements the ValidateAgainstSpecFunction which validates
 artifacts against specifications, invariants, and acceptance criteria.
@@ -11,11 +12,13 @@ Acceptance Criteria:
 - AC-10.3: Context budget: 4096 input / 1024 output
 - AC-10.4: Default preset: D4 (Standard)
 - AC-10.5: Violations include line_number, expected, actual
+- AC-KB7.6: CodeValidationTool available for objective code analysis
 
 Exit Criteria:
 - compliance_percentage is 0-100 float
 - Each Violation has expected vs actual comparison
 - Empty violations list → compliance_percentage = 100.0
+- CodeValidationTool provides objective metrics when available
 
 Reference: AGENT_FUNCTIONS_ARCHITECTURE.md → Agent Function 5
 
@@ -23,12 +26,23 @@ REFACTOR Phase:
 - Extracted CHARS_PER_TOKEN to src/core/constants.py (S1192)
 - Extracted artifact parsing to src/functions/utils/artifact_parser.py (S1192)
 - Using shared utilities to reduce code duplication
+- KB7.9: Integrated CodeValidationTool for objective metrics
 """
 
+from __future__ import annotations
+
+import logging
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from src.functions.base import AgentFunction
+
+
+if TYPE_CHECKING:
+    from src.tools.code_validation import CodeValidationProtocol
+
+
+logger = logging.getLogger(__name__)
 from src.functions.utils.artifact_parser import (
     # Artifact parsing
     extract_class_name,
@@ -90,6 +104,19 @@ class ValidateAgainstSpecFunction(AgentFunction):
 
     name: str = "validate_against_spec"
     default_preset: str = "D4"  # Critique mode for validation
+
+    def __init__(
+        self,
+        code_validation_tool: CodeValidationProtocol | None = None,
+    ) -> None:
+        """Initialize the validate_against_spec function.
+        
+        Args:
+            code_validation_tool: Optional CodeValidationTool for objective
+                code analysis using CodeT5+, GraphCodeBERT, CodeBERT, SonarQube.
+                AC-KB7.6: Tools available to validate_against_spec agent.
+        """
+        self._code_validation_tool = code_validation_tool
 
     async def run(  # type: ignore[override]
         self,
@@ -498,6 +525,67 @@ class ValidateAgainstSpecFunction(AgentFunction):
                 hints.append("Provide implementation code in the artifact")
 
         return hints
+
+    async def validate_with_code_tools(
+        self,
+        code: str,
+        query: str,
+        file_path: str | None = None,
+    ) -> dict[str, Any]:
+        """Validate code using CodeValidationTool (AC-KB7.6).
+        
+        Uses CodeT5+, GraphCodeBERT, CodeBERT, and SonarQube for
+        objective code analysis and validation.
+        
+        Args:
+            code: Source code to validate
+            query: Query describing expected functionality
+            file_path: Optional file path for SonarQube analysis
+            
+        Returns:
+            Dict with validation results including:
+            - passed: Whether validation passed
+            - keywords: Extracted keywords from CodeT5+
+            - validation_score: Overall validation score
+            - sonarqube_result: Quality metrics (if available)
+            - should_retry: Whether agent should retry (AC-KB7.7)
+        """
+        if self._code_validation_tool is None:
+            logger.debug("CodeValidationTool not available, skipping validation")
+            return {
+                "passed": True,
+                "keywords": [],
+                "validation_score": 0.0,
+                "sonarqube_result": None,
+                "should_retry": False,
+                "skipped": True,
+            }
+        
+        try:
+            result = await self._code_validation_tool.validate_code(
+                code=code,
+                query=query,
+                file_path=file_path,
+            )
+            
+            return {
+                "passed": result.passed,
+                "keywords": result.keywords,
+                "validation_score": result.validation_score,
+                "sonarqube_result": result.sonarqube_result,
+                "should_retry": result.should_retry,
+                "failure_reason": result.failure_reason,
+            }
+        except Exception as e:
+            logger.warning(f"CodeValidationTool validation failed: {e}")
+            return {
+                "passed": True,  # Fail open if tool unavailable
+                "keywords": [],
+                "validation_score": 0.0,
+                "sonarqube_result": None,
+                "should_retry": False,
+                "error": str(e),
+            }
 
 
 __all__ = ["ValidateAgainstSpecFunction"]

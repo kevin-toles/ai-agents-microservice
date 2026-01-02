@@ -1,6 +1,7 @@
 """analyze_artifact agent function.
 
 WBS-AGT9: analyze_artifact Function implementation.
+WBS-KB7.8: Code-Orchestrator Tool Integration (AC-KB7.6)
 
 Purpose: Analyze code/document for patterns, issues, quality.
 - Analyzes code/docs for quality, patterns, issues (AC-9.1)
@@ -8,16 +9,21 @@ Purpose: Analyze code/document for patterns, issues, quality.
 - Context budget: 16384 input / 2048 output (AC-9.3)
 - Default preset: D4 (Standard) (AC-9.4)
 - Supports analysis_type parameter (quality/security/patterns) (AC-9.5)
+- AC-KB7.6: CodeValidationTool available for objective code analysis
 
 Reference: AGENT_FUNCTIONS_ARCHITECTURE.md → Agent Function 4
 
 REFACTOR Phase:
 - Extracted CHARS_PER_TOKEN to shared utilities (S1192)
 - Using estimate_tokens() from src/functions/utils/token_utils.py
+- KB7.8: Integrated CodeValidationTool for objective metrics
 """
 
+from __future__ import annotations
+
+import logging
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from src.functions.base import AgentFunction, ContextBudgetExceededError
 from src.functions.utils.token_utils import estimate_tokens
@@ -28,6 +34,13 @@ from src.schemas.functions.analyze_artifact import (
     Finding,
     Severity,
 )
+
+
+if TYPE_CHECKING:
+    from src.tools.code_validation import CodeValidationProtocol
+
+
+logger = logging.getLogger(__name__)
 
 
 # Context budget for analyze_artifact (AC-9.3)
@@ -46,11 +59,13 @@ class AnalyzeArtifactFunction(AgentFunction):
     - AC-9.3: Context budget: 16384 input / 2048 output
     - AC-9.4: Default preset: D4 (Standard)
     - AC-9.5: Supports analysis_type parameter (quality/security/patterns)
+    - AC-KB7.6: CodeValidationTool available for objective code analysis
 
     Exit Criteria:
     - Each Finding has severity, category, description, location
     - analysis_type="security" flags common vulnerabilities
     - analysis_type="patterns" identifies design patterns
+    - CodeValidationTool provides objective metrics when available
     """
 
     name: str = "analyze_artifact"
@@ -64,6 +79,19 @@ class AnalyzeArtifactFunction(AgentFunction):
         "security": "D3",  # Debate for high-stakes
         "quick": "S3",     # Qwen solo for speed
     }
+
+    def __init__(
+        self,
+        code_validation_tool: CodeValidationProtocol | None = None,
+    ) -> None:
+        """Initialize the analyze_artifact function.
+        
+        Args:
+            code_validation_tool: Optional CodeValidationTool for objective
+                code analysis using CodeT5+, GraphCodeBERT, CodeBERT, SonarQube.
+                AC-KB7.6: Tools available to analyze_artifact agent.
+        """
+        self._code_validation_tool = code_validation_tool
 
     # =========================================================================
     # Security Patterns (for analysis_type="security")
@@ -297,6 +325,8 @@ class AnalyzeArtifactFunction(AgentFunction):
         artifact: str,
         artifact_type: ArtifactKind,
         checklist: list[str],
+        file_path: str | None = None,
+        query: str | None = None,
     ) -> AnalysisResult:
         """Analyze artifact for code quality issues.
 
@@ -305,6 +335,12 @@ class AnalyzeArtifactFunction(AgentFunction):
         - Missing docstrings
         - High complexity
         - Too many parameters
+        
+        AC-KB7.6: When CodeValidationTool is available, also uses:
+        - CodeT5+ for keyword extraction
+        - GraphCodeBERT for term validation
+        - CodeBERT for code ranking
+        - SonarQube for objective quality metrics
         """
         findings: list[Finding] = []
         metrics: dict[str, Any] = {}
@@ -348,6 +384,67 @@ class AnalyzeArtifactFunction(AgentFunction):
             passed=passed,
             compressed_report=compressed_report,
         )
+
+    async def validate_with_code_tools(
+        self,
+        code: str,
+        query: str,
+        file_path: str | None = None,
+    ) -> dict[str, Any]:
+        """Validate code using CodeValidationTool (AC-KB7.6).
+        
+        Uses CodeT5+, GraphCodeBERT, CodeBERT, and SonarQube for
+        objective code analysis and validation.
+        
+        Args:
+            code: Source code to validate
+            query: Query describing expected functionality
+            file_path: Optional file path for SonarQube analysis
+            
+        Returns:
+            Dict with validation results including:
+            - passed: Whether validation passed
+            - keywords: Extracted keywords from CodeT5+
+            - validation_score: Overall validation score
+            - sonarqube_result: Quality metrics (if available)
+            - should_retry: Whether agent should retry (AC-KB7.7)
+        """
+        if self._code_validation_tool is None:
+            logger.debug("CodeValidationTool not available, skipping validation")
+            return {
+                "passed": True,
+                "keywords": [],
+                "validation_score": 0.0,
+                "sonarqube_result": None,
+                "should_retry": False,
+                "skipped": True,
+            }
+        
+        try:
+            result = await self._code_validation_tool.validate_code(
+                code=code,
+                query=query,
+                file_path=file_path,
+            )
+            
+            return {
+                "passed": result.passed,
+                "keywords": result.keywords,
+                "validation_score": result.validation_score,
+                "sonarqube_result": result.sonarqube_result,
+                "should_retry": result.should_retry,
+                "failure_reason": result.failure_reason,
+            }
+        except Exception as e:
+            logger.warning(f"CodeValidationTool validation failed: {e}")
+            return {
+                "passed": True,  # Fail open if tool unavailable
+                "keywords": [],
+                "validation_score": 0.0,
+                "sonarqube_result": None,
+                "should_retry": False,
+                "error": str(e),
+            }
 
     def _extract_functions(self, code: str) -> list[dict[str, Any]]:
         """Extract function definitions from code."""

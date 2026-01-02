@@ -8,11 +8,21 @@ Reference: AGENT_FUNCTIONS_ARCHITECTURE.md - WBS-AGT7.7
 Reference: WBS-AGT21 - Code Reference Engine Client
 Reference: WBS-AGT22 - Neo4j Graph Integration
 Reference: WBS-AGT23 - Book/JSON Passage Retrieval
+Reference: WBS-KB7 - Code-Orchestrator Tool Integration
 """
 
 from src.clients.book_passage import (
     BookPassageClient,
     BookPassageClientConfig,
+)
+from src.clients.code_analysis import (
+    CodeAnalysisClient,
+    CodeAnalysisConfig,
+    CodeAnalysisProtocol,
+    CodeRankingResult,
+    FakeCodeAnalysisClient,
+    KeywordResult,
+    TermValidationResult,
 )
 from src.clients.code_orchestrator import CodeOrchestratorClient
 from src.clients.code_reference import (
@@ -41,21 +51,39 @@ from src.clients.protocols import (
     SemanticSearchProtocol,
 )
 from src.clients.semantic_search import MSEPSemanticSearchClient
+from src.clients.sonarqube import (
+    ClaimValidationResult,
+    FakeSonarQubeClient,
+    SonarQubeAnalysisResult,
+    SonarQubeClient,
+    SonarQubeConfig,
+    SonarQubeIssue,
+    SonarQubeMetrics,
+    SonarQubeProtocol,
+)
 
 
 __all__ = [
     "BookPassageClient",
     "BookPassageClientConfig",
     "BookPassageClientProtocol",
+    "ClaimValidationResult",
+    "CodeAnalysisClient",
+    "CodeAnalysisConfig",
+    "CodeAnalysisProtocol",
     "CodeChunk",
     "CodeContext",
     "CodeOrchestratorClient",
     "CodeOrchestratorProtocol",
+    "CodeRankingResult",
     "CodeReference",
     "CodeReferenceClient",
     "CodeReferenceConfig",
     "CodeReferenceProtocol",
+    "FakeCodeAnalysisClient",
+    "FakeSonarQubeClient",
     "InferenceServiceClient",
+    "KeywordResult",
     "MODEL_PREFERENCES",
     "MSEPSemanticSearchClient",
     "ModelInfo",
@@ -64,6 +92,13 @@ __all__ = [
     "Neo4jClientConfig",
     "Neo4jClientProtocol",
     "SemanticSearchProtocol",
+    "SonarQubeAnalysisResult",
+    "SonarQubeClient",
+    "SonarQubeConfig",
+    "SonarQubeIssue",
+    "SonarQubeMetrics",
+    "SonarQubeProtocol",
+    "TermValidationResult",
     "create_inference_client",
 ]
 

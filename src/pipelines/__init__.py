@@ -3,6 +3,7 @@
 WBS-AGT14: Pipeline Orchestrator
 WBS-AGT15: Chapter Summarization Pipeline
 WBS-AGT16: Code Generation Pipeline
+WBS-KB6: Cross-Reference Pipeline Orchestration
 
 This package provides:
 - PipelineOrchestrator: Executes function DAGs (AC-14.1)
@@ -12,6 +13,7 @@ This package provides:
 - PipelineSaga: Compensation on failure (AC-14.5)
 - ChapterSummarizationPipeline: 4-stage citation pipeline (AC-15.x)
 - CodeGenerationPipeline: 6-stage code generation pipeline (AC-16.x)
+- CrossReferencePipeline: KB component orchestration pipeline (AC-KB6.x)
 """
 
 from src.pipelines.agents import (
@@ -44,6 +46,11 @@ from src.pipelines.code_generation import (
 )
 from src.pipelines.code_generation import (
     PresetType as CodePresetType,
+)
+from src.pipelines.cross_reference_pipeline import (
+    CrossReferenceConfig,
+    CrossReferencePipeline,
+    PipelineStage,
 )
 from src.pipelines.orchestrator import (
     ConditionEvaluator,
@@ -84,6 +91,9 @@ __all__ = [
     "CompensationResult",
     "CompletedStage",
     "ConditionEvaluator",
+    # Cross-Reference Pipeline (KB6)
+    "CrossReferenceConfig",
+    "CrossReferencePipeline",
     "DAGBuilder",
     "HandoffState",
     "LoopAgent",
@@ -95,6 +105,7 @@ __all__ = [
     "PipelineResult",
     # Saga
     "PipelineSaga",
+    "PipelineStage",
     "RetryConfig",
     "SequentialAgent",
     "StageCondition",

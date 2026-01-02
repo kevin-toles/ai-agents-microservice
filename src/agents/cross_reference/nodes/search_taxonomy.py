@@ -56,14 +56,28 @@ def get_neo4j_client() -> Neo4jClient | None:
 
     If no client is set, attempts to create one from environment variables.
     This handles multi-worker scenarios where lifespan may not propagate.
+    
+    PCON-4: Uses consolidated client from src/clients/neo4j_client.py
     """
     global _neo4j_client
     if _neo4j_client is None:
         # Lazy initialization for multi-worker support
         try:
-            from src.core.clients.neo4j import create_neo4j_client_from_env
-            _neo4j_client = create_neo4j_client_from_env()
-            if _neo4j_client:
+            # PCON-4: Import from consolidated location
+            from src.clients.neo4j_client import Neo4jClient, Neo4jClientConfig
+            import os
+            
+            uri = os.getenv("NEO4J_URI") or os.getenv("NEO4J_URL")
+            user = os.getenv("NEO4J_USER", "neo4j")
+            password = os.getenv("NEO4J_PASSWORD")
+            
+            if uri and password:
+                config = Neo4jClientConfig(uri=uri, user=user, password=password)
+                client = Neo4jClient(config)
+                # Synchronous connection for lazy init
+                import asyncio
+                asyncio.get_event_loop().run_until_complete(client.connect())
+                _neo4j_client = client
                 logger.info("Neo4j client initialized lazily in worker")
         except Exception as e:
             logger.warning("Failed to lazily initialize Neo4j client: %s", e)

@@ -1,6 +1,7 @@
 """Function API routes.
 
 WBS-AGT18: API Routes - AC-18.1: POST /v1/functions/{name}/run executes single function.
+PCON-5: Wire UnifiedRetriever for cross-reference function.
 
 Provides REST API endpoints for executing agent functions.
 
@@ -20,12 +21,13 @@ import logging
 import time
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
 
 from src.api.error_handlers import FunctionExecutionError, FunctionNotFoundError
 from src.functions import (
     AnalyzeArtifactFunction,
+    CrossReferenceFunction,
     DecomposeTaskFunction,
     ExtractStructureFunction,
     GenerateCodeFunction,
@@ -59,7 +61,7 @@ FUNCTION_REGISTRY: dict[str, type] = {
     "validate-against-spec": ValidateAgainstSpecFunction,
     "decompose-task": DecomposeTaskFunction,
     "synthesize-outputs": SummarizeContentFunction,  # Uses same base
-    "cross-reference": ExtractStructureFunction,  # Placeholder
+    "cross-reference": CrossReferenceFunction,  # PCON-5: Proper cross-reference function
 }
 
 
@@ -162,16 +164,21 @@ async def get_function_executor(
     name: str,
     input_data: dict[str, Any],
     preset: str | None = None,
+    request: Request | None = None,
 ) -> dict[str, Any]:
     """Execute a function and return its result.
 
     This is the actual executor that runs the function.
     Can be mocked in tests.
 
+    PCON-5: For cross-reference, injects UnifiedRetriever and SemanticSearchClient
+    from app.state when available.
+
     Args:
         name: Function name
         input_data: Function input data
         preset: Optional preset
+        request: Optional FastAPI request for accessing app.state
 
     Returns:
         Function output as dict
@@ -186,8 +193,21 @@ async def get_function_executor(
     function_class = FUNCTION_REGISTRY[name]
 
     try:
-        # Create function instance
-        function = function_class()
+        # Create function instance with dependencies
+        # PCON-5: Inject unified_retriever and semantic_search_client for cross-reference
+        if name == "cross-reference" and request is not None:
+            app = request.app
+            unified_retriever = getattr(app.state, "unified_retriever", None)
+            semantic_search_client = getattr(app.state, "semantic_search_client", None)
+            function = function_class(
+                semantic_search_client=semantic_search_client,
+                unified_retriever=unified_retriever,
+            )
+            # If unified_retriever is available, enable unified mode by default
+            if unified_retriever is not None and "use_unified" not in input_data:
+                input_data["use_unified"] = True
+        else:
+            function = function_class()
 
         # Execute function
         result = await function.run(**input_data)
@@ -253,13 +273,17 @@ async def list_functions() -> FunctionListResponse:
 )
 async def run_function(
     name: str,
-    request: FunctionRunRequest,
+    body: FunctionRunRequest,
+    request: Request,
 ) -> FunctionRunResponse:
     """Execute a single agent function.
 
+    PCON-5: Passes Request to executor for cross-reference UnifiedRetriever injection.
+
     Args:
         name: Function name (from URL path)
-        request: Function run request with input data
+        body: Function run request with input data
+        request: FastAPI request for accessing app.state
 
     Returns:
         FunctionRunResponse with execution result
@@ -276,18 +300,19 @@ async def run_function(
         "Executing function",
         extra={
             "function": name,
-            "preset": request.preset,
+            "preset": body.preset,
         },
     )
 
     # Time the execution
     start_time = time.perf_counter()
 
-    # Execute function
+    # Execute function (PCON-5: pass request for dependency injection)
     result = await get_function_executor(
         name=name,
-        input_data=request.input,
-        preset=request.preset,
+        input_data=body.input,
+        preset=body.preset,
+        request=request,
     )
 
     # Calculate processing time
@@ -305,7 +330,7 @@ async def run_function(
         result=result,
         function_name=name,
         processing_time_ms=processing_time,
-        preset_used=request.preset,
+        preset_used=body.preset,
     )
 
 

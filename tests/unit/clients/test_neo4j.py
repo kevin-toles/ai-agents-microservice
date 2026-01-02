@@ -131,6 +131,26 @@ class FakeNeo4jClient:
         results = self.chapters_for_concept.get(concept, [])
         return results[:limit]
 
+    async def search_chapters(
+        self,
+        concepts: list[str],
+        tiers: list[int] | None = None,
+        limit: int = 10,
+    ) -> list[dict[str, Any]]:
+        """Search chapters by concepts and optional tier filter.
+        
+        PCON-4: Added to satisfy Neo4jClientProtocol.
+        """
+        self.query_count += 1
+        if self.should_raise:
+            raise self.should_raise
+        
+        # Return combined results for all concepts
+        results = []
+        for concept in concepts:
+            results.extend(self.chapters_for_concept.get(concept, []))
+        return results[:limit]
+
 
 @pytest.fixture
 def fake_client() -> FakeNeo4jClient:

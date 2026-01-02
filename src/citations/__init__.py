@@ -20,6 +20,11 @@ from src.citations.book_citation import (
     passage_to_citation,
     passages_to_citations,
 )
+from src.citations.chicago_formatter import (
+    ChicagoCitationFormatter,
+    CitationData,
+    CitationType,
+)
 from src.citations.code_citation import (
     CodeCitation,
     code_context_to_citations,
@@ -51,8 +56,11 @@ from src.citations.mixed_citation import (
 
 __all__ = [
     "BookCitation",
+    "ChicagoCitationFormatter",
     "ChicagoFormatter",
+    "CitationData",
     "CitationManager",
+    "CitationType",
     "CodeCitation",
     "GraphCitation",
     "MixedCitation",

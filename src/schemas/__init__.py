@@ -58,6 +58,13 @@ from src.schemas.retrieval_models import (
     RetrievalScope,
     SourceType as RetrievalSourceType,
 )
+# Grounded response schemas (WBS-KB6)
+from src.schemas.grounded_response import (
+    CitationEntry,
+    GroundedResponse,
+    GroundedResponseMetadata,
+    TerminationReason,
+)
 
 
 __all__: list[str] = [
@@ -67,6 +74,7 @@ __all__: list[str] = [
     "ChapterPassageRef",
     "ChapterReference",
     "Citation",
+    "CitationEntry",
     "CitedContent",
     "CodeFileReference",
     "CodeQueryResult",
@@ -74,6 +82,8 @@ __all__: list[str] = [
     "ConceptQueryResult",
     "Finding",
     "GraphReference",
+    "GroundedResponse",
+    "GroundedResponseMetadata",
     "PassageFilter",
     "PassageMetadata",
     "PassageSearchResult",
@@ -90,6 +100,7 @@ __all__: list[str] = [
     "SourceMetadata",
     # Citation schemas
     "SourceType",
+    "TerminationReason",
     "ValidationResult",
     "Violation",
     "create_citation_from_retrieval",

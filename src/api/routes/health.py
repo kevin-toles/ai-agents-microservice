@@ -290,21 +290,47 @@ async def check_neo4j() -> DependencyHealth:
     Returns:
         DependencyHealth for neo4j
 
-    Note: Neo4j check is optional - returns UP if not configured
+    PCON-8: Implements actual Neo4j driver ping using neo4j async driver.
     """
-    # Neo4j is optional for basic operation
-    # TODO: Implement actual Neo4j driver ping if neo4j is configured
-    if NEO4J_URL == "bolt://localhost:7687":
+    from neo4j import AsyncGraphDatabase
+    
+    neo4j_user = os.environ.get("AI_AGENTS_NEO4J_USER", "neo4j")
+    neo4j_password = os.environ.get("AI_AGENTS_NEO4J_PASSWORD", "devpassword")
+    
+    try:
+        driver = AsyncGraphDatabase.driver(
+            NEO4J_URL,
+            auth=(neo4j_user, neo4j_password),
+        )
+        try:
+            start = datetime.now(UTC)
+            async with driver.session() as session:
+                result = await session.run("RETURN 1 as n")
+                record = await result.single()
+                latency = (datetime.now(UTC) - start).total_seconds() * 1000
+                
+                if record and record["n"] == 1:
+                    return DependencyHealth(
+                        name="neo4j",
+                        status=DependencyStatus.UP,
+                        latency_ms=latency,
+                        message="OK",
+                    )
+                return DependencyHealth(
+                    name="neo4j",
+                    status=DependencyStatus.DOWN,
+                    latency_ms=latency,
+                    message="Query returned unexpected result",
+                )
+        finally:
+            await driver.close()
+    except Exception as e:
+        logger.warning(f"Neo4j health check failed: {e}")
         return DependencyHealth(
             name="neo4j",
-            status=DependencyStatus.UP,
-            message="Optional (not configured)",
+            status=DependencyStatus.DOWN,
+            message=str(e)[:100],
         )
-    return DependencyHealth(
-        name="neo4j",
-        status=DependencyStatus.UNKNOWN,
-        message="Neo4j check not implemented",
-    )
 
 
 async def get_all_dependency_checks() -> list[DependencyHealth]:

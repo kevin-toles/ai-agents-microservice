@@ -6,6 +6,9 @@ The AI Agents service is a **microservice** that exposes specialized AI agents v
 
 **This service is the core of the Unified Agent Platform** - supporting both batch processing (llm-document-enhancer) and interactive use cases (VS Code Copilot, IDE extensions).
 
+**PCON Status**: PCON-1 through PCON-8 Complete (January 1, 2026)  
+**Neo4j Client**: Single consolidated `Neo4jClient` in `src/clients/neo4j_client.py`
+
 ## Architecture Type
 
 **Microservice** - Independently deployable, stateless, horizontally scalable. Agents are exposed as API endpoints, not as libraries.
@@ -181,9 +184,12 @@ ai-agents/
 │   │
 │   ├── clients/
 │   │   ├── __init__.py
+│   │   ├── neo4j_client.py          # PCON-4: Consolidated Neo4j client (single client)
+│   │   ├── code_reference.py        # WBS-AGT21: Code Reference Engine client
+│   │   ├── book_passage.py          # WBS-AGT23: Book Passage client
+│   │   ├── protocols.py             # Client protocols for testing
 │   │   ├── gateway_client.py        # HTTP client for llm-gateway
-│   │   ├── search_client.py         # HTTP client for semantic-search
-│   │   └── graph_client.py          # HTTP client for Neo4j (NEW)
+│   │   └── search_client.py         # HTTP client for semantic-search
 │   │
 │   ├── agents/
 │   │   ├── __init__.py

@@ -402,6 +402,34 @@ class Neo4jClientProtocol(Protocol):
         """
         ...
 
+    async def search_chapters(
+        self,
+        concepts: list[str],
+        tiers: list[int] | None = None,
+        limit: int = 10,
+    ) -> list[dict[str, Any]]:
+        """Search chapters by concepts and optional tier filter.
+
+        PCON-4: Consolidated method for LangGraph agent compatibility.
+        Searches the Neo4j graph for chapters matching the given concepts.
+
+        Args:
+            concepts: List of concepts to search for
+            tiers: Optional list of tiers to filter by (1, 2, or 3)
+            limit: Maximum results to return
+
+        Returns:
+            List of chapter dicts with:
+                - book: Book identifier
+                - chapter: Chapter number
+                - title: Chapter title
+                - tier: Tier level (1-3)
+                - similarity: Relevance score (0-1)
+                - keywords: List of keywords
+                - relevance_reason: Why this chapter matched
+        """
+        ...
+
 
 @runtime_checkable
 class BookPassageClientProtocol(Protocol):

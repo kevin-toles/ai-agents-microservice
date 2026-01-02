@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json.schemastore.org/mcp.json",
+  "mcpServers": {
+    "ai-platform-agent-functions": {
+      "command": "python3",
+      "args": [
+        "-m",
+        "src.mcp.server"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}",
+        "AGENTS_MCP_ENABLED": "true",
+        "AGENTS_MCP_SERVER_ENABLED": "true"
+      },
+      "initializationOptions": {
+        "server_name": "ai-platform-agent-functions",
+        "port": 8765,
+        "log_level": "INFO"
+      }
+    }
+  },
+  "tools": {
+    "cross_reference": {
+      "description": "Cross-reference a question across code, documentation, and textbooks. Returns grounded answers with citations [^N] pointing to specific sources.",
+      "enabled": true
+    },
+    "analyze_code": {
+      "description": "Analyze code for quality, security issues, and architectural patterns. Uses CodeT5+, SonarQube, and pattern matching.",
+      "enabled": true
+    },
+    "generate_code": {
+      "description": "Generate code based on requirements, with references to similar patterns found in the codebase.",
+      "enabled": true
+    },
+    "explain_code": {
+      "description": "Explain code functionality with references to design patterns, documentation, and related implementations.",
+      "enabled": true
+    }
+  }
+}

@@ -421,6 +421,162 @@ class Neo4jClient:
             return f"{base_url}#L{start_line}"
         return base_url
 
+    # =========================================================================
+    # AC-4.1/4.2: search_chapters() for LangGraph agent compatibility
+    # Consolidated from src/core/clients/neo4j.py (RealNeo4jClient)
+    # PCON-4: Platform Consolidation - Single Neo4j Client
+    # =========================================================================
+
+    async def search_chapters(
+        self,
+        concepts: list[str],
+        tiers: list[int] | None = None,
+        limit: int = 10,
+    ) -> list[dict[str, Any]]:
+        """Search chapters by concepts and optional tier filter.
+        
+        Implements the Neo4jClient Protocol for LangGraph agent compatibility.
+        Searches the Neo4j graph for chapters that match the given concepts
+        using full-text search on chapter content, keywords, and concepts.
+        
+        PCON-4: Consolidated from RealNeo4jClient.search_chapters()
+        
+        Args:
+            concepts: List of concepts to search for
+            tiers: Optional list of tiers to filter by (1, 2, or 3) - reserved for future use
+            limit: Maximum results to return
+        
+        Returns:
+            List of chapter dicts with:
+                - book: Book identifier (book_id)
+                - chapter: Chapter number
+                - title: Chapter title
+                - tier: Tier level (1-3, defaults to 2)
+                - similarity: Relevance score (0-1)
+                - keywords: List of keywords
+                - relevance_reason: Why this chapter matched
+        """
+        # Cypher query searches keywords, concepts arrays, and title
+        # Scoring: 40% keyword matches + 40% concept matches + 20% title matches
+        cypher = """
+        MATCH (c:Chapter)
+        WHERE (
+            ANY(keyword IN coalesce(c.keywords, []) WHERE
+                ANY(concept IN $concepts WHERE toLower(keyword) CONTAINS toLower(concept))
+            )
+            OR ANY(stored_concept IN coalesce(c.concepts, []) WHERE
+                ANY(concept IN $concepts WHERE toLower(stored_concept) CONTAINS toLower(concept))
+            )
+            OR ANY(concept IN $concepts WHERE toLower(coalesce(c.title, '')) CONTAINS toLower(concept))
+            OR ANY(concept IN $concepts WHERE toLower(coalesce(c.summary, '')) CONTAINS toLower(concept))
+        )
+        WITH c,
+             size([keyword IN coalesce(c.keywords, []) WHERE
+                ANY(concept IN $concepts WHERE toLower(keyword) CONTAINS toLower(concept))
+             ]) as keyword_matches,
+             size([stored_concept IN coalesce(c.concepts, []) WHERE
+                ANY(concept IN $concepts WHERE toLower(stored_concept) CONTAINS toLower(concept))
+             ]) as concept_matches,
+             size([concept IN $concepts WHERE toLower(coalesce(c.title, '')) CONTAINS toLower(concept)]) as title_matches
+        WITH c, (keyword_matches * 0.4 + concept_matches * 0.4 + title_matches * 0.2) as raw_score
+        WHERE raw_score > 0
+        RETURN c.book_id as book,
+               c.number as chapter,
+               c.title as title,
+               coalesce(c.tier, 2) as tier,
+               CASE WHEN raw_score > 1.0 THEN 1.0 ELSE raw_score END as similarity,
+               c.keywords as keywords,
+               c.concepts as concepts
+        ORDER BY similarity DESC
+        LIMIT $limit
+        """
+        
+        records = await self._run_query(cypher, {"concepts": concepts, "limit": limit})
+        
+        results = [
+            {
+                "book": r["book"] or "",
+                "chapter": r["chapter"] or 0,
+                "title": r["title"] or "",
+                "tier": r["tier"] or 2,
+                "similarity": float(r["similarity"] or 0.0),
+                "keywords": list(r["keywords"] or []),
+                "relevance_reason": f"Matched concepts: {', '.join(concepts[:3])}",
+            }
+            for r in records
+        ]
+        
+        logger.info(
+            "Neo4j search found %d chapters for concepts: %s",
+            len(results),
+            concepts[:3],
+        )
+        
+        return results
+
+
+# =============================================================================
+# Global client reference and factory functions
+# PCON-4: Consolidated from src/core/clients/neo4j.py
+# =============================================================================
+
+_neo4j_client: Neo4jClient | None = None
+
+
+def get_neo4j_client() -> Neo4jClient | None:
+    """Get the current Neo4j client instance.
+    
+    Returns:
+        Neo4jClient instance or None if not initialized
+    """
+    return _neo4j_client
+
+
+def set_neo4j_client(client: Neo4jClient | None) -> None:
+    """Set the global Neo4j client.
+
+    Args:
+        client: Neo4jClient instance or None to reset
+    """
+    global _neo4j_client
+    _neo4j_client = client
+
+
+async def create_neo4j_client_from_env() -> Neo4jClient | None:
+    """Create Neo4j client from environment variables.
+
+    Expected environment variables:
+        - NEO4J_URI or NEO4J_URL: Bolt URI (e.g., bolt://neo4j:7687)
+        - NEO4J_USER: Username (default: neo4j)
+        - NEO4J_PASSWORD: Password
+
+    Returns:
+        Neo4jClient if connection successful, None otherwise
+    """
+    import os
+    
+    uri = os.getenv("NEO4J_URI") or os.getenv("NEO4J_URL")
+    user = os.getenv("NEO4J_USER", "neo4j")
+    password = os.getenv("NEO4J_PASSWORD")
+
+    if not uri:
+        logger.warning("NEO4J_URI/NEO4J_URL not set, Neo4j client not initialized")
+        return None
+
+    if not password:
+        logger.warning("NEO4J_PASSWORD not set, Neo4j client not initialized")
+        return None
+
+    try:
+        config = Neo4jClientConfig(uri=uri, user=user, password=password)
+        client = Neo4jClient(config)
+        await client.connect()
+        logger.info("Created Neo4j client from environment: %s", uri)
+        return client
+    except Exception as e:
+        logger.error("Failed to create Neo4j client: %s", e)
+        return None
+
 
 # Type alias for protocol compliance verification
 _: type[Neo4jClientProtocol] = Neo4jClient  # type: ignore[assignment]
