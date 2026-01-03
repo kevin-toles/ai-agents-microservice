@@ -214,7 +214,7 @@ class TestPipelineOrchestrator:
         
         orchestrator = PipelineOrchestrator()
         
-        assert orchestrator is not None
+        assert isinstance(orchestrator, PipelineOrchestrator)
         assert hasattr(orchestrator, "function_registry")
 
     def test_orchestrator_has_function_registry(self) -> None:
@@ -757,7 +757,7 @@ class TestPipelineResult:
             total_duration_ms=150.5,
         )
         
-        assert result.total_duration_ms == 150.5
+        assert result.total_duration_ms == pytest.approx(150.5)
 
     def test_pipeline_result_has_error_info(self) -> None:
         """PipelineResult has error information when failed."""

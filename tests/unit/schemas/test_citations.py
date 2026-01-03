@@ -106,7 +106,7 @@ class TestSourceMetadata:
             similarity_score=0.89,
         )
         
-        assert metadata.similarity_score == 0.89
+        assert metadata.similarity_score == pytest.approx(0.89)
     
     def test_source_metadata_optional_fields(self) -> None:
         """SourceMetadata allows optional fields."""
@@ -529,7 +529,7 @@ class TestCitationUtilities:
         
         assert citation.marker == 1
         assert citation.source.author == "Fowler, Martin"
-        assert citation.source.similarity_score == 0.89
+        assert citation.source.similarity_score == pytest.approx(0.89)
         assert citation.context == "The Repository pattern provides..."
     
     def test_merge_citations(self) -> None:

@@ -53,6 +53,89 @@ configure_logging()
 logger = get_logger(__name__)
 
 
+# =============================================================================
+# Lifespan Helper Functions (Refactored for reduced cognitive complexity)
+# =============================================================================
+
+
+async def _init_neo4j_client(app: FastAPI) -> Neo4jClient | None:
+    """Initialize Neo4j client and set global references."""
+    neo4j_client = await create_neo4j_client_from_env()
+    if not neo4j_client:
+        logger.warning("Neo4j client not configured")
+        app.state.neo4j_status = "not_configured"
+        return None
+
+    set_global_neo4j_client(neo4j_client)
+    set_node_neo4j_client(neo4j_client)
+    app.state.neo4j_status = await _check_neo4j_health(neo4j_client)
+    return neo4j_client
+
+
+async def _check_neo4j_health(client: Neo4jClient) -> str:
+    """Check Neo4j health and return status string."""
+    try:
+        if await client.health_check():
+            logger.info("Neo4j connected successfully")
+            return "connected"
+        logger.warning("Neo4j health check failed")
+        return "unhealthy"
+    except Exception as e:
+        logger.error("Neo4j connection error", error=str(e))
+        return f"error: {e}"
+
+
+async def _init_code_ref_client() -> CodeReferenceClient | None:
+    """Initialize CodeReferenceClient (WBS-AGT21)."""
+    code_ref_config = CodeReferenceConfig.from_env()
+    if not code_ref_config.registry_path:
+        logger.warning("CodeReferenceClient not configured (missing CODE_REFERENCE_REGISTRY)")
+        return None
+
+    try:
+        client = CodeReferenceClient(code_ref_config)
+        await client.__aenter__()
+        logger.info("CodeReferenceClient initialized")
+        return client
+    except Exception as e:
+        logger.warning("CodeReferenceClient initialization failed", error=str(e))
+        return None
+
+
+async def _init_book_passage_client(settings) -> BookPassageClient | None:
+    """Initialize BookPassageClient (WBS-AGT23)."""
+    config = BookPassageClientConfig(
+        qdrant_url=settings.qdrant_url,
+        qdrant_collection=settings.book_passages_collection,
+        books_dir=settings.book_passages_dir,
+        neo4j_uri=settings.neo4j_uri,
+        neo4j_user=settings.neo4j_user,
+        neo4j_password=settings.neo4j_password.get_secret_value(),
+        embedding_model=settings.embedding_model,
+    )
+    try:
+        client = BookPassageClient(config)
+        await client.connect()
+        logger.info("BookPassageClient initialized")
+        return client
+    except Exception as e:
+        logger.warning("BookPassageClient initialization failed", error=str(e))
+        return None
+
+
+async def _close_client(client, name: str, close_method: str = "close") -> None:
+    """Safely close a client with logging."""
+    if not client:
+        return
+    try:
+        if close_method == "__aexit__":
+            await client.__aexit__(None, None, None)
+        else:
+            await getattr(client, close_method)()
+        logger.info(f"{name} closed")
+    except Exception as e:
+        logger.warning(f"{name} close failed", error=str(e))
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -75,27 +158,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     set_service_start_time()
 
     # Initialize Neo4j client (PCON-4: consolidated client)
-    neo4j_client = await create_neo4j_client_from_env()
-    if neo4j_client:
-        # Set client in both locations for compatibility
-        set_global_neo4j_client(neo4j_client)
-        set_node_neo4j_client(neo4j_client)
-
-        # Health check
-        try:
-            if await neo4j_client.health_check():
-                logger.info("Neo4j connected successfully")
-                app.state.neo4j_status = "connected"
-            else:
-                logger.warning("Neo4j health check failed")
-                app.state.neo4j_status = "unhealthy"
-        except Exception as e:
-            logger.error("Neo4j connection error", error=str(e))
-            app.state.neo4j_status = f"error: {e}"
-    else:
-        logger.warning("Neo4j client not configured")
-        app.state.neo4j_status = "not_configured"
-
+    neo4j_client = await _init_neo4j_client(app)
     app.state.neo4j_client = neo4j_client
 
     # Initialize SemanticSearchClient for content retrieval
@@ -111,38 +174,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # =========================================================================
 
     # Initialize CodeReferenceClient (WBS-AGT21)
-    code_ref_config = CodeReferenceConfig.from_env()
-    code_ref_client = None
-    if code_ref_config.registry_path:
-        try:
-            code_ref_client = CodeReferenceClient(code_ref_config)
-            await code_ref_client.__aenter__()  # Initialize HTTP client
-            logger.info("CodeReferenceClient initialized")
-        except Exception as e:
-            logger.warning("CodeReferenceClient initialization failed", error=str(e))
-            code_ref_client = None
-    else:
-        logger.warning("CodeReferenceClient not configured (missing CODE_REFERENCE_REGISTRY)")
+    code_ref_client = await _init_code_ref_client()
     app.state.code_ref_client = code_ref_client
 
     # Initialize BookPassageClient (WBS-AGT23)
-    book_passage_config = BookPassageClientConfig(
-        qdrant_url=settings.qdrant_url,
-        qdrant_collection=settings.book_passages_collection,
-        books_dir=settings.book_passages_dir,
-        neo4j_uri=settings.neo4j_uri,
-        neo4j_user=settings.neo4j_user,
-        neo4j_password=settings.neo4j_password.get_secret_value(),
-        embedding_model=settings.embedding_model,
-    )
-    book_passage_client = None
-    try:
-        book_passage_client = BookPassageClient(book_passage_config)
-        await book_passage_client.connect()
-        logger.info("BookPassageClient initialized")
-    except Exception as e:
-        logger.warning("BookPassageClient initialization failed", error=str(e))
-        book_passage_client = None
+    book_passage_client = await _init_book_passage_client(settings)
     app.state.book_passage_client = book_passage_client
 
     # Initialize UnifiedRetriever (WBS-AGT24)
@@ -164,19 +200,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Shutting down ai-agents service")
 
     # PCON-5: Close WBS-AGT21-24 clients
-    if code_ref_client:
-        try:
-            await code_ref_client.__aexit__(None, None, None)
-            logger.info("CodeReferenceClient closed")
-        except Exception as e:
-            logger.warning("CodeReferenceClient close failed", error=str(e))
-
-    if book_passage_client:
-        try:
-            await book_passage_client.close()
-            logger.info("BookPassageClient closed")
-        except Exception as e:
-            logger.warning("BookPassageClient close failed", error=str(e))
+    await _close_client(code_ref_client, "CodeReferenceClient", "__aexit__")
+    await _close_client(book_passage_client, "BookPassageClient", "close")
 
     # Close semantic search client
     if semantic_search_client:

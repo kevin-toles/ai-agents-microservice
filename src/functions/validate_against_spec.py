@@ -204,6 +204,82 @@ class ValidateAgainstSpecFunction(AgentFunction):
             remediation_hints=remediation_hints,
         )
 
+    def _check_empty_artifact(self, artifact: str) -> Violation | None:
+        """Check if artifact is empty."""
+        if not artifact or not artifact.strip():
+            return Violation(
+                expected="Non-empty artifact content",
+                actual="Empty artifact",
+                description="Artifact is empty or contains only whitespace",
+                severity=ViolationSeverity.CRITICAL,
+            )
+        return None
+
+    def _check_function_requirement(
+        self, artifact: str, specification: str, spec_lower: str
+    ) -> list[Violation]:
+        """Check function requirements in specification."""
+        violations: list[Violation] = []
+        if not spec_requires_function(spec_lower):
+            return violations
+
+        func_name = extract_function_name(specification)
+        if not has_function(artifact):
+            name_part = f" named {func_name}" if func_name else ""
+            violations.append(Violation(
+                expected=f"Function definition{name_part}",
+                actual="No function definition found",
+                description=f"Specification requires a function{name_part}, but none was found",
+                severity=ViolationSeverity.ERROR,
+            ))
+        elif func_name and not has_function_named(artifact, func_name):
+            violations.append(Violation(
+                expected=f"Function named '{func_name}'",
+                actual=f"Function named '{func_name}' not found",
+                description=f"Specification requires function '{func_name}', but it was not found",
+                severity=ViolationSeverity.ERROR,
+            ))
+        return violations
+
+    def _check_class_requirement(
+        self, artifact: str, specification: str, spec_lower: str
+    ) -> list[Violation]:
+        """Check class requirements in specification."""
+        violations: list[Violation] = []
+        if not spec_requires_class(spec_lower):
+            return violations
+
+        cls_name = extract_class_name(specification)
+        if not has_class(artifact):
+            name_part = f" named {cls_name}" if cls_name else ""
+            violations.append(Violation(
+                expected=f"Class definition{name_part}",
+                actual="No class definition found",
+                description=f"Specification requires a class{name_part}, but none was found",
+                severity=ViolationSeverity.ERROR,
+            ))
+        elif cls_name and not has_class_named(artifact, cls_name):
+            violations.append(Violation(
+                expected=f"Class named '{cls_name}'",
+                actual=f"Class named '{cls_name}' not found",
+                description=f"Specification requires class '{cls_name}', but it was not found",
+                severity=ViolationSeverity.ERROR,
+            ))
+        return violations
+
+    def _check_docstring_requirement(
+        self, artifact: str, spec_lower: str
+    ) -> Violation | None:
+        """Check docstring requirement in specification."""
+        if spec_requires_docstring(spec_lower) and not has_docstring(artifact):
+            return Violation(
+                expected="Docstring present",
+                actual="No docstring found",
+                description="Specification requires a docstring, but none was found",
+                severity=ViolationSeverity.WARNING,
+            )
+        return None
+
     def _validate_artifact_content(
         self,
         artifact: str,
@@ -223,66 +299,114 @@ class ValidateAgainstSpecFunction(AgentFunction):
         Returns:
             List of violations found
         """
+        # Check for empty artifact first
+        if empty_violation := self._check_empty_artifact(artifact):
+            return [empty_violation]
+
+        violations: list[Violation] = []
+        spec_lower = specification.lower()
+
+        violations.extend(self._check_function_requirement(artifact, specification, spec_lower))
+        violations.extend(self._check_class_requirement(artifact, specification, spec_lower))
+
+        if docstring_violation := self._check_docstring_requirement(artifact, spec_lower):
+            violations.append(docstring_violation)
+
+        return violations
+
+    def _check_criterion_function(
+        self, artifact: str, criterion: str, criterion_lower: str, criterion_id: str
+    ) -> list[Violation]:
+        """Check function-related criteria."""
         violations: list[Violation] = []
 
-        # Check for empty artifact
-        if not artifact or not artifact.strip():
+        # General function existence check
+        requires_func = "function" in criterion_lower and (
+            "must exist" in criterion_lower or "must be" in criterion_lower
+        )
+        if requires_func and not has_function(artifact):
             violations.append(Violation(
-                expected="Non-empty artifact content",
-                actual="Empty artifact",
-                description="Artifact is empty or contains only whitespace",
-                severity=ViolationSeverity.CRITICAL,
+                expected="Function exists",
+                actual="No function found",
+                description=f"Criterion requires a function: {criterion}",
+                criterion_id=criterion_id,
+                severity=ViolationSeverity.ERROR,
             ))
+
+        # Named function check
+        func_name = extract_entity_name(criterion, "function")
+        if func_name and not has_function_named(artifact, func_name):
+            violations.append(Violation(
+                expected=f"Function '{func_name}' exists",
+                actual=f"Function '{func_name}' not found",
+                description=f"Criterion requires function '{func_name}': {criterion}",
+                criterion_id=criterion_id,
+                severity=ViolationSeverity.ERROR,
+            ))
+
+        return violations
+
+    def _check_criterion_class(
+        self, artifact: str, criterion: str, criterion_lower: str, criterion_id: str
+    ) -> list[Violation]:
+        """Check class-related criteria."""
+        violations: list[Violation] = []
+
+        if "class" not in criterion_lower or "must" not in criterion_lower:
             return violations
 
-        spec_lower = specification.lower()
-        artifact.lower()
+        cls_name = extract_entity_name(criterion, "class")
+        if cls_name and not has_class_named(artifact, cls_name):
+            violations.append(Violation(
+                expected=f"Class '{cls_name}' exists",
+                actual=f"Class '{cls_name}' not found",
+                description=f"Criterion requires class '{cls_name}': {criterion}",
+                criterion_id=criterion_id,
+                severity=ViolationSeverity.ERROR,
+            ))
 
-        # Check for function requirement - using shared utilities
-        if spec_requires_function(spec_lower):
-            if not has_function(artifact):
-                func_name = extract_function_name(specification)
-                violations.append(Violation(
-                    expected=f"Function definition{' named ' + func_name if func_name else ''}",
-                    actual="No function definition found",
-                    description=f"Specification requires a function{' named ' + func_name if func_name else ''}, but none was found",
-                    severity=ViolationSeverity.ERROR,
-                ))
-            elif func_name := extract_function_name(specification):
-                if not has_function_named(artifact, func_name):
-                    violations.append(Violation(
-                        expected=f"Function named '{func_name}'",
-                        actual=f"Function named '{func_name}' not found",
-                        description=f"Specification requires function '{func_name}', but it was not found",
-                        severity=ViolationSeverity.ERROR,
-                    ))
+        return violations
 
-        # Check for class requirement - using shared utilities
-        if spec_requires_class(spec_lower):
-            if not has_class(artifact):
-                cls_name = extract_class_name(specification)
-                violations.append(Violation(
-                    expected=f"Class definition{' named ' + cls_name if cls_name else ''}",
-                    actual="No class definition found",
-                    description=f"Specification requires a class{' named ' + cls_name if cls_name else ''}, but none was found",
-                    severity=ViolationSeverity.ERROR,
-                ))
-            elif cls_name := extract_class_name(specification):
-                if not has_class_named(artifact, cls_name):
-                    violations.append(Violation(
-                        expected=f"Class named '{cls_name}'",
-                        actual=f"Class named '{cls_name}' not found",
-                        description=f"Specification requires class '{cls_name}', but it was not found",
-                        severity=ViolationSeverity.ERROR,
-                    ))
+    def _check_criterion_documentation(
+        self, artifact: str, criterion: str, criterion_lower: str, criterion_id: str
+    ) -> list[Violation]:
+        """Check documentation-related criteria (docstrings, type hints)."""
+        violations: list[Violation] = []
 
-        # Check for docstring requirement - using shared utilities
-        if spec_requires_docstring(spec_lower) and not has_docstring(artifact):
+        if "docstring" in criterion_lower and not has_docstring(artifact):
             violations.append(Violation(
                 expected="Docstring present",
                 actual="No docstring found",
-                description="Specification requires a docstring, but none was found",
+                description=f"Criterion requires docstring: {criterion}",
+                criterion_id=criterion_id,
                 severity=ViolationSeverity.WARNING,
+            ))
+
+        if "type hint" in criterion_lower and not has_type_hints(artifact):
+            violations.append(Violation(
+                expected="Type hints present",
+                actual="No type hints found",
+                description=f"Criterion requires type hints: {criterion}",
+                criterion_id=criterion_id,
+                severity=ViolationSeverity.WARNING,
+            ))
+
+        return violations
+
+    def _check_criterion_method(
+        self, artifact: str, criterion: str, criterion_id: str
+    ) -> list[Violation]:
+        """Check method-related criteria."""
+        violations: list[Violation] = []
+
+        meth_name = extract_method_name(criterion)
+        if meth_name and not has_method(artifact, meth_name):
+            violations.append(Violation(
+                expected=f"Method '{meth_name}' exists",
+                actual=f"Method '{meth_name}' not found",
+                description=f"Criterion requires method '{meth_name}': {criterion}",
+                criterion_id=criterion_id,
+                severity=ViolationSeverity.ERROR,
             ))
 
         return violations
@@ -303,76 +427,13 @@ class ValidateAgainstSpecFunction(AgentFunction):
         Returns:
             List of violations for this criterion
         """
-        violations: list[Violation] = []
         criterion_lower = criterion.lower()
+        violations: list[Violation] = []
 
-        # Check common criteria patterns
-
-        # Function existence check
-        if ("function" in criterion_lower
-            and ("must exist" in criterion_lower or "must be" in criterion_lower)
-            and not has_function(artifact)):
-            violations.append(Violation(
-                expected="Function exists",
-                actual="No function found",
-                description=f"Criterion requires a function: {criterion}",
-                criterion_id=criterion_id,
-                severity=ViolationSeverity.ERROR,
-            ))
-
-        # Named function check
-        func_name = extract_entity_name(criterion, "function")
-        if func_name and not has_function_named(artifact, func_name):
-            violations.append(Violation(
-                expected=f"Function '{func_name}' exists",
-                actual=f"Function '{func_name}' not found",
-                description=f"Criterion requires function '{func_name}': {criterion}",
-                criterion_id=criterion_id,
-                severity=ViolationSeverity.ERROR,
-            ))
-
-        # Class existence check
-        if "class" in criterion_lower and "must" in criterion_lower:
-            cls_name = extract_entity_name(criterion, "class")
-            if cls_name and not has_class_named(artifact, cls_name):
-                violations.append(Violation(
-                    expected=f"Class '{cls_name}' exists",
-                    actual=f"Class '{cls_name}' not found",
-                    description=f"Criterion requires class '{cls_name}': {criterion}",
-                    criterion_id=criterion_id,
-                    severity=ViolationSeverity.ERROR,
-                ))
-
-        # Docstring check
-        if "docstring" in criterion_lower and not has_docstring(artifact):
-            violations.append(Violation(
-                expected="Docstring present",
-                actual="No docstring found",
-                description=f"Criterion requires docstring: {criterion}",
-                criterion_id=criterion_id,
-                severity=ViolationSeverity.WARNING,
-            ))
-
-        # Type hints check
-        if "type hint" in criterion_lower and not has_type_hints(artifact):
-            violations.append(Violation(
-                expected="Type hints present",
-                actual="No type hints found",
-                description=f"Criterion requires type hints: {criterion}",
-                criterion_id=criterion_id,
-                severity=ViolationSeverity.WARNING,
-            ))
-
-        # Method check
-        meth_name = extract_method_name(criterion)
-        if meth_name and not has_method(artifact, meth_name):
-            violations.append(Violation(
-                expected=f"Method '{meth_name}' exists",
-                actual=f"Method '{meth_name}' not found",
-                description=f"Criterion requires method '{meth_name}': {criterion}",
-                criterion_id=criterion_id,
-                severity=ViolationSeverity.ERROR,
-            ))
+        violations.extend(self._check_criterion_function(artifact, criterion, criterion_lower, criterion_id))
+        violations.extend(self._check_criterion_class(artifact, criterion, criterion_lower, criterion_id))
+        violations.extend(self._check_criterion_documentation(artifact, criterion, criterion_lower, criterion_id))
+        violations.extend(self._check_criterion_method(artifact, criterion, criterion_id))
 
         return violations
 
@@ -506,19 +567,20 @@ class ValidateAgainstSpecFunction(AgentFunction):
         """
         hints: list[str] = []
 
+        not_found_pattern = "not found"
         for violation in violations:
             desc_lower = violation.description.lower()
-            if "function" in desc_lower and "not found" in desc_lower:
+            if "function" in desc_lower and not_found_pattern in desc_lower:
                 func_name = extract_func_name_from_text(violation.description)
                 hints.append(f"Add a function definition: `def {func_name}(...):`")
-            elif "class" in desc_lower and "not found" in desc_lower:
+            elif "class" in desc_lower and not_found_pattern in desc_lower:
                 cls_name = extract_class_name_from_text(violation.description)
                 hints.append(f"Add a class definition: `class {cls_name}:`")
             elif "docstring" in desc_lower:
                 hints.append("Add a docstring immediately after the function/class definition")
             elif "type hint" in desc_lower:
                 hints.append("Add type hints to function parameters and return type: `def func(param: Type) -> ReturnType:`")
-            elif "method" in desc_lower and "not found" in desc_lower:
+            elif "method" in desc_lower and not_found_pattern in desc_lower:
                 meth_name = extract_method_name_from_text(violation.description)
                 hints.append(f"Add the required method to the class: `def {meth_name}(self, ...):`")
             elif "empty" in desc_lower:

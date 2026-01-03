@@ -351,6 +351,9 @@ class FakeAuditServiceClient:
         Raises:
             AuditServiceUnavailableError: If should_raise_error is True
         """
+        # Yield control to event loop (maintains async interface)
+        await asyncio.sleep(0)
+        
         # code parameter intentionally unused - fake returns configured response
         del code  # silence ARG002 linter warning
         if self.should_raise_error:
@@ -399,6 +402,9 @@ class FakeAuditServiceClient:
         Raises:
             ConnectionError: If should_fail is True
         """
+        # Yield control to event loop (maintains async interface)
+        await asyncio.sleep(0)
+        
         if self.should_fail:
             raise ConnectionError("Fake connection failure")
 
@@ -420,6 +426,9 @@ class FakeAuditServiceClient:
         Raises:
             ConnectionError: If should_fail is True
         """
+        # Yield control to event loop (maintains async interface)
+        await asyncio.sleep(0)
+        
         if self.should_fail:
             raise ConnectionError("Fake connection failure")
 

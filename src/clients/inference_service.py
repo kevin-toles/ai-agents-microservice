@@ -148,62 +148,66 @@ class ModelResolver:
                 context_length=model_data.get("context_length", 0),
                 roles=model_data.get("roles", []),
             ))
-    
+
+    def _find_preferred_model(self, loaded: list[ModelInfo], preferred: str) -> str | None:
+        """Find preferred model if it's loaded."""
+        for model in loaded:
+            if model.model_id == preferred:
+                logger.debug("Using preferred model: %s", preferred)
+                return preferred
+        return None
+
+    def _find_model_by_role(
+        self, loaded: list[ModelInfo], roles: list[str], preferred: str | None
+    ) -> str | None:
+        """Find first model matching any of the specified roles."""
+        for role in roles:
+            for model in loaded:
+                if model.has_role(role):
+                    logger.debug(
+                        "Preferred model '%s' not loaded, using '%s' with role '%s'",
+                        preferred, model.model_id, role,
+                    )
+                    return model.model_id
+        return None
+
     def resolve(
         self,
         preferred: str | None = None,
         fallback_roles: list[str] | None = None,
     ) -> str:
         """Resolve model from preference with fallbacks.
-        
+
         Resolution order:
         1. If preferred model is loaded → use it
         2. Try each fallback role in order → use first match
         3. Return any loaded model
-        
+
         Args:
             preferred: Preferred model ID (not required to be loaded)
             fallback_roles: Roles to try if preferred not loaded
-        
+
         Returns:
             Model ID to use for inference
-        
+
         Raises:
             ValueError: If no models are loaded
         """
         loaded = self.get_loaded_models()
-        
+
         if not loaded:
             raise ValueError("No models are currently loaded in inference-service")
-        
-        # 1. Check if preferred model is loaded
+
         if preferred:
-            for model in loaded:
-                if model.model_id == preferred:
-                    logger.debug(
-                        "Using preferred model: %s", preferred
-                    )
-                    return preferred
-        
-        # 2. Try fallback roles in order
+            if model_id := self._find_preferred_model(loaded, preferred):
+                return model_id
+
         if fallback_roles:
-            for role in fallback_roles:
-                for model in loaded:
-                    if model.has_role(role):
-                        logger.debug(
-                            "Preferred model '%s' not loaded, using '%s' with role '%s'",
-                            preferred,
-                            model.model_id,
-                            role,
-                        )
-                        return model.model_id
-        
-        # 3. Return any loaded model (first one)
+            if model_id := self._find_model_by_role(loaded, fallback_roles, preferred):
+                return model_id
+
         first_loaded = loaded[0]
-        logger.debug(
-            "No preference/role match, using first loaded model: %s",
-            first_loaded.model_id,
-        )
+        logger.debug("No preference/role match, using first loaded model: %s", first_loaded.model_id)
         return first_loaded.model_id
     
     def get_loaded_models(self) -> list[ModelInfo]:
@@ -321,7 +325,7 @@ class InferenceServiceClient:
         self._client: httpx.AsyncClient | None = None
         self._resolver: ModelResolver | None = None
 
-    async def _get_client(self) -> httpx.AsyncClient:
+    def _get_client(self) -> httpx.AsyncClient:
         """Get or create HTTP client (lazy initialization)."""
         if self._client is None:
             self._client = httpx.AsyncClient(
@@ -354,7 +358,7 @@ class InferenceServiceClient:
         if self._resolver is not None and not refresh:
             return self._resolver
         
-        client = await self._get_client()
+        client = self._get_client()
         response = await client.get("/v1/models")
         response.raise_for_status()
         
@@ -477,7 +481,7 @@ class InferenceServiceClient:
         )
 
         # Make request
-        client = await self._get_client()
+        client = self._get_client()
         response = await client.post(
             "/v1/chat/completions",
             json=request.model_dump(),

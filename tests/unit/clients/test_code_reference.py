@@ -17,6 +17,7 @@ Anti-Pattern Compliance: CODING_PATTERNS_ANALYSIS.md
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -60,6 +61,7 @@ class FakeCodeReferenceClient:
         top_k: int = 10,
     ) -> CodeContext:
         """Fake search implementation."""
+        await asyncio.sleep(0)
         self.search_call_count += 1
         if self.should_raise:
             raise self.should_raise
@@ -90,6 +92,7 @@ class FakeCodeReferenceClient:
     
     async def get_metadata(self, repo_id: str) -> dict[str, Any] | None:
         """Get repository metadata."""
+        await asyncio.sleep(0)
         return self.metadata_results.get(repo_id)
     
     async def fetch_file(
@@ -99,6 +102,7 @@ class FakeCodeReferenceClient:
         end_line: int | None = None,
     ) -> str | None:
         """Fetch file content."""
+        await asyncio.sleep(0)
         self.fetch_call_count += 1
         if self.should_raise:
             raise self.should_raise

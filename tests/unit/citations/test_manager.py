@@ -30,7 +30,7 @@ class TestCitationManagerCreation:
         """CitationManager can be imported from src.citations.manager."""
         from src.citations.manager import CitationManager
         
-        assert CitationManager is not None
+        assert isinstance(CitationManager, type)
 
     def test_citation_manager_can_be_instantiated(self) -> None:
         """CitationManager can be instantiated with default settings."""
@@ -38,7 +38,7 @@ class TestCitationManagerCreation:
         
         manager = CitationManager()
         
-        assert manager is not None
+        assert isinstance(manager, CitationManager)
 
     def test_citation_manager_starts_with_empty_citations(self) -> None:
         """New CitationManager has no citations."""
@@ -134,7 +134,7 @@ class TestCitationManagerAddSource:
         
         marker = manager.add_source(source, retrieval_score=0.89)
         
-        assert manager.get_retrieval_score(marker) == 0.89
+        assert manager.get_retrieval_score(marker) == pytest.approx(0.89)
 
     def test_add_source_tracks_pipeline_stage(self) -> None:
         """add_source can track which pipeline stage added the citation."""
@@ -348,7 +348,7 @@ class TestCitationManagerPipelineIntegration:
         assert len(records) == 1
         assert records[0].conversation_id == "conv-123"
         assert records[0].message_id == "msg-456"
-        assert records[0].retrieval_score == 0.85
+        assert records[0].retrieval_score == pytest.approx(0.85)
 
 
 __all__ = [

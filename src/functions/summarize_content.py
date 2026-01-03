@@ -252,7 +252,7 @@ class SummarizeContentFunction(AgentFunction):
 
         # Run async call - check if we're already in an event loop
         try:
-            loop = asyncio.get_running_loop()
+            asyncio.get_running_loop()
             # We're in an async context, need to use await
             # But this is a sync method, so we need to handle this
             # Create a new task and wait for it
@@ -269,6 +269,56 @@ class SummarizeContentFunction(AgentFunction):
 
         return summary, invariants
 
+    def _extract_preserved_sentences(
+        self,
+        sentences: list[str],
+        preserve: list[str],
+    ) -> tuple[list[str], list[str], int]:
+        """Extract sentences containing preserved concepts.
+
+        Returns:
+            Tuple of (selected_sentences, invariants, total_chars)
+        """
+        selected: list[str] = []
+        invariants: list[str] = []
+        current_chars = 0
+
+        for sentence in sentences:
+            for concept in preserve:
+                if concept.lower() in sentence.lower() and sentence not in selected:
+                    selected.append(sentence)
+                    invariants.append(f"Preserved: {concept}")
+                    current_chars += len(sentence)
+                    break
+
+        return selected, invariants, current_chars
+
+    def _fill_remaining_sentences(
+        self,
+        sentences: list[str],
+        selected: list[str],
+        current_chars: int,
+        target_chars: int,
+    ) -> list[str]:
+        """Fill remaining space with important sentences."""
+        for sentence in sentences:
+            if sentence in selected or current_chars >= target_chars:
+                continue
+            if len(sentence) < 20:
+                continue
+            selected.append(sentence)
+            current_chars += len(sentence)
+
+        return selected
+
+    def _format_by_style(self, sentences: list[str], style: SummaryStyle) -> str:
+        """Format sentences according to the specified style."""
+        if style == SummaryStyle.BULLETS:
+            return self._format_bullets(sentences)
+        if style == SummaryStyle.EXECUTIVE:
+            return self._format_executive(sentences)
+        return self._format_technical(sentences)
+
     def _generate_summary_local(
         self,
         content: str,
@@ -284,50 +334,14 @@ class SummarizeContentFunction(AgentFunction):
         Returns:
             Tuple of (summary, invariants)
         """
-        # Split into sentences
         sentences = re.split(r'(?<=[.!?])\s+', content.strip())
-
-        # Calculate target character count - using shared utility
         target_chars = tokens_to_chars(target_tokens)
 
-        # Collect key sentences
-        selected: list[str] = []
-        invariants: list[str] = []
-        current_chars = 0
+        selected, invariants, current_chars = self._extract_preserved_sentences(sentences, preserve)
+        selected = self._fill_remaining_sentences(sentences, selected, current_chars, target_chars)
 
-        # First pass: find sentences containing preserved concepts
-        for sentence in sentences:
-            for concept in preserve:
-                if concept.lower() in sentence.lower():
-                    if sentence not in selected:
-                        selected.append(sentence)
-                        invariants.append(f"Preserved: {concept}")
-                        current_chars += len(sentence)
-                    break
+        summary = self._format_by_style(selected, style)
 
-        # Second pass: add other important sentences until target reached
-        for sentence in sentences:
-            if sentence in selected:
-                continue
-            if current_chars >= target_chars:
-                break
-
-            # Skip very short sentences
-            if len(sentence) < 20:
-                continue
-
-            selected.append(sentence)
-            current_chars += len(sentence)
-
-        # Format based on style
-        if style == SummaryStyle.BULLETS:
-            summary = self._format_bullets(selected)
-        elif style == SummaryStyle.EXECUTIVE:
-            summary = self._format_executive(selected)
-        else:  # TECHNICAL
-            summary = self._format_technical(selected)
-
-        # Ensure we have at least some output
         if not summary:
             summary = content[:target_chars].strip()
             if len(content) > target_chars:

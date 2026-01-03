@@ -64,15 +64,15 @@ class TestTimeouts:
     
     def test_http_timeouts_defined(self) -> None:
         """Test HTTP timeout values are defined."""
-        assert Timeouts.HTTP_DEFAULT == 30.0
-        assert Timeouts.HTTP_INFERENCE == 120.0
-        assert Timeouts.HTTP_SEARCH == 10.0
-        assert Timeouts.HTTP_AUDIT == 5.0
+        assert Timeouts.HTTP_DEFAULT == pytest.approx(30.0)
+        assert Timeouts.HTTP_INFERENCE == pytest.approx(120.0)
+        assert Timeouts.HTTP_SEARCH == pytest.approx(10.0)
+        assert Timeouts.HTTP_AUDIT == pytest.approx(5.0)
     
     def test_pipeline_timeouts_defined(self) -> None:
         """Test pipeline timeout values are defined."""
-        assert Timeouts.PIPELINE_DEFAULT == 300.0
-        assert Timeouts.PIPELINE_MAX == 600.0
+        assert Timeouts.PIPELINE_DEFAULT == pytest.approx(300.0)
+        assert Timeouts.PIPELINE_MAX == pytest.approx(600.0)
     
     def test_cache_ttls_defined(self) -> None:
         """Test cache TTL values are defined."""

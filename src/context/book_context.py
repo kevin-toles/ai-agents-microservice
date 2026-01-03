@@ -221,6 +221,230 @@ class BookContextLookup:
 
         return term_lower in text_lower
 
+    def _search_summaries(
+        self,
+        chapter: dict,
+        term: str,
+        use_word_boundary: bool,
+        book_title: str,
+        context: TermContext,
+        books_with_term: set,
+        chapters_with_term: set,
+        max_results: int,
+    ) -> None:
+        """Search chapter summaries for term occurrences."""
+        summary = chapter.get("summary", "")
+        if not self._term_matches(summary, term, use_word_boundary):
+            return
+
+        chapter_num = chapter.get("chapter_number")
+        chapter_title = chapter.get("title", "")
+
+        context.appears_in_summaries = True
+        books_with_term.add(book_title)
+        chapters_with_term.add(f"{book_title}:{chapter_num}")
+
+        if len(context.occurrences) < max_results:
+            context.occurrences.append(TermOccurrence(
+                term=term,
+                book_title=book_title,
+                chapter_number=chapter_num,
+                chapter_title=chapter_title,
+                source_type="summary",
+                context_snippet=self._extract_context_snippet(summary, term),
+                relevance_score=0.9,
+            ))
+
+    def _search_concept_lists(
+        self,
+        chapter: dict,
+        term: str,
+        use_word_boundary: bool,
+        book_title: str,
+        context: TermContext,
+        books_with_term: set,
+        chapters_with_term: set,
+        max_results: int,
+    ) -> None:
+        """Search chapter concept lists for term occurrences."""
+        concepts = chapter.get("concepts", [])
+        matching = [c for c in concepts if self._term_matches(c, term, use_word_boundary)]
+        if not matching:
+            return
+
+        chapter_num = chapter.get("chapter_number")
+        chapter_title = chapter.get("title", "")
+
+        context.appears_in_concept_lists = True
+        books_with_term.add(book_title)
+        chapters_with_term.add(f"{book_title}:{chapter_num}")
+
+        if len(context.occurrences) < max_results:
+            context.occurrences.append(TermOccurrence(
+                term=term,
+                book_title=book_title,
+                chapter_number=chapter_num,
+                chapter_title=chapter_title,
+                source_type="concept_list",
+                context_snippet=f"Listed as concept: {', '.join(matching)}",
+                relevance_score=1.0,
+            ))
+
+    def _search_keyword_lists(
+        self,
+        chapter: dict,
+        term: str,
+        use_word_boundary: bool,
+        book_title: str,
+        context: TermContext,
+        books_with_term: set,
+        chapters_with_term: set,
+    ) -> None:
+        """Search chapter keyword lists for term occurrences."""
+        keywords = chapter.get("keywords", [])
+        enriched_kw = chapter.get("enriched_keywords", {})
+
+        if isinstance(enriched_kw, dict):
+            keywords = keywords + enriched_kw.get("merged", []) + enriched_kw.get("tfidf", [])
+        elif isinstance(enriched_kw, list):
+            keywords = keywords + enriched_kw
+
+        if not any(self._term_matches(k, term, use_word_boundary) for k in keywords):
+            return
+
+        chapter_num = chapter.get("chapter_number")
+        context.appears_in_keyword_lists = True
+        books_with_term.add(book_title)
+        chapters_with_term.add(f"{book_title}:{chapter_num}")
+
+    def _search_raw_text(
+        self,
+        term: str,
+        use_word_boundary: bool,
+        context: TermContext,
+        books_with_term: set,
+        chapters_with_term: set,
+        max_results: int,
+    ) -> None:
+        """Search raw book text for term occurrences."""
+        for title, _ in self._book_index.items():
+            if len(context.occurrences) >= max_results:
+                break
+
+            raw_book = self._load_raw_book(title.replace("_", " ").title())
+            if not raw_book:
+                raw_book = self._find_raw_book_by_title(title)
+
+            if not raw_book:
+                continue
+
+            book_title = raw_book.get("metadata", {}).get("title", title)
+            self._search_raw_chapters(
+                raw_book, term, use_word_boundary, book_title,
+                context, books_with_term, chapters_with_term, max_results
+            )
+
+    def _find_raw_book_by_title(self, title: str) -> dict | None:
+        """Find raw book by exact title match."""
+        for f in self.raw_path.glob("*.json"):
+            if f.stem.lower() == title.lower():
+                return self._load_raw_book(f.stem)
+        return None
+
+    def _search_raw_chapters(
+        self,
+        raw_book: dict,
+        term: str,
+        use_word_boundary: bool,
+        book_title: str,
+        context: TermContext,
+        books_with_term: set,
+        chapters_with_term: set,
+        max_results: int,
+    ) -> None:
+        """Search raw book chapters for term occurrences."""
+        for chapter in raw_book.get("chapters", []):
+            if len(context.occurrences) >= max_results:
+                break
+
+            content = chapter.get("content", "")
+            if not self._term_matches(content, term, use_word_boundary):
+                continue
+
+            chapter_num = chapter.get("number")
+            context.appears_in_raw_text = True
+            books_with_term.add(book_title)
+            chapters_with_term.add(f"{book_title}:{chapter_num}")
+
+            if len(context.occurrences) < max_results:
+                context.occurrences.append(TermOccurrence(
+                    term=term,
+                    book_title=book_title,
+                    chapter_number=chapter_num,
+                    chapter_title=chapter.get("title", ""),
+                    source_type="raw_text",
+                    context_snippet=self._extract_context_snippet(content, term, 200),
+                    relevance_score=0.7,
+                ))
+
+    def _search_enriched_chapter(
+        self,
+        chapter: dict,
+        term: str,
+        use_word_boundary: bool,
+        book_title: str,
+        context: TermContext,
+        books_with_term: set,
+        chapters_with_term: set,
+        max_results: int,
+        search_summaries: bool,
+        search_concept_lists: bool,
+        search_keyword_lists: bool,
+    ) -> None:
+        """Search a single chapter in an enriched book."""
+        if search_summaries:
+            self._search_summaries(
+                chapter, term, use_word_boundary, book_title,
+                context, books_with_term, chapters_with_term, max_results
+            )
+        if search_concept_lists:
+            self._search_concept_lists(
+                chapter, term, use_word_boundary, book_title,
+                context, books_with_term, chapters_with_term, max_results
+            )
+        if search_keyword_lists:
+            self._search_keyword_lists(
+                chapter, term, use_word_boundary, book_title,
+                context, books_with_term, chapters_with_term
+            )
+
+    def _search_enriched_books(
+        self,
+        term: str,
+        use_word_boundary: bool,
+        context: TermContext,
+        books_with_term: set,
+        chapters_with_term: set,
+        max_results: int,
+        search_summaries: bool,
+        search_concept_lists: bool,
+        search_keyword_lists: bool,
+    ) -> None:
+        """Search all enriched books for term occurrences."""
+        for _title, path in self._book_index.items():
+            book_data = self._load_enriched_book(path)
+            if not book_data:
+                continue
+
+            book_title = book_data.get("metadata", {}).get("title", path.stem)
+
+            for chapter in book_data.get("chapters", []):
+                self._search_enriched_chapter(
+                    chapter, term, use_word_boundary, book_title,
+                    context, books_with_term, chapters_with_term, max_results,
+                    search_summaries, search_concept_lists, search_keyword_lists
+                )
+
     def find_term_context(
         self,
         term: str,
@@ -244,122 +468,24 @@ class BookContextLookup:
             TermContext with all found occurrences.
         """
         context = TermContext(term=term)
-        books_with_term = set()
-        chapters_with_term = set()
-
-        term.lower()
-        # Use word boundaries for short terms to avoid false positives
+        books_with_term: set[str] = set()
+        chapters_with_term: set[str] = set()
         use_word_boundary = len(term) < 5 or term.upper() == term
 
-        # Search enriched books
-        for _title, path in self._book_index.items():
-            book_data = self._load_enriched_book(path)
-            if not book_data:
-                continue
+        self._search_enriched_books(
+            term, use_word_boundary, context, books_with_term, chapters_with_term,
+            max_results, search_summaries, search_concept_lists, search_keyword_lists
+        )
 
-            book_title = book_data.get("metadata", {}).get("title", path.stem)
-
-            for chapter in book_data.get("chapters", []):
-                chapter_num = chapter.get("chapter_number")
-                chapter_title = chapter.get("title", "")
-
-                # Search summaries
-                if search_summaries:
-                    summary = chapter.get("summary", "")
-                    if self._term_matches(summary, term, use_word_boundary):
-                        context.appears_in_summaries = True
-                        books_with_term.add(book_title)
-                        chapters_with_term.add(f"{book_title}:{chapter_num}")
-
-                        if len(context.occurrences) < max_results:
-                            context.occurrences.append(TermOccurrence(
-                                term=term,
-                                book_title=book_title,
-                                chapter_number=chapter_num,
-                                chapter_title=chapter_title,
-                                source_type="summary",
-                                context_snippet=self._extract_context_snippet(summary, term),
-                                relevance_score=0.9,  # Summaries are high value
-                            ))
-
-                # Search concept lists
-                if search_concept_lists:
-                    concepts = chapter.get("concepts", [])
-                    if any(self._term_matches(c, term, use_word_boundary) for c in concepts):
-                        context.appears_in_concept_lists = True
-                        books_with_term.add(book_title)
-                        chapters_with_term.add(f"{book_title}:{chapter_num}")
-
-                        matching_concepts = [c for c in concepts if self._term_matches(c, term, use_word_boundary)]
-                        if len(context.occurrences) < max_results:
-                            context.occurrences.append(TermOccurrence(
-                                term=term,
-                                book_title=book_title,
-                                chapter_number=chapter_num,
-                                chapter_title=chapter_title,
-                                source_type="concept_list",
-                                context_snippet=f"Listed as concept: {', '.join(matching_concepts)}",
-                                relevance_score=1.0,  # Already identified as concept = highest
-                            ))
-
-                # Search keyword lists
-                if search_keyword_lists:
-                    keywords = chapter.get("keywords", [])
-                    # enriched_keywords may be a dict with tfidf/semantic/merged
-                    enriched_kw = chapter.get("enriched_keywords", {})
-                    if isinstance(enriched_kw, dict):
-                        keywords = keywords + enriched_kw.get("merged", []) + enriched_kw.get("tfidf", [])
-                    elif isinstance(enriched_kw, list):
-                        keywords = keywords + enriched_kw
-
-                    if any(self._term_matches(k, term, use_word_boundary) for k in keywords):
-                        context.appears_in_keyword_lists = True
-                        books_with_term.add(book_title)
-                        chapters_with_term.add(f"{book_title}:{chapter_num}")
-
-        # Search raw text (slower, do last)
         if search_raw_text and len(context.occurrences) < max_results:
-            for title, _ in self._book_index.items():
-                raw_book = self._load_raw_book(title.replace("_", " ").title())
-                if not raw_book:
-                    # Try exact title match
-                    for f in self.raw_path.glob("*.json"):
-                        if f.stem.lower() == title.lower():
-                            raw_book = self._load_raw_book(f.stem)
-                            break
+            self._search_raw_text(
+                term, use_word_boundary, context,
+                books_with_term, chapters_with_term, max_results
+            )
 
-                if not raw_book:
-                    continue
-
-                book_title = raw_book.get("metadata", {}).get("title", title)
-
-                for chapter in raw_book.get("chapters", []):
-                    content = chapter.get("content", "")
-                    if self._term_matches(content, term, use_word_boundary):
-                        context.appears_in_raw_text = True
-                        books_with_term.add(book_title)
-                        chapter_num = chapter.get("number")
-                        chapters_with_term.add(f"{book_title}:{chapter_num}")
-
-                        if len(context.occurrences) < max_results:
-                            context.occurrences.append(TermOccurrence(
-                                term=term,
-                                book_title=book_title,
-                                chapter_number=chapter_num,
-                                chapter_title=chapter.get("title", ""),
-                                source_type="raw_text",
-                                context_snippet=self._extract_context_snippet(content, term, 200),
-                                relevance_score=0.7,  # Raw text is lower value than summaries
-                            ))
-
-                if len(context.occurrences) >= max_results:
-                    break
-
-        # Update counts
+        # Update counts and sort
         context.books_found_in = len(books_with_term)
         context.chapters_found_in = len(chapters_with_term)
-
-        # Sort by relevance
         context.occurrences.sort(key=lambda x: x.relevance_score, reverse=True)
 
         return context
@@ -388,6 +514,35 @@ class BookContextLookup:
 
         return results
 
+    def _get_source_types(self, term_context: TermContext) -> list[str]:
+        """Get list of source types where term appears."""
+        sources = []
+        if term_context.appears_in_concept_lists:
+            sources.append("concept lists")
+        if term_context.appears_in_summaries:
+            sources.append("chapter summaries")
+        if term_context.appears_in_keyword_lists:
+            sources.append("keyword lists")
+        if term_context.appears_in_raw_text:
+            sources.append("full text")
+        return sources
+
+    def _format_occurrence_snippet(self, occ: TermOccurrence) -> list[str]:
+        """Format a single occurrence with snippet."""
+        lines = []
+        source = f"[{occ.source_type}] {occ.book_title}"
+        if occ.chapter_title:
+            source += f", Ch.{occ.chapter_number}: {occ.chapter_title}"
+        lines.append(f"    - {source}")
+
+        if occ.context_snippet:
+            snippet = occ.context_snippet[:200]
+            if len(occ.context_snippet) > 200:
+                snippet += "..."
+            lines.append(f"      \"{snippet}\"")
+
+        return lines
+
     def format_context_for_llm(
         self,
         term_context: TermContext,
@@ -407,34 +562,14 @@ class BookContextLookup:
             f"  Found in {term_context.books_found_in} books, {term_context.chapters_found_in} chapters",
         ]
 
-        # Summary of where it appears
-        sources = []
-        if term_context.appears_in_concept_lists:
-            sources.append("concept lists")
-        if term_context.appears_in_summaries:
-            sources.append("chapter summaries")
-        if term_context.appears_in_keyword_lists:
-            sources.append("keyword lists")
-        if term_context.appears_in_raw_text:
-            sources.append("full text")
-
+        sources = self._get_source_types(term_context)
         if sources:
             lines.append(f"  Appears in: {', '.join(sources)}")
 
-        # Add snippets
         if include_snippets and term_context.occurrences:
             lines.append("  Evidence:")
             for occ in term_context.occurrences[:3]:
-                source = f"[{occ.source_type}] {occ.book_title}"
-                if occ.chapter_title:
-                    source += f", Ch.{occ.chapter_number}: {occ.chapter_title}"
-                lines.append(f"    - {source}")
-                if occ.context_snippet:
-                    # Truncate long snippets
-                    snippet = occ.context_snippet[:200]
-                    if len(occ.context_snippet) > 200:
-                        snippet += "..."
-                    lines.append(f"      \"{snippet}\"")
+                lines.extend(self._format_occurrence_snippet(occ))
 
         return "\n".join(lines)
 

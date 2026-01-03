@@ -407,8 +407,8 @@ class TestValidationResult:
         
         assert result.valid is False
         assert len(result.violations) == 1
-        assert result.compliance_percentage == 80.0
-        assert result.confidence == 0.95
+        assert result.compliance_percentage == pytest.approx(80.0)
+        assert result.confidence == pytest.approx(0.95)
     
     def test_validation_result_fully_valid(self) -> None:
         """ValidationResult with no violations is 100% compliant."""
@@ -423,7 +423,7 @@ class TestValidationResult:
         
         assert result.valid is True
         assert result.violations == []
-        assert result.compliance_percentage == 100.0
+        assert result.compliance_percentage == pytest.approx(100.0)
     
     def test_validation_result_compliance_range(self) -> None:
         """ValidationResult.compliance_percentage is 0-100."""

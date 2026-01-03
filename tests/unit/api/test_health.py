@@ -95,7 +95,7 @@ class TestHealthResponseModel:
         """HealthResponse can be imported."""
         from src.api.routes.health import HealthResponse
         
-        assert HealthResponse is not None
+        assert isinstance(HealthResponse, type)
 
     def test_health_response_has_status(self) -> None:
         """HealthResponse has status field."""

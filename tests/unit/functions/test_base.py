@@ -384,7 +384,7 @@ class TestFakeAgentFunction:
         """FakeAgentFunction can be imported."""
         from tests.unit.functions.fake_agent import FakeAgentFunction
         
-        assert FakeAgentFunction is not None
+        assert isinstance(FakeAgentFunction, type)
     
     def test_fake_agent_function_instantiable(self) -> None:
         """FakeAgentFunction can be instantiated."""
@@ -472,7 +472,7 @@ class TestProtocolDuckTyping:
         """AgentFunctionProtocol exists for duck typing."""
         from src.functions.base import AgentFunctionProtocol
         
-        assert AgentFunctionProtocol is not None
+        assert callable(AgentFunctionProtocol)
     
     def test_protocol_is_runtime_checkable(self) -> None:
         """AgentFunctionProtocol is runtime checkable."""

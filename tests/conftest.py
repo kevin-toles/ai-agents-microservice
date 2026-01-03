@@ -4,6 +4,8 @@ Pattern: Pytest fixtures, conftest.py
 Anti-Pattern Avoided: Fixture reuse without explicit scope
 """
 
+import asyncio
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
@@ -200,6 +202,9 @@ class FakeInferenceClient:
         max_tokens: int | None = None,
     ) -> dict[str, Any]:
         """Return canned completion response."""
+        # Yield control to event loop (maintains async interface)
+        await asyncio.sleep(0)
+        
         self._call_count += 1
         self._call_args.append({
             "prompt": prompt,
@@ -251,6 +256,9 @@ class FakeSemanticSearchClient:
         filters: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         """Return canned search results."""
+        # Yield control to event loop (maintains async interface)
+        await asyncio.sleep(0)
+        
         self._call_count += 1
         self._call_args.append({
             "query": query,

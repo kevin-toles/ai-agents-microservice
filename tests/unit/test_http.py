@@ -69,7 +69,7 @@ class TestHTTPClientFactory:
                 code_reference_engine_url="http://localhost:8086",
             )
             
-            factory = HTTPClientFactory()
+            _factory = HTTPClientFactory()
             
             mock_get.assert_called_once()
     
@@ -129,7 +129,7 @@ class TestHTTPClientFactory:
         factory = HTTPClientFactory(settings=mock_settings)
         
         async with factory.get_client(ServiceName.INFERENCE, timeout=60.0) as client:
-            assert client.timeout.connect == 60.0
+            assert client.timeout.connect == pytest.approx(60.0)
     
     def test_create_client_standalone(self, mock_settings: MagicMock) -> None:
         """Test create_client returns standalone client."""

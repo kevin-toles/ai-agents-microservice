@@ -27,6 +27,7 @@ class FakeRedisClient:
         self._ttls: dict[str, int] = {}
     
     async def get(self, key: str) -> bytes | None:
+        await asyncio.sleep(0)
         return self._store.get(key)
     
     async def set(
@@ -35,12 +36,14 @@ class FakeRedisClient:
         value: bytes,
         ex: int | None = None,
     ) -> bool:
+        await asyncio.sleep(0)
         self._store[key] = value
         if ex is not None:
             self._ttls[key] = ex
         return True
     
     async def delete(self, key: str) -> int:
+        await asyncio.sleep(0)
         if key in self._store:
             del self._store[key]
             self._ttls.pop(key, None)
@@ -48,9 +51,11 @@ class FakeRedisClient:
         return 0
     
     async def exists(self, key: str) -> int:
+        await asyncio.sleep(0)
         return 1 if key in self._store else 0
     
     async def ttl(self, key: str) -> int:
+        await asyncio.sleep(0)
         if key not in self._store:
             return -2
         return self._ttls.get(key, -1)
@@ -86,7 +91,7 @@ class TestCacheEntry:
             original_size=100,
             compressed_size=100,
         )
-        assert entry.compression_ratio == 1.0
+        assert entry.compression_ratio == pytest.approx(1.0)
     
     def test_compression_ratio_with_compression(self) -> None:
         """Test compression_ratio when compressed."""
@@ -97,12 +102,12 @@ class TestCacheEntry:
             original_size=1000,
             compressed_size=200,
         )
-        assert entry.compression_ratio == 0.2
+        assert entry.compression_ratio == pytest.approx(0.2)
     
     def test_compression_ratio_zero_size(self) -> None:
         """Test compression_ratio with zero original size."""
         entry = CacheEntry(key="test", value="data", original_size=0)
-        assert entry.compression_ratio == 1.0
+        assert entry.compression_ratio == pytest.approx(1.0)
     
     def test_is_expired_no_expiry(self) -> None:
         """Test is_expired when no expiration set."""

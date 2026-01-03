@@ -13,6 +13,8 @@ Exit Criteria:
 Reference: AGENT_FUNCTIONS_ARCHITECTURE.md → Integration Points
 """
 
+import asyncio
+
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -139,6 +141,7 @@ class TestFunctionRunEndpoint:
         }
         
         async def mock_executor(**kwargs):
+            await asyncio.sleep(0)  # Yield control to event loop
             return {
                 "headings": [{"level": 1, "text": "Test"}],
                 "sections": [],
@@ -163,6 +166,7 @@ class TestFunctionRunEndpoint:
         }
         
         async def mock_executor(**kwargs):
+            await asyncio.sleep(0)  # Yield control to event loop
             return {
                 "headings": [{"level": 1, "text": "Test"}],
                 "sections": [{"heading": "Test", "content": "Some content"}],
@@ -254,7 +258,7 @@ class TestFunctionRequestModel:
         """FunctionRunRequest can be imported."""
         from src.api.routes.functions import FunctionRunRequest
         
-        assert FunctionRunRequest is not None
+        assert isinstance(FunctionRunRequest, type)
 
     def test_function_run_request_requires_input(self) -> None:
         """FunctionRunRequest requires input field."""
@@ -282,7 +286,7 @@ class TestFunctionResponseModel:
         """FunctionRunResponse can be imported."""
         from src.api.routes.functions import FunctionRunResponse
         
-        assert FunctionRunResponse is not None
+        assert isinstance(FunctionRunResponse, type)
 
     def test_function_run_response_has_result(self) -> None:
         """FunctionRunResponse has result field."""
@@ -316,7 +320,7 @@ class TestFunctionResponseModel:
             processing_time_ms=150.5,
         )
         
-        assert response.processing_time_ms == 150.5
+        assert response.processing_time_ms == pytest.approx(150.5)
 
 
 class TestFunctionListEndpoint:

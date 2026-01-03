@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
 import httpx
@@ -98,7 +98,7 @@ class LLMParticipantAdapter(BaseParticipant):
         Raises:
             LLMProviderError: If the provider fails (caller should handle gracefully).
         """
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
 
         # Build messages for LLM
         messages = self._build_messages(conversation, participant)
@@ -154,7 +154,7 @@ class LLMParticipantAdapter(BaseParticipant):
             if data.get("usage"):
                 tokens_used = data["usage"].get("total_tokens")
 
-            elapsed_ms = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+            elapsed_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
 
             logger.info(
                 "LLM response received: provider=%s, model=%s, tokens=%s, latency=%dms",

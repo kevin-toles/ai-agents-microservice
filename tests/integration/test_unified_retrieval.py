@@ -226,7 +226,7 @@ class TestCrossReferenceWithUnifiedRetriever:
         
         # Should return results
         assert result is not None
-        assert len(result.references) >= 0  # May be empty without real services
+        assert isinstance(result.references, list)  # May be empty without real services
     
     @pytest.mark.asyncio
     @pytest.mark.skip(reason="Requires all services running")

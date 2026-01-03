@@ -16,6 +16,7 @@ Reference: docs/INTER_AI_ORCHESTRATION.md
 
 from __future__ import annotations
 
+import aiofiles
 import json
 import logging
 from pathlib import Path
@@ -137,6 +138,78 @@ class ConversationOrchestrator:
 
         return conversation
 
+    def _should_check_consensus(
+        self,
+        llms_responded: set[str],
+        all_llms: set[str],
+        last_response: dict[str, Any] | None,
+    ) -> bool:
+        """Check if all LLMs have responded and consensus check is needed."""
+        return llms_responded >= all_llms and last_response is not None
+
+    async def _handle_participant_response(
+        self,
+        conversation: Conversation,
+        participant: Participant,
+        on_message: Callable[[ConversationMessage], None] | None,
+    ) -> tuple[dict[str, Any], ConversationMessage]:
+        """Get and process a participant's response."""
+        response = await self._get_participant_response(conversation, participant)
+
+        message = ConversationMessage(
+            conversation_id=conversation.conversation_id,
+            participant_id=participant.id,
+            participant_type=participant.participant_type,
+            role="assistant",
+            content=response["content"],
+            tokens_used=response.get("tokens_used"),
+            latency_ms=response.get("latency_ms", 0),
+            metadata=response.get("metadata", {}),
+        )
+
+        conversation.add_message(message)
+
+        if on_message:
+            on_message(message)
+
+        logger.info(f"[{participant.id}]: {response['content'][:100]}...")
+        return response, message
+
+    async def _process_turn(
+        self,
+        conversation: Conversation,
+        participant: Participant,
+        on_message: Callable[[ConversationMessage], None] | None,
+        llms_responded: set[str],
+        llm_participants: set[str],
+    ) -> tuple[dict[str, Any] | None, bool]:
+        """Process a single conversation turn.
+
+        Returns:
+            Tuple of (last_response, reached_consensus)
+        """
+        try:
+            response, _ = await self._handle_participant_response(conversation, participant, on_message)
+
+            if participant.participant_type == ParticipantType.LLM:
+                llms_responded.add(participant.id)
+
+                if self._should_check_consensus(llms_responded, llm_participants, response):
+                    logger.info(f"All LLMs responded ({len(llms_responded)}/{len(llm_participants)}), checking for consensus...")
+                    if await self._check_consensus(conversation, response):
+                        return response, True
+                    llms_responded.clear()
+
+            return response, False
+
+        except Exception as e:
+            logger.error(f"Error from {participant.id}: {e}")
+            if participant.participant_type == ParticipantType.LLM:
+                llms_responded.add(participant.id)
+                logger.warning(f"LLM {participant.id} failed, marking as responded. ({len(llms_responded)}/{len(llm_participants)} LLMs)")
+            await self._send_orchestrator_message(conversation, f"Error from {participant.id}: {e!s}. Continuing...")
+            return None, False
+
     async def run_conversation(
         self,
         conversation: Conversation,
@@ -156,100 +229,33 @@ class ConversationOrchestrator:
         """
         logger.info(f"Running conversation {conversation.conversation_id}")
 
-        # Track which LLMs have responded in current round
-        llm_participants = {
-            p.id for p in conversation.participants
-            if p.participant_type == ParticipantType.LLM
-        }
-        llms_responded_this_round: set[str] = set()
-        last_response: dict[str, Any] | None = None
+        llm_participants = {p.id for p in conversation.participants if p.participant_type == ParticipantType.LLM}
+        llms_responded: set[str] = set()
 
         while conversation.status == ConversationStatus.IN_PROGRESS:
-            # Check termination conditions
             if conversation.current_round >= conversation.max_rounds:
                 conversation.status = ConversationStatus.TIMEOUT
-                await self._send_orchestrator_message(
-                    conversation,
-                    "Maximum rounds reached. Ending conversation.",
-                )
+                await self._send_orchestrator_message(conversation, "Maximum rounds reached. Ending conversation.")
                 break
 
-            # Get current participant
-            current_turn = conversation.current_turn or ""
-            participant = conversation.get_participant(current_turn)
+            participant = conversation.get_participant(conversation.current_turn or "")
             if not participant:
                 logger.error(f"Unknown participant: {conversation.current_turn}")
                 conversation.advance_turn()
                 continue
 
-            # Get participant's response
-            try:
-                response = await self._get_participant_response(
-                    conversation,
-                    participant,
-                )
+            _, reached_consensus = await self._process_turn(
+                conversation, participant, on_message, llms_responded, llm_participants
+            )
 
-                # Create message
-                message = ConversationMessage(
-                    conversation_id=conversation.conversation_id,
-                    participant_id=participant.id,
-                    participant_type=participant.participant_type,
-                    role="assistant",
-                    content=response["content"],
-                    tokens_used=response.get("tokens_used"),
-                    latency_ms=response.get("latency_ms", 0),
-                    metadata=response.get("metadata", {}),
-                )
+            if reached_consensus:
+                conversation.status = ConversationStatus.CONSENSUS
+                break
 
-                conversation.add_message(message)
-
-                if on_message:
-                    on_message(message)
-
-                logger.info(f"[{participant.id}]: {response['content'][:100]}...")
-
-                # Track LLM responses
-                if participant.participant_type == ParticipantType.LLM:
-                    llms_responded_this_round.add(participant.id)
-                    last_response = response
-
-                # Only check consensus after ALL LLMs have responded at least once
-                all_llms_responded = llms_responded_this_round >= llm_participants
-                if all_llms_responded and last_response:
-                    logger.info(
-                        f"All LLMs responded ({len(llms_responded_this_round)}/{len(llm_participants)}), "
-                        f"checking for consensus..."
-                    )
-                    if await self._check_consensus(conversation, last_response):
-                        conversation.status = ConversationStatus.CONSENSUS
-                        break
-                    # Reset for next round
-                    llms_responded_this_round = set()
-
-            except Exception as e:
-                logger.error(f"Error from {participant.id}: {e}")
-                # Mark failed LLM as "responded" (with failure) so we don't block forever
-                if participant.participant_type == ParticipantType.LLM:
-                    llms_responded_this_round.add(participant.id)
-                    logger.warning(
-                        f"LLM {participant.id} failed, marking as responded. "
-                        f"({len(llms_responded_this_round)}/{len(llm_participants)} LLMs)"
-                    )
-                await self._send_orchestrator_message(
-                    conversation,
-                    f"Error from {participant.id}: {e!s}. Continuing...",
-                )
-
-            # Advance to next participant
             conversation.advance_turn()
 
-        # Save transcript
         await self._save_transcript(conversation)
-
-        logger.info(
-            f"Conversation {conversation.conversation_id} ended "
-            f"with status: {conversation.status.value}"
-        )
+        logger.info(f"Conversation {conversation.conversation_id} ended with status: {conversation.status.value}")
 
         return conversation
 
@@ -291,7 +297,7 @@ class ConversationOrchestrator:
         # Single contract: adapter.respond(conversation, participant)
         return await adapter.respond(conversation, participant)
 
-    async def _check_consensus(
+    def _check_consensus(
         self,
         conversation: Conversation,
         latest_response: dict[str, Any],
@@ -363,7 +369,7 @@ class ConversationOrchestrator:
 
         return False
 
-    async def _send_orchestrator_message(
+    def _send_orchestrator_message(
         self,
         conversation: Conversation,
         content: str,
@@ -394,13 +400,13 @@ class ConversationOrchestrator:
         """
         # Save as JSON
         json_path = self.transcript_dir / f"{conversation.conversation_id}.json"
-        with open(json_path, "w") as f:
-            json.dump(conversation.to_dict(), f, indent=2, default=str)
+        async with aiofiles.open(json_path, "w") as f:
+            await f.write(json.dumps(conversation.to_dict(), indent=2, default=str))
 
         # Save as text transcript
         txt_path = self.transcript_dir / f"{conversation.conversation_id}.txt"
-        with open(txt_path, "w") as f:
-            f.write(conversation.get_transcript())
+        async with aiofiles.open(txt_path, "w") as f:
+            await f.write(conversation.get_transcript())
 
         logger.info(f"Saved transcript to {json_path}")
 
@@ -430,7 +436,7 @@ class ConversationOrchestrator:
         """
         self._consensus_callbacks[conversation_id] = callback
 
-    async def inject_message(
+    def inject_message(
         self,
         conversation_id: str,
         content: str,

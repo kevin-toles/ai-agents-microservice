@@ -276,7 +276,7 @@ class TestExtractedItem:
         from src.schemas.functions.extract_structure import ExtractedItem
         
         item = ExtractedItem(value="machine learning", confidence_score=0.95)
-        assert item.confidence_score == 0.95
+        assert item.confidence_score == pytest.approx(0.95)
 
     def test_extracted_item_has_category(self) -> None:
         """ExtractedItem has optional category."""

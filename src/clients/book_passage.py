@@ -117,6 +117,9 @@ class BookPassageClient:
         if self._connected:
             return
         
+        # Yield control to event loop (maintains async interface)
+        await asyncio.sleep(0)
+        
         try:
             # Initialize Qdrant client
             from qdrant_client import QdrantClient
@@ -161,6 +164,9 @@ class BookPassageClient:
     
     async def close(self) -> None:
         """Close connections and release resources."""
+        # Yield control to event loop (maintains async interface)
+        await asyncio.sleep(0)
+        
         if self._qdrant_client:
             try:
                 self._qdrant_client.close()
@@ -603,6 +609,8 @@ class BookPassageClient:
         Returns:
             Filtered list of passages
         """
+        # Yield control to event loop (maintains async interface)
+        await asyncio.sleep(0)
         return [p for p in passages if p.book_id == book_id]
     
     async def filter_by_chapter(
@@ -621,4 +629,6 @@ class BookPassageClient:
         Returns:
             Filtered list of passages
         """
+        # Yield control to event loop (maintains async interface)
+        await asyncio.sleep(0)
         return [p for p in passages if p.chapter_number == chapter_number]

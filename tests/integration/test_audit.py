@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 import httpx
@@ -74,7 +74,7 @@ class TestAuditServiceIntegration:
             "page": 15,
             "quote": "Complexity is anything that makes software hard to understand.",
             "generated_text": "Software complexity increases maintenance difficulty.",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "agent": "summarize_chapter",
             "confidence": 0.95,
         }
@@ -173,7 +173,7 @@ class TestAuditServiceBatchOperations:
                 "citation_id": str(uuid.uuid4()),
                 "source": f"Test Source {i}",
                 "generated_text": f"Generated text {i}",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "agent": "test_agent",
             }
             for i in range(3)

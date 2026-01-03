@@ -725,7 +725,7 @@ class TestCodeGenerationExecution:
             CodeGenerationOutput,
         )
         
-        pipeline = CodeGenerationPipeline()
+        _pipeline = CodeGenerationPipeline()
         
         # Verify output schema works
         output = CodeGenerationOutput(

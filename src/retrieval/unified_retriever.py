@@ -434,6 +434,9 @@ class FakeUnifiedRetriever:
         top_k: int = 10,
     ) -> RetrievalResult:
         """Return preconfigured results."""
+        # Yield control to event loop (maintains async interface)
+        await asyncio.sleep(0)
+        
         self.retrieve_calls.append({
             "query": query,
             "scope": scope,

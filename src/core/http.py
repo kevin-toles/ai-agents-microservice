@@ -111,7 +111,7 @@ class HTTPClientFactory:
     async def get_client(
         self,
         service: ServiceName,
-        timeout: float | None = None,
+        timeout: float | None = None,  # NOSONAR - httpx.Timeout is the appropriate pattern for HTTP clients
         **kwargs: Any,
     ) -> AsyncGenerator[httpx.AsyncClient, None]:
         """Get an HTTP client for a specific service.
@@ -151,7 +151,7 @@ class HTTPClientFactory:
     def create_client(
         self,
         service: ServiceName,
-        timeout: float | None = None,
+        timeout: float | None = None,  # NOSONAR - httpx.Timeout is the appropriate pattern for HTTP clients
         **kwargs: Any,
     ) -> httpx.AsyncClient:
         """Create a standalone HTTP client (caller manages lifecycle).

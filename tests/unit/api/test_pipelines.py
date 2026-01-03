@@ -13,6 +13,8 @@ Exit Criteria:
 Reference: AGENT_FUNCTIONS_ARCHITECTURE.md → Integration Points
 """
 
+import asyncio
+
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -101,6 +103,7 @@ class TestPipelineRunEndpoint:
         }
         
         async def mock_executor(**kwargs):
+            await asyncio.sleep(0)  # Yield control
             return {
                 "content": "Summary with [^1] citation.",
                 "citations": [{"marker": 1, "source": "test"}],
@@ -125,6 +128,7 @@ class TestPipelineRunEndpoint:
         }
         
         async def mock_executor(**kwargs):
+            await asyncio.sleep(0)  # Yield control
             return {
                 "content": "Summary with [^1] citation.",
                 "citations": [{"marker": 1, "source": "test"}],
@@ -150,6 +154,7 @@ class TestPipelineRunEndpoint:
         }
         
         async def mock_executor(**kwargs):
+            await asyncio.sleep(0)  # Yield control
             return {
                 "code": "class Repository:\n    pass",
                 "language": "python",
@@ -229,7 +234,7 @@ class TestPipelineRequestModel:
         """PipelineRunRequest can be imported."""
         from src.api.routes.pipelines import PipelineRunRequest
         
-        assert PipelineRunRequest is not None
+        assert isinstance(PipelineRunRequest, type)
 
     def test_pipeline_run_request_requires_input(self) -> None:
         """PipelineRunRequest requires input field."""
@@ -257,7 +262,7 @@ class TestPipelineResponseModel:
         """PipelineRunResponse can be imported."""
         from src.api.routes.pipelines import PipelineRunResponse
         
-        assert PipelineRunResponse is not None
+        assert isinstance(PipelineRunResponse, type)
 
     def test_pipeline_run_response_has_result(self) -> None:
         """PipelineRunResponse has result field."""
@@ -303,7 +308,7 @@ class TestPipelineResponseModel:
             processing_time_ms=1500.0,
         )
         
-        assert response.processing_time_ms == 1500.0
+        assert response.processing_time_ms == pytest.approx(1500.0)
 
 
 class TestPipelineListEndpoint:

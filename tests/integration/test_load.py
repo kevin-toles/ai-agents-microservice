@@ -84,17 +84,14 @@ class TestConcurrentPipelines:
         assert elapsed_time < 60.0, f"Requests took {elapsed_time:.2f}s (> 60s timeout)"
         
         # Count successful responses
-        successes = 0
         errors = 0
         
-        for i, response in enumerate(responses):
+        for _i, response in enumerate(responses):
             if isinstance(response, Exception):
                 errors += 1
             else:
                 # Accept 200 (success) or 404/503 (service not configured)
-                if response.status_code in [200, 404, 503]:
-                    successes += 1
-                else:
+                if response.status_code not in [200, 404, 503]:
                     errors += 1
         
         # At least some should complete
@@ -128,7 +125,7 @@ class TestConcurrentPipelines:
             for input_data in function_inputs
         ]
         
-        responses = await asyncio.gather(*tasks, return_exceptions=True)
+        _responses = await asyncio.gather(*tasks, return_exceptions=True)
         
         elapsed_time = time.monotonic() - start_time
         
@@ -148,7 +145,7 @@ class TestSystemStability:
         """
         response_times: list[float] = []
         
-        for i in range(5):
+        for _ in range(5):
             start = time.monotonic()
             
             response = await ensure_ai_agents.get("/health", timeout=10.0)
@@ -196,7 +193,7 @@ class TestSystemStability:
         ]
         
         start_time = time.monotonic()
-        responses = await asyncio.gather(*tasks, return_exceptions=True)
+        _responses = await asyncio.gather(*tasks, return_exceptions=True)
         elapsed = time.monotonic() - start_time
         
         # Should complete without crashing
@@ -263,7 +260,7 @@ class TestResourceUsage:
         """
         try:
             # Use very short timeout
-            response = await ai_agents_client.get("/health", timeout=0.001)
+            _response = await ai_agents_client.get("/health", timeout=0.001)
         except httpx.TimeoutException:
             # Expected - timeout should be handled gracefully
             pass
@@ -309,7 +306,7 @@ class TestLoadTestMetrics:
         # Report metrics
         if metrics["response_times"]:
             avg = sum(metrics["response_times"]) / len(metrics["response_times"])
-            print(f"\nLoad Test Metrics:")
+            print("\nLoad Test Metrics:")
             print(f"  Total: {metrics['total_requests']}")
             print(f"  Success: {metrics['successful']}")
             print(f"  Failed: {metrics['failed']}")

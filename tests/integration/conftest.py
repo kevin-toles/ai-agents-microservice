@@ -25,6 +25,13 @@ from src.core.config import Settings
 
 
 # =============================================================================
+# Constants
+# =============================================================================
+
+HEALTH_ENDPOINT = "/health"
+
+
+# =============================================================================
 # Environment Configuration
 # =============================================================================
 
@@ -140,7 +147,7 @@ async def ensure_inference_service(
     inference_client: httpx.AsyncClient,
 ) -> httpx.AsyncClient:
     """Ensure inference-service is available, skip if not."""
-    if not await check_service_health(inference_client, "/health"):
+    if not await check_service_health(inference_client, HEALTH_ENDPOINT):
         pytest.skip("inference-service not available")
     return inference_client
 
@@ -150,7 +157,7 @@ async def ensure_semantic_search(
     semantic_search_client: httpx.AsyncClient,
 ) -> httpx.AsyncClient:
     """Ensure semantic-search-service is available, skip if not."""
-    if not await check_service_health(semantic_search_client, "/health"):
+    if not await check_service_health(semantic_search_client, HEALTH_ENDPOINT):
         pytest.skip("semantic-search-service not available")
     return semantic_search_client
 
@@ -160,7 +167,7 @@ async def ensure_audit_service(
     audit_client: httpx.AsyncClient,
 ) -> httpx.AsyncClient:
     """Ensure audit-service is available, skip if not."""
-    if not await check_service_health(audit_client, "/health"):
+    if not await check_service_health(audit_client, HEALTH_ENDPOINT):
         pytest.skip("audit-service not available")
     return audit_client
 

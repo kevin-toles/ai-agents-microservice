@@ -14,6 +14,8 @@ Exit Criteria:
 Reference: AGENT_FUNCTIONS_ARCHITECTURE.md → Citation Flow
 """
 
+import asyncio
+
 import pytest
 from typing import Any
 from datetime import datetime
@@ -31,7 +33,7 @@ class TestCitationAuditRecordSchema:
         """CitationAuditRecord can be imported from src.schemas.audit."""
         from src.schemas.audit import CitationAuditRecord
         
-        assert CitationAuditRecord is not None
+        assert isinstance(CitationAuditRecord, type)
 
     def test_citation_audit_record_has_required_fields(self) -> None:
         """CitationAuditRecord has all required fields."""
@@ -50,7 +52,7 @@ class TestCitationAuditRecordSchema:
         assert record.message_id == "msg-456"
         assert record.source_id == "src-789"
         assert record.source_type == "book"
-        assert record.retrieval_score == 0.85
+        assert record.retrieval_score == pytest.approx(0.85)
         assert record.usage_context == "Used in summary section"
 
     def test_citation_audit_record_has_timestamp(self) -> None:
@@ -103,7 +105,7 @@ class TestCitationAuditRecordSchema:
         
         assert data["conversation_id"] == "conv-123"
         assert data["source_id"] == "src-789"
-        assert data["retrieval_score"] == 0.92
+        assert data["retrieval_score"] == pytest.approx(0.92)
         assert "timestamp" in data
 
 
@@ -114,7 +116,7 @@ class TestCitationAuditBatch:
         """CitationAuditBatch can be imported from src.schemas.audit."""
         from src.schemas.audit import CitationAuditBatch
         
-        assert CitationAuditBatch is not None
+        assert isinstance(CitationAuditBatch, type)
 
     def test_citation_audit_batch_holds_multiple_records(self) -> None:
         """CitationAuditBatch can hold multiple records."""
@@ -266,6 +268,7 @@ class TestAuditServiceClientRetry:
         
         async def mock_request_with_retry(*args, **kwargs):
             nonlocal call_count
+            await asyncio.sleep(0)  # Yield control to event loop
             call_count += 1
             if call_count < 3:
                 raise ConnectionError("Transient failure")
@@ -420,7 +423,7 @@ class TestCitationAuditIntegration:
         
         # Verify values
         assert record.source_id == "book:fowler-peaa-2002"
-        assert record.retrieval_score == 0.89
+        assert record.retrieval_score == pytest.approx(0.89)
         assert "Repository pattern" in record.usage_context
 
 

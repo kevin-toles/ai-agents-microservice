@@ -135,11 +135,19 @@ class MSEPDispatcher:
             for ch in request.chapter_index
         ]
 
+        # Create tasks and save references to prevent garbage collection
+        embeddings_task = asyncio.create_task(self._get_embeddings(request.corpus))
+        similarity_task = asyncio.create_task(self._get_similarity(request.corpus))
+        topics_task = asyncio.create_task(
+            self._get_topics(request.corpus, chapter_index_dicts)
+        )
+        keywords_task = asyncio.create_task(self._get_keywords(request.corpus))
+
         tasks: list[asyncio.Task[Any]] = [
-            asyncio.create_task(self._get_embeddings(request.corpus)),
-            asyncio.create_task(self._get_similarity(request.corpus)),
-            asyncio.create_task(self._get_topics(request.corpus, chapter_index_dicts)),
-            asyncio.create_task(self._get_keywords(request.corpus)),
+            embeddings_task,
+            similarity_task,
+            topics_task,
+            keywords_task,
         ]
 
         # Hybrid search is conditional

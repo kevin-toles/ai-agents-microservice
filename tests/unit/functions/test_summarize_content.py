@@ -195,7 +195,7 @@ class TestSummarizeContentOutput:
             summary="Short",
             compression_ratio=0.25,
         )
-        assert output.compression_ratio == 0.25
+        assert output.compression_ratio == pytest.approx(0.25)
 
     def test_output_has_token_count(self) -> None:
         """SummarizeContentOutput has token_count field."""
@@ -657,7 +657,7 @@ class TestSummarizeContentIntegration:
         
         # Verify citations if sources were provided
         if sources:
-            assert len(result.footnotes) >= 0  # May or may not have citations
+            assert isinstance(result.footnotes, list)  # Footnotes is a list (may be empty)
 
     @pytest.mark.asyncio
     async def test_output_compatible_with_handoff_cache(self) -> None:

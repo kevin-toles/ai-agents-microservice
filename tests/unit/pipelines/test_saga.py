@@ -44,6 +44,7 @@ class TestPipelineSaga:
         saga = PipelineSaga(name="test_saga")
         
         async def rollback_stage_a(context: dict) -> None:
+            # No-op: Test stub for compensation registration
             pass
         
         saga.register_compensation("stage_a", rollback_stage_a)
@@ -82,9 +83,11 @@ class TestSagaCompensation:
         saga = PipelineSaga(name="compensation_test")
         
         async def compensate_a(context: dict) -> None:
+            await asyncio.sleep(0)  # Yield control
             compensation_log.append("rollback_a")
         
         async def compensate_b(context: dict) -> None:
+            await asyncio.sleep(0)  # Yield control
             compensation_log.append("rollback_b")
         
         saga.register_compensation("stage_a", compensate_a)
@@ -111,12 +114,15 @@ class TestSagaCompensation:
         saga = PipelineSaga(name="reverse_test")
         
         async def compensate_first(context: dict) -> None:
+            await asyncio.sleep(0)  # Yield control
             compensation_order.append("first")
         
         async def compensate_second(context: dict) -> None:
+            await asyncio.sleep(0)  # Yield control
             compensation_order.append("second")
         
         async def compensate_third(context: dict) -> None:
+            await asyncio.sleep(0)  # Yield control
             compensation_order.append("third")
         
         saga.register_compensation("first", compensate_first)
@@ -144,6 +150,7 @@ class TestSagaCompensation:
         saga = PipelineSaga(name="context_test")
         
         async def compensate(context: dict) -> None:
+            await asyncio.sleep(0)  # Yield control
             received_contexts.append(context)
         
         saga.register_compensation("data_stage", compensate)
@@ -165,12 +172,15 @@ class TestSagaCompensation:
         saga = PipelineSaga(name="partial_test")
         
         async def compensate_a(context: dict) -> None:
+            await asyncio.sleep(0)  # Yield control
             compensation_log.append("a")
         
         async def compensate_b(context: dict) -> None:
+            await asyncio.sleep(0)  # Yield control
             compensation_log.append("b")
         
         async def compensate_c(context: dict) -> None:
+            await asyncio.sleep(0)  # Yield control
             compensation_log.append("c")
         
         saga.register_compensation("stage_a", compensate_a)
@@ -206,12 +216,14 @@ class TestSagaErrorHandling:
         saga = PipelineSaga(name="error_resilient")
         
         async def compensate_good(context: dict) -> None:
+            await asyncio.sleep(0)  # Yield control
             compensation_log.append("good")
         
         async def compensate_bad(context: dict) -> None:
             raise RuntimeError("Compensation failed!")
         
         async def compensate_also_good(context: dict) -> None:
+            await asyncio.sleep(0)  # Yield control
             compensation_log.append("also_good")
         
         saga.register_compensation("first", compensate_also_good)
@@ -241,6 +253,7 @@ class TestSagaErrorHandling:
         saga = PipelineSaga(name="result_test")
         
         async def success_handler(context: dict) -> None:
+            # No-op: Test stub for successful compensation
             pass
         
         async def fail_handler(context: dict) -> None:
@@ -290,6 +303,7 @@ class TestSagaPipelineIntegration:
                 return SuccessOutput(created_id="resource_123")
             
             async def compensate(self, context: dict) -> None:
+                await asyncio.sleep(0)  # Yield control
                 nonlocal cleanup_called
                 cleanup_called = True
         

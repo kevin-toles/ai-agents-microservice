@@ -153,6 +153,7 @@ class Neo4jClient:
     
     async def close(self) -> None:
         """Close connection and release resources."""
+        await asyncio.sleep(0)  # Yield control to event loop
         if self._driver:
             self._driver.close()
             self._driver = None

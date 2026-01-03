@@ -134,7 +134,7 @@ class FunctionExecutionError(Exception):
 # Exception Handlers
 # =============================================================================
 
-async def http_exception_handler(
+def http_exception_handler(
     request: Request,
     exc: HTTPException,
 ) -> JSONResponse:
@@ -167,7 +167,7 @@ async def http_exception_handler(
     )
 
 
-async def validation_exception_handler(
+def validation_exception_handler(
     request: Request,
     exc: RequestValidationError,
 ) -> JSONResponse:
@@ -202,7 +202,7 @@ async def validation_exception_handler(
     )
 
 
-async def function_not_found_handler(
+def function_not_found_handler(
     request: Request,
     exc: FunctionNotFoundError,
 ) -> JSONResponse:
@@ -226,7 +226,7 @@ async def function_not_found_handler(
     )
 
 
-async def pipeline_not_found_handler(
+def pipeline_not_found_handler(
     request: Request,
     exc: PipelineNotFoundError,
 ) -> JSONResponse:
@@ -250,7 +250,7 @@ async def pipeline_not_found_handler(
     )
 
 
-async def pipeline_execution_handler(
+def pipeline_execution_handler(
     request: Request,
     exc: PipelineExecutionError,
 ) -> JSONResponse:
@@ -283,7 +283,7 @@ async def pipeline_execution_handler(
     )
 
 
-async def function_execution_handler(
+def function_execution_handler(
     request: Request,
     exc: FunctionExecutionError,
 ) -> JSONResponse:
@@ -315,7 +315,7 @@ async def function_execution_handler(
     )
 
 
-async def generic_exception_handler(
+def generic_exception_handler(
     request: Request,
     exc: Exception,
 ) -> JSONResponse:

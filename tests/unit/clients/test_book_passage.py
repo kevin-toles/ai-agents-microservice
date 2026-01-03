@@ -17,6 +17,7 @@ Anti-Pattern Compliance: CODING_PATTERNS_ANALYSIS.md
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -64,12 +65,14 @@ class FakeBookPassageClient:
     
     async def connect(self) -> None:
         """Fake connect."""
+        await asyncio.sleep(0)
         if self.should_raise:
             raise self.should_raise
         self._connected = True
     
     async def close(self) -> None:
         """Fake close."""
+        await asyncio.sleep(0)
         self._connected = False
     
     async def __aenter__(self) -> "FakeBookPassageClient":
@@ -83,6 +86,7 @@ class FakeBookPassageClient:
     
     async def health_check(self) -> bool:
         """Fake health check."""
+        await asyncio.sleep(0)
         return self._connected
     
     async def search_passages(
@@ -96,6 +100,7 @@ class FakeBookPassageClient:
         AC-23.2: Query passages via Qdrant vector similarity
         AC-23.5: Support filtering by book, chapter, concept
         """
+        await asyncio.sleep(0)
         self.query_count += 1
         self.last_query = query
         if self.should_raise:
@@ -122,6 +127,7 @@ class FakeBookPassageClient:
         
         AC-23.1: Retrieve passages from enriched book JSON files
         """
+        await asyncio.sleep(0)
         self.query_count += 1
         if self.should_raise:
             raise self.should_raise
@@ -136,6 +142,7 @@ class FakeBookPassageClient:
         
         AC-23.3: Cross-reference passages with Neo4j concept nodes
         """
+        await asyncio.sleep(0)
         self.query_count += 1
         if self.should_raise:
             raise self.should_raise
@@ -151,6 +158,7 @@ class FakeBookPassageClient:
         
         AC-23.5: Support filtering by book
         """
+        await asyncio.sleep(0)
         self.query_count += 1
         results = self.passages_by_book.get(book_id, [])
         return results[:limit]
@@ -164,6 +172,7 @@ class FakeBookPassageClient:
         
         AC-23.5: Support filtering by book
         """
+        await asyncio.sleep(0)
         return [p for p in passages if p.book_id == book_id]
     
     async def filter_by_chapter(
@@ -175,6 +184,7 @@ class FakeBookPassageClient:
         
         AC-23.5: Support filtering by chapter
         """
+        await asyncio.sleep(0)
         return [p for p in passages if p.chapter_number == chapter_number]
 
 

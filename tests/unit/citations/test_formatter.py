@@ -29,7 +29,8 @@ class TestChicagoFormatterCreation:
         """ChicagoFormatter can be imported from src.citations.formatter."""
         from src.citations.formatter import ChicagoFormatter
         
-        assert ChicagoFormatter is not None
+        # Verify import succeeded by checking it's a type
+        assert isinstance(ChicagoFormatter, type)
 
     def test_chicago_formatter_can_be_instantiated(self) -> None:
         """ChicagoFormatter can be instantiated."""
@@ -37,7 +38,8 @@ class TestChicagoFormatterCreation:
         
         formatter = ChicagoFormatter()
         
-        assert formatter is not None
+        # Verify instance is of correct type
+        assert isinstance(formatter, ChicagoFormatter)
 
 
 class TestChicagoFormatterBookFormat:
@@ -335,6 +337,8 @@ class TestChicagoFormatterIntegration:
         # The core content should match
         assert "Test Author" in formatter_result
         assert "Test Book" in formatter_result
+        # Direct result should contain core content too
+        assert "Test Author" in direct_result
 
     def test_format_adds_marker_prefix(self) -> None:
         """ChicagoFormatter adds [^N]: prefix to Citation.chicago_format() output."""

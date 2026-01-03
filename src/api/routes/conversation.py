@@ -32,6 +32,9 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/v1/conversation", tags=["conversation"])
 
+# Error message constants
+ERROR_CONVERSATION_NOT_FOUND = "Conversation not found"
+
 # Global orchestrator instance (initialized on first use)
 _orchestrator: ConversationOrchestrator | None = None
 
@@ -158,7 +161,7 @@ async def run_conversation(conversation_id: str) -> ConversationResponse:
 
     conversation = orchestrator.get_conversation(conversation_id)
     if not conversation:
-        raise HTTPException(status_code=404, detail="Conversation not found")
+        raise HTTPException(status_code=404, detail=ERROR_CONVERSATION_NOT_FOUND)
 
     # Run the conversation
     conversation = await orchestrator.run_conversation(conversation)
@@ -181,7 +184,7 @@ async def get_conversation(conversation_id: str) -> dict[str, Any]:
 
     conversation = orchestrator.get_conversation(conversation_id)
     if not conversation:
-        raise HTTPException(status_code=404, detail="Conversation not found")
+        raise HTTPException(status_code=404, detail=ERROR_CONVERSATION_NOT_FOUND)
 
     return conversation.to_dict()
 
@@ -193,7 +196,7 @@ async def get_transcript(conversation_id: str) -> dict[str, str]:
 
     conversation = orchestrator.get_conversation(conversation_id)
     if not conversation:
-        raise HTTPException(status_code=404, detail="Conversation not found")
+        raise HTTPException(status_code=404, detail=ERROR_CONVERSATION_NOT_FOUND)
 
     return {
         "conversation_id": conversation_id,
@@ -209,14 +212,14 @@ async def inject_message(
     """Inject a message into an active conversation (human-in-the-loop)."""
     orchestrator = get_orchestrator()
 
-    message = await orchestrator.inject_message(
+    message = orchestrator.inject_message(
         conversation_id=conversation_id,
         content=request.content,
         from_participant=request.from_participant,
     )
 
     if not message:
-        raise HTTPException(status_code=404, detail="Conversation not found")
+        raise HTTPException(status_code=404, detail=ERROR_CONVERSATION_NOT_FOUND)
 
     return message.to_dict()
 
@@ -235,7 +238,7 @@ async def stop_conversation(
     )
 
     if not conversation:
-        raise HTTPException(status_code=404, detail="Conversation not found")
+        raise HTTPException(status_code=404, detail=ERROR_CONVERSATION_NOT_FOUND)
 
     return ConversationResponse(
         conversation_id=conversation.conversation_id,

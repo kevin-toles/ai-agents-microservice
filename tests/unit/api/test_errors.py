@@ -36,7 +36,7 @@ class TestErrorHandlerImport:
         """ErrorResponse model can be imported."""
         from src.api.error_handlers import ErrorResponse
         
-        assert ErrorResponse is not None
+        assert isinstance(ErrorResponse, type)
 
 
 class TestErrorResponseModel:
@@ -189,7 +189,7 @@ class TestFunctionNotFoundError:
         """FunctionNotFoundError can be imported."""
         from src.api.error_handlers import FunctionNotFoundError
         
-        assert FunctionNotFoundError is not None
+        assert isinstance(FunctionNotFoundError, type)
 
     def test_function_not_found_error_has_function_name(self) -> None:
         """FunctionNotFoundError includes function name."""
@@ -215,7 +215,7 @@ class TestPipelineNotFoundError:
         """PipelineNotFoundError can be imported."""
         from src.api.error_handlers import PipelineNotFoundError
         
-        assert PipelineNotFoundError is not None
+        assert isinstance(PipelineNotFoundError, type)
 
     def test_pipeline_not_found_error_has_pipeline_name(self) -> None:
         """PipelineNotFoundError includes pipeline name."""
@@ -233,7 +233,7 @@ class TestPipelineExecutionError:
         """PipelineExecutionError can be imported."""
         from src.api.error_handlers import PipelineExecutionError
         
-        assert PipelineExecutionError is not None
+        assert isinstance(PipelineExecutionError, type)
 
     def test_pipeline_execution_error_has_stage(self) -> None:
         """PipelineExecutionError includes failed stage."""

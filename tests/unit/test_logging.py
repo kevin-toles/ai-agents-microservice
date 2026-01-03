@@ -66,8 +66,8 @@ class TestConfigureLogging:
             configure_logging()
             configure_logging()
             
-            # If we get here without exception, the test passes
-            assert True
+            # Test passes if no exception was raised - verify module state
+            assert logging_module._configured is True
 
 
 class TestGetLogger:
@@ -81,6 +81,7 @@ class TestGetLogger:
             
             logger = get_logger("test_module")
             
+            assert logger is mock_logger
             mock_get.assert_called_once_with("test_module")
     
     def test_get_logger_without_name(self) -> None:
@@ -91,6 +92,7 @@ class TestGetLogger:
             
             logger = get_logger()
             
+            assert logger is mock_logger
             mock_get.assert_called_once_with(None)
 
 

@@ -417,6 +417,8 @@ class TestChapterSummarizationPresets:
         light_summarize = light_def.stages[2]
         hq_summarize = hq_def.stages[2]
         
+        # Light preset should use different preset than high quality
+        assert light_summarize.preset != hq_summarize.preset
         # High quality should use D10 (critique mode)
         assert hq_summarize.preset == "D10"
 
@@ -563,7 +565,9 @@ class TestChapterSummarizationExecution:
         pipeline = ChapterSummarizationPipeline()
         
         # This would require real execution - mark as integration test
-        # For unit test, verify output schema
+        # For unit test, verify output schema and pipeline instance
+        assert isinstance(pipeline, ChapterSummarizationPipeline)
+        
         output = ChapterSummarizationOutput(
             summary="Test summary with citation[^1].",
             footnotes=[],

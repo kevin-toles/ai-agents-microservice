@@ -89,7 +89,7 @@ class TestSequentialAgent:
             functions=[FirstFunc(), SecondFunc(), ThirdFunc()],
         )
         
-        result = await agent.execute(value=0)
+        _result = await agent.execute(value=0)
         
         # Verify execution order
         assert execution_log == ["first", "second", "third"]
@@ -117,7 +117,7 @@ class TestSequentialAgent:
         
         result = await agent.execute(value=0)
         
-        # 0 + 10 + 10 + 10 = 30
+        # Expected: 0 + 10 + 10 + 10 = 30
         assert result.value == 30
 
     @pytest.mark.asyncio
@@ -460,7 +460,7 @@ class TestLoopAgent:
             keep_history=True,
         )
         
-        result = await agent.execute(value=0)
+        _result = await agent.execute(value=0)
         
         # Should have history of all iterations stored in agent
         assert agent.history is not None

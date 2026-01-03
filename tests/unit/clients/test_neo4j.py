@@ -17,6 +17,7 @@ Anti-Pattern Compliance: CODING_PATTERNS_ANALYSIS.md
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -61,12 +62,14 @@ class FakeNeo4jClient:
     
     async def connect(self) -> None:
         """Fake connect."""
+        await asyncio.sleep(0)
         if self.should_raise:
             raise self.should_raise
         self._connected = True
     
     async def close(self) -> None:
         """Fake close."""
+        await asyncio.sleep(0)
         self._connected = False
     
     async def __aenter__(self) -> "FakeNeo4jClient":
@@ -80,6 +83,7 @@ class FakeNeo4jClient:
     
     async def health_check(self) -> bool:
         """Fake health check."""
+        await asyncio.sleep(0)
         return self._connected
     
     async def get_concepts_for_chapter(
@@ -90,6 +94,7 @@ class FakeNeo4jClient:
         
         AC-22.2: Query book → chapter → concept relationships
         """
+        await asyncio.sleep(0)
         self.query_count += 1
         if self.should_raise:
             raise self.should_raise
@@ -103,6 +108,7 @@ class FakeNeo4jClient:
         
         AC-22.3: Query concept → code-reference-engine file mappings
         """
+        await asyncio.sleep(0)
         self.query_count += 1
         if self.should_raise:
             raise self.should_raise
@@ -116,6 +122,7 @@ class FakeNeo4jClient:
         
         AC-22.4: Query cross-repo pattern relationships
         """
+        await asyncio.sleep(0)
         self.query_count += 1
         if self.should_raise:
             raise self.should_raise
@@ -127,6 +134,7 @@ class FakeNeo4jClient:
         limit: int = 10,
     ) -> list[dict[str, Any]]:
         """Get chapters linked to a concept."""
+        await asyncio.sleep(0)
         self.query_count += 1
         results = self.chapters_for_concept.get(concept, [])
         return results[:limit]
@@ -141,6 +149,7 @@ class FakeNeo4jClient:
         
         PCON-4: Added to satisfy Neo4jClientProtocol.
         """
+        await asyncio.sleep(0)
         self.query_count += 1
         if self.should_raise:
             raise self.should_raise

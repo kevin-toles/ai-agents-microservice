@@ -122,12 +122,12 @@ class TestCodeOrchestratorClientInit:
     def test_init_with_timeout(self) -> None:
         """Client initializes with custom timeout."""
         client = CodeOrchestratorClient(base_url="http://test:8082", timeout=60.0)
-        assert client.timeout == 60.0
+        assert client.timeout == pytest.approx(60.0)
 
     def test_init_default_timeout(self) -> None:
         """Client has default timeout of 30.0 seconds."""
         client = CodeOrchestratorClient(base_url="http://test:8082")
-        assert client.timeout == 30.0
+        assert client.timeout == pytest.approx(30.0)
 
     def test_init_with_max_retries(self) -> None:
         """Client initializes with custom max_retries."""
@@ -178,7 +178,7 @@ class TestConnectionPooling:
             client,
             "_get_client",
             wraps=client._get_client,
-        ) as mock_get_client:
+        ):
             # Mock the actual HTTP call
             with patch.object(
                 httpx.AsyncClient, "post", return_value=mock_response

@@ -61,6 +61,7 @@ class FakeCodeReferenceClient:
         top_k: int = 10,
     ) -> Any:
         """Record call and return fake results."""
+        await asyncio.sleep(0)
         self.search_calls.append({
             "query": query,
             "domains": domains,
@@ -75,6 +76,7 @@ class FakeCodeReferenceClient:
         top_k: int = 10,
     ) -> Any:
         """Search by pattern name."""
+        await asyncio.sleep(0)
         self.pattern_calls.append(pattern)
         return FakeCodeContext(references=self.pattern_results, query=pattern)
     
@@ -135,33 +137,40 @@ class FakeNeo4jClient:
     
     async def connect(self) -> None:
         """Establish connection."""
+        await asyncio.sleep(0)
         self._connected = True
     
     async def close(self) -> None:
         """Close connection."""
+        await asyncio.sleep(0)
         self._connected = False
     
     async def health_check(self) -> bool:
         """Check connection health."""
+        await asyncio.sleep(0)
         return self._connected
     
     async def get_concepts_for_chapter(self, chapter_id: str) -> list[Any]:
         """Get concepts for chapter."""
+        await asyncio.sleep(0)
         return [FakeConcept(**c) for c in self.concepts]
     
     async def get_code_for_concept(self, concept: str) -> list[Any]:
         """Get code files for concept."""
+        await asyncio.sleep(0)
         self.code_calls.append(concept)
         return [FakeCodeFile(**c) for c in self.code_files]
     
     async def get_related_patterns(self, pattern: str) -> list[Any]:
         """Get related patterns."""
+        await asyncio.sleep(0)
         return [FakePattern(**p) for p in self.patterns]
     
     async def get_chapters_for_concept(
         self, concept: str, limit: int = 10
     ) -> list[dict[str, Any]]:
         """Get chapters covering concept."""
+        await asyncio.sleep(0)  # Yield control to event loop
         self.concept_calls.append(concept)
         return self.chapters
 
@@ -213,14 +222,17 @@ class FakeBookPassageClient:
     
     async def connect(self) -> None:
         """Establish connection."""
+        await asyncio.sleep(0)  # Yield control to event loop
         self._connected = True
     
     async def close(self) -> None:
         """Close connection."""
+        await asyncio.sleep(0)  # Yield control to event loop
         self._connected = False
     
     async def health_check(self) -> bool:
         """Check connection health."""
+        await asyncio.sleep(0)  # Yield control to event loop
         return self._connected
     
     async def search_passages(
@@ -230,11 +242,13 @@ class FakeBookPassageClient:
         filters: Any = None,
     ) -> list[Any]:
         """Search passages via Qdrant."""
+        await asyncio.sleep(0)  # Yield control to event loop
         self.search_calls.append({"query": query, "top_k": top_k, "filters": filters})
         return [FakeBookPassage(**p) for p in self.search_results]
     
     async def get_passage_by_id(self, passage_id: str) -> Any | None:
         """Get passage by ID."""
+        await asyncio.sleep(0)  # Yield control to event loop
         for p in self.search_results:
             if p.get("passage_id") == passage_id:
                 return FakeBookPassage(**p)
@@ -244,6 +258,7 @@ class FakeBookPassageClient:
         self, concept: str, limit: int = 10
     ) -> list[Any]:
         """Get passages for concept."""
+        await asyncio.sleep(0)  # Yield control to event loop
         self.concept_calls.append(concept)
         passages = self.concept_passages.get(concept, [])
         return [FakeBookPassage(**p) for p in passages[:limit]]
@@ -372,7 +387,7 @@ class TestRetrievalResultSchema:
     def test_import_retrieval_result(self) -> None:
         """RetrievalResult can be imported."""
         from src.schemas.retrieval_models import RetrievalResult
-        assert RetrievalResult is not None
+        assert isinstance(RetrievalResult, type)
     
     def test_retrieval_result_has_results(self) -> None:
         """RetrievalResult has results list."""
@@ -415,7 +430,7 @@ class TestMixedCitationModel:
     def test_import_mixed_citation(self) -> None:
         """MixedCitation can be imported."""
         from src.citations.mixed_citation import MixedCitation
-        assert MixedCitation is not None
+        assert isinstance(MixedCitation, type)
     
     def test_mixed_citation_source_types(self) -> None:
         """MixedCitation supports code, book, graph source types."""
@@ -461,7 +476,7 @@ class TestScopeFiltering:
     def test_import_retrieval_scope(self) -> None:
         """RetrievalScope enum can be imported."""
         from src.schemas.retrieval_models import RetrievalScope
-        assert RetrievalScope is not None
+        assert isinstance(RetrievalScope, type)
     
     def test_retrieval_scope_values(self) -> None:
         """RetrievalScope has code_only, books_only, all values."""
@@ -579,6 +594,7 @@ class TestMultiSourceOrchestration:
         )
         
         # Should only call code client
+        assert result is not None
         assert len(code_client.search_calls) == 1
         assert len(book_client.search_calls) == 0
     
@@ -607,6 +623,7 @@ class TestMultiSourceOrchestration:
         )
         
         # Should only call book client
+        assert result is not None
         assert len(code_client.search_calls) == 0
         assert len(book_client.search_calls) == 1
 
@@ -617,7 +634,7 @@ class TestResultMerging:
     def test_import_result_merger(self) -> None:
         """ResultMerger can be imported."""
         from src.retrieval.merger import ResultMerger
-        assert ResultMerger is not None
+        assert isinstance(ResultMerger, type)
     
     def test_merger_combines_sources(self) -> None:
         """Merger combines results from multiple sources."""
@@ -673,7 +690,7 @@ class TestResultMerging:
         
         # Should keep higher scoring item
         assert len(merged) == 1
-        assert merged[0].relevance_score == 0.9
+        assert merged[0].relevance_score == pytest.approx(0.9)
 
 
 class TestCrossSourceRanking:
@@ -682,7 +699,7 @@ class TestCrossSourceRanking:
     def test_import_cross_source_ranker(self) -> None:
         """CrossSourceRanker can be imported."""
         from src.retrieval.ranker import CrossSourceRanker
-        assert CrossSourceRanker is not None
+        assert isinstance(CrossSourceRanker, type)
     
     def test_ranker_sorts_by_relevance(self) -> None:
         """Ranker sorts results by relevance score descending."""
@@ -713,9 +730,9 @@ class TestCrossSourceRanking:
         ranker = CrossSourceRanker()
         ranked = ranker.rank(items)
         
-        assert ranked[0].relevance_score == 0.95
-        assert ranked[1].relevance_score == 0.75
-        assert ranked[2].relevance_score == 0.5
+        assert ranked[0].relevance_score == pytest.approx(0.95)
+        assert ranked[1].relevance_score == pytest.approx(0.75)
+        assert ranked[2].relevance_score == pytest.approx(0.5)
     
     def test_ranker_applies_source_boost(self) -> None:
         """Ranker can apply source-type boosts."""
@@ -842,7 +859,7 @@ class TestUnifiedRetrieverProtocol:
     def test_retriever_protocol_exists(self) -> None:
         """UnifiedRetrieverProtocol can be imported."""
         from src.retrieval.unified_retriever import UnifiedRetrieverProtocol
-        assert UnifiedRetrieverProtocol is not None
+        assert callable(UnifiedRetrieverProtocol)
     
     def test_fake_retriever_protocol_compliance(self) -> None:
         """FakeUnifiedRetriever implements protocol."""
@@ -868,6 +885,7 @@ class TestErrorHandling:
                 raise ConnectionError("Service unavailable")
             
             async def close(self):
+                # No-op: Fake client requires no cleanup
                 pass
         
         retriever = UnifiedRetriever(
@@ -891,6 +909,7 @@ class TestErrorHandling:
                 raise ConnectionError("Service unavailable")
             
             async def close(self):
+                # No-op: Fake client requires no cleanup
                 pass
         
         retriever = UnifiedRetriever(

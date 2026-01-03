@@ -152,7 +152,7 @@ class ExtractStructureFunction(AgentFunction):
     def _parse_json(
         self,
         content: str,
-        extraction_type: ExtractionType,
+        _extraction_type: ExtractionType,
     ) -> StructuredOutput:
         """Parse JSON content into structured output.
 
@@ -181,6 +181,42 @@ class ExtractStructureFunction(AgentFunction):
             compressed_summary=summary,
         )
 
+    def _extract_json_dict(
+        self,
+        data: dict,
+        sections: list[Section],
+        items: list[ExtractedItem],
+        depth: int,
+        path: str,
+    ) -> None:
+        """Extract structure from a JSON dict."""
+        for key, value in data.items():
+            current_path = f"{path}.{key}" if path else key
+
+            if isinstance(value, dict):
+                sections.append(Section(
+                    title=key,
+                    content=json.dumps(value, indent=2)[:200],
+                    depth=depth,
+                ))
+                self._extract_json_structure(value, sections, items, depth + 1, current_path)
+            elif isinstance(value, list):
+                sections.append(Section(
+                    title=key,
+                    content=f"Array with {len(value)} items",
+                    depth=depth,
+                ))
+                for i, item in enumerate(value):
+                    if isinstance(item, dict):
+                        self._extract_json_structure(item, sections, items, depth + 1, f"{current_path}[{i}]")
+            else:
+                sections.append(Section(title=key, content=str(value), depth=depth))
+                items.append(ExtractedItem(
+                    value=f"{key}: {value}",
+                    category="property",
+                    confidence_score=1.0,
+                ))
+
     def _extract_json_structure(
         self,
         data: Any,
@@ -191,50 +227,10 @@ class ExtractStructureFunction(AgentFunction):
     ) -> None:
         """Recursively extract structure from JSON data."""
         if isinstance(data, dict):
-            for key, value in data.items():
-                current_path = f"{path}.{key}" if path else key
-
-                if isinstance(value, dict):
-                    # Create section for nested object at current depth
-                    sections.append(Section(
-                        title=key,
-                        content=json.dumps(value, indent=2)[:200],  # Truncate
-                        depth=depth,
-                    ))
-                    # Recurse into nested dict with incremented depth
-                    self._extract_json_structure(
-                        value, sections, items, depth + 1, current_path
-                    )
-                elif isinstance(value, list):
-                    # Extract list items
-                    sections.append(Section(
-                        title=key,
-                        content=f"Array with {len(value)} items",
-                        depth=depth,
-                    ))
-                    for i, item in enumerate(value):
-                        if isinstance(item, dict):
-                            self._extract_json_structure(
-                                item, sections, items, depth + 1, f"{current_path}[{i}]"
-                            )
-                else:
-                    # Leaf value - also add as section to track depth
-                    sections.append(Section(
-                        title=key,
-                        content=str(value),
-                        depth=depth,
-                    ))
-                    # Extract as item for keywords/concepts
-                    items.append(ExtractedItem(
-                        value=f"{key}: {value}",
-                        category="property",
-                        confidence_score=1.0,
-                    ))
+            self._extract_json_dict(data, sections, items, depth, path)
         elif isinstance(data, list):
             for i, item in enumerate(data):
-                self._extract_json_structure(
-                    item, sections, items, depth, f"{path}[{i}]"
-                )
+                self._extract_json_structure(item, sections, items, depth, f"{path}[{i}]")
 
     def _generate_json_summary(self, data: Any) -> str:
         """Generate compressed summary for JSON data."""
@@ -251,7 +247,7 @@ class ExtractStructureFunction(AgentFunction):
     def _parse_markdown(
         self,
         content: str,
-        extraction_type: ExtractionType,
+        _extraction_type: ExtractionType,
     ) -> StructuredOutput:
         """Parse Markdown content into structured output.
 
@@ -367,11 +363,106 @@ class ExtractStructureFunction(AgentFunction):
 
         return f"Markdown document with {', '.join(parts) or 'no structure'}"
 
+    def _save_current_block(
+        self,
+        code_blocks: list[CodeBlock],
+        sections: list[Section],
+        current_block_start: int | None,
+        current_block_lines: list[str],
+        current_block_name: str | None,
+        current_block_type: str | None,
+        end_line: int,
+    ) -> None:
+        """Save the current code block if one exists."""
+        if current_block_start is None:
+            return
+
+        code_blocks.append(CodeBlock(
+            code="\n".join(current_block_lines),
+            language="python",
+            start_line=current_block_start,
+            end_line=end_line,
+        ))
+        sections.append(Section(
+            title=current_block_name or "Unknown",
+            content=f"{current_block_type}: {current_block_name}",
+            depth=0,
+            start_line=current_block_start,
+            end_line=end_line,
+        ))
+
+    def _handle_class_definition(
+        self,
+        match: re.Match,
+        line_num: int,
+        code_blocks: list[CodeBlock],
+        sections: list[Section],
+        extracted_items: list[ExtractedItem],
+        block_state: dict,
+    ) -> None:
+        """Handle a class definition line."""
+        self._save_current_block(
+            code_blocks, sections,
+            block_state["start"], block_state["lines"],
+            block_state["name"], block_state["type"],
+            line_num - 1
+        )
+
+        class_name = match.group(1)
+        block_state["start"] = line_num
+        block_state["lines"] = [match.string]
+        block_state["name"] = class_name
+        block_state["type"] = "class"
+
+        extracted_items.append(ExtractedItem(
+            value=class_name,
+            category="class",
+            confidence_score=1.0,
+            source_positions=[line_num],
+        ))
+
+    def _handle_function_definition(
+        self,
+        match: re.Match,
+        line_num: int,
+        code_blocks: list[CodeBlock],
+        sections: list[Section],
+        extracted_items: list[ExtractedItem],
+        block_state: dict,
+    ) -> None:
+        """Handle a function/method definition line."""
+        func_indent = len(match.group(1))
+        func_name = match.group(2)
+
+        if func_indent == 0:
+            # Top-level function - save previous block
+            self._save_current_block(
+                code_blocks, sections,
+                block_state["start"], block_state["lines"],
+                block_state["name"], block_state["type"],
+                line_num - 1
+            )
+            block_state["start"] = line_num
+            block_state["lines"] = [match.string]
+            block_state["name"] = func_name
+            block_state["type"] = "function"
+        else:
+            # Method inside class
+            if block_state["start"] is not None:
+                block_state["lines"].append(match.string)
+
+        extracted_items.append(ExtractedItem(
+            value=func_name,
+            category="function" if func_indent == 0 else "method",
+            confidence_score=1.0,
+            source_positions=[line_num],
+        ))
+
     def _parse_code(
         self,
         content: str,
-        extraction_type: ExtractionType,
-        domain: str,
+        _extraction_type: ExtractionType,
+        _domain: str,
     ) -> StructuredOutput:
         """Parse source code into structured output.
 
@@ -382,121 +473,47 @@ class ExtractStructureFunction(AgentFunction):
         sections: list[Section] = []
         extracted_items: list[ExtractedItem] = []
 
-        # Extract Python-style definitions
-        current_block_start: int | None = None
-        current_block_lines: list[str] = []
-        current_block_name: str | None = None
-        current_block_type: str | None = None
+        block_state = {"start": None, "lines": [], "name": None, "type": None}
 
         for i, line in enumerate(lines, start=1):
-            # Detect class definitions
             class_match = re.match(r"^class\s+(\w+)", line)
             if class_match:
-                # Save previous block
-                if current_block_start is not None:
-                    code_blocks.append(CodeBlock(
-                        code="\n".join(current_block_lines),
-                        language="python",
-                        start_line=current_block_start,
-                        end_line=i - 1,
-                    ))
-                    sections.append(Section(
-                        title=current_block_name or "Unknown",
-                        content=f"{current_block_type}: {current_block_name}",
-                        depth=0,
-                        start_line=current_block_start,
-                        end_line=i - 1,
-                    ))
-
-                current_block_start = i
-                current_block_lines = [line]
-                current_block_name = class_match.group(1)
-                current_block_type = "class"
-
-                extracted_items.append(ExtractedItem(
-                    value=class_match.group(1),
-                    category="class",
-                    confidence_score=1.0,
-                    source_positions=[i],
-                ))
+                self._handle_class_definition(
+                    class_match, i, code_blocks, sections, extracted_items, block_state
+                )
                 continue
 
-            # Detect function definitions
             func_match = re.match(r"^(\s*)def\s+(\w+)", line)
             if func_match:
-                func_indent = len(func_match.group(1))
-                func_name = func_match.group(2)
-
-                # Top-level function
-                if func_indent == 0:
-                    if current_block_start is not None:
-                        code_blocks.append(CodeBlock(
-                            code="\n".join(current_block_lines),
-                            language="python",
-                            start_line=current_block_start,
-                            end_line=i - 1,
-                        ))
-                        sections.append(Section(
-                            title=current_block_name or "Unknown",
-                            content=f"{current_block_type}: {current_block_name}",
-                            depth=0,
-                            start_line=current_block_start,
-                            end_line=i - 1,
-                        ))
-
-                    current_block_start = i
-                    current_block_lines = [line]
-                    current_block_name = func_name
-                    current_block_type = "function"
-                else:
-                    # Method inside class
-                    current_block_lines.append(line)
-
-                extracted_items.append(ExtractedItem(
-                    value=func_name,
-                    category="function" if func_indent == 0 else "method",
-                    confidence_score=1.0,
-                    source_positions=[i],
-                ))
+                self._handle_function_definition(
+                    func_match, i, code_blocks, sections, extracted_items, block_state
+                )
                 continue
 
-            # Accumulate lines in current block
-            if current_block_start is not None:
-                current_block_lines.append(line)
+            if block_state["start"] is not None:
+                block_state["lines"].append(line)
 
         # Save last block
-        if current_block_start is not None:
-            code_blocks.append(CodeBlock(
-                code="\n".join(current_block_lines),
-                language="python",
-                start_line=current_block_start,
-                end_line=len(lines),
-            ))
-            sections.append(Section(
-                title=current_block_name or "Unknown",
-                content=f"{current_block_type}: {current_block_name}",
-                depth=0,
-                start_line=current_block_start,
-                end_line=len(lines),
-            ))
+        self._save_current_block(
+            code_blocks, sections,
+            block_state["start"], block_state["lines"],
+            block_state["name"], block_state["type"],
+            len(lines)
+        )
 
         # If no blocks found, treat entire content as one block
         if not code_blocks:
             code_blocks.append(CodeBlock(
-                code=content,
-                language="python",
-                start_line=1,
-                end_line=len(lines),
+                code=content, language="python", start_line=1, end_line=len(lines)
             ))
 
         # Generate summary
         class_count = sum(1 for i in extracted_items if i.category == "class")
         func_count = sum(1 for i in extracted_items if i.category in ("function", "method"))
-        summary = f"Code with {class_count} classes and {func_count} functions/methods"
 
         return StructuredOutput(
             code_blocks=code_blocks,
             sections=sections,
             extracted_items=extracted_items,
-            compressed_summary=summary,
+            compressed_summary=f"Code with {class_count} classes and {func_count} functions/methods",
         )

@@ -271,15 +271,10 @@ class ConditionEvaluator:
 class DAGBuilder:
     """Builds execution order from stage dependencies."""
 
-    def build_execution_order(
+    def _build_dependency_graph(
         self, stages: list[StageDefinition]
-    ) -> list[list[str]]:
-        """Build execution order using topological sort.
-
-        Returns list of lists - each inner list contains stages
-        that can be executed in parallel.
-        """
-        # Build adjacency list and in-degree count
+    ) -> tuple[dict[str, StageDefinition], dict[str, int], dict[str, list[str]]]:
+        """Build adjacency list and in-degree count for topological sort."""
         stage_map = {s.name: s for s in stages}
         in_degree: dict[str, int] = {s.name: 0 for s in stages}
         dependents: dict[str, list[str]] = {s.name: [] for s in stages}
@@ -291,21 +286,30 @@ class DAGBuilder:
                 in_degree[stage.name] += 1
                 dependents[dep].append(stage.name)
 
+        return stage_map, in_degree, dependents
+
+    def build_execution_order(
+        self, stages: list[StageDefinition]
+    ) -> list[list[str]]:
+        """Build execution order using topological sort.
+
+        Returns list of lists - each inner list contains stages
+        that can be executed in parallel.
+        """
+        _, in_degree, dependents = self._build_dependency_graph(stages)
+
         # Kahn's algorithm for topological sort
         execution_order: list[list[str]] = []
         ready = [name for name, degree in in_degree.items() if degree == 0]
 
         while ready:
-            # All stages with in_degree=0 can run in parallel
-            execution_order.append(sorted(ready))  # Sort for determinism
-
+            execution_order.append(sorted(ready))
             next_ready: list[str] = []
             for stage_name in ready:
                 for dependent in dependents[stage_name]:
                     in_degree[dependent] -= 1
                     if in_degree[dependent] == 0:
                         next_ready.append(dependent)
-
             ready = next_ready
 
         # Check for cycles
@@ -345,6 +349,97 @@ class PipelineOrchestrator:
         """Build DAG execution order for a pipeline."""
         return self._dag_builder.build_execution_order(pipeline.stages)
 
+    def _create_failure_result(
+        self,
+        pipeline_name: str,
+        start_time: float,
+        error: str,
+        outputs: dict[str, Any] | None = None,
+        stage_results: dict[str, StageResult] | None = None,
+        failed_stage: str | None = None,
+    ) -> PipelineResult:
+        """Create a failure PipelineResult."""
+        return PipelineResult(
+            success=False,
+            pipeline_name=pipeline_name,
+            outputs=outputs or {},
+            stage_results=stage_results or {},
+            total_duration_ms=(time.time() - start_time) * 1000,
+            error=error,
+            failed_stage=failed_stage,
+        )
+
+    def _process_stage_result(
+        self,
+        stage: StageDefinition,
+        result: StageResult | BaseException,
+        stage_results: dict[str, StageResult],
+        outputs: dict[str, Any],
+    ) -> tuple[str | None, str | None]:
+        """Process a single stage result. Returns (failed_stage, error_message) if failed."""
+        if isinstance(result, BaseException):
+            stage_results[stage.name] = StageResult(
+                stage_name=stage.name,
+                status=StageStatus.FAILED,
+                error=str(result),
+            )
+            return stage.name, str(result)
+
+        stage_results[stage.name] = result
+        if result.output is not None:
+            output_dict = (
+                result.output.model_dump()
+                if hasattr(result.output, "model_dump")
+                else result.output
+            )
+            outputs[stage.name] = output_dict
+        return None, None
+
+    async def _execute_level(
+        self,
+        level: list[str],
+        stage_map: dict[str, StageDefinition],
+        state: HandoffState,
+        saga: Any,
+    ) -> list[tuple[StageDefinition, StageResult | BaseException]]:
+        """Execute all stages at a given level in parallel."""
+        level_tasks = []
+        level_stages = []
+
+        for stage_name in level:
+            stage = stage_map[stage_name]
+            level_stages.append(stage)
+            level_tasks.append(self._execute_stage(stage, state, saga))
+
+        results = await asyncio.gather(*level_tasks, return_exceptions=True)
+        return list(zip(level_stages, results, strict=False))
+
+    async def _execute_all_levels(
+        self,
+        execution_order: list[list[str]],
+        stage_map: dict[str, StageDefinition],
+        state: HandoffState,
+        saga: Any,
+        stage_results: dict[str, StageResult],
+        outputs: dict[str, Any],
+    ) -> tuple[str | None, str | None]:
+        """Execute all levels of the pipeline.
+
+        Returns:
+            Tuple of (failed_stage, error_message) if any stage failed, else (None, None)
+        """
+        for level in execution_order:
+            level_results = await self._execute_level(level, stage_map, state, saga)
+
+            for stage, result in level_results:
+                failed, _ = self._process_stage_result(stage, result, stage_results, outputs)
+                if failed:
+                    if isinstance(result, Exception):
+                        raise result
+                    raise RuntimeError(str(result)) from result  # type: ignore[arg-type]
+
+        return None, None
+
     async def execute(
         self,
         pipeline: PipelineDefinition,
@@ -363,89 +458,26 @@ class PipelineOrchestrator:
 
         start_time = time.time()
 
-        # Initialize handoff state
         state = HandoffState()
         if initial_inputs:
             for key, value in initial_inputs.items():
                 state.set(key, value)
 
-        # Build execution order
         try:
             execution_order = self._dag_builder.build_execution_order(pipeline.stages)
         except ValueError as e:
-            return PipelineResult(
-                success=False,
-                pipeline_name=pipeline.name,
-                error=str(e),
-                total_duration_ms=(time.time() - start_time) * 1000,
-            )
+            return self._create_failure_result(pipeline.name, start_time, str(e))
 
-        # Create stage map for quick lookup
         stage_map = {s.name: s for s in pipeline.stages}
-
-        # Initialize saga for compensation
         saga = PipelineSaga(name=f"{pipeline.name}_saga")
-
-        # Track results
         stage_results: dict[str, StageResult] = {}
         outputs: dict[str, Any] = {}
-        failed_stage: str | None = None
-        error_message: str | None = None
 
-        # Execute stages level by level
         try:
-            for level in execution_order:
-                # Execute all stages at this level in parallel
-                level_tasks = []
-                level_stages = []
-
-                for stage_name in level:
-                    stage = stage_map[stage_name]
-                    level_stages.append(stage)
-                    level_tasks.append(
-                        self._execute_stage(stage, state, saga)
-                    )
-
-                # Wait for all stages in this level
-                results = await asyncio.gather(*level_tasks, return_exceptions=True)
-
-                # Process results
-                for stage, result in zip(level_stages, results, strict=False):
-                    if isinstance(result, BaseException):
-                        # Stage failed
-                        failed_stage = stage.name
-                        error_message = str(result)
-                        stage_results[stage.name] = StageResult(
-                            stage_name=stage.name,
-                            status=StageStatus.FAILED,
-                            error=str(result),
-                        )
-                        if isinstance(result, Exception):
-                            raise result
-                        raise RuntimeError(str(result)) from result
-
-                    stage_results[stage.name] = result
-                    if result.output is not None:
-                        output_dict = (
-                            result.output.model_dump()
-                            if hasattr(result.output, "model_dump")
-                            else result.output
-                        )
-                        outputs[stage.name] = output_dict
-
+            await self._execute_all_levels(execution_order, stage_map, state, saga, stage_results, outputs)
         except Exception as e:
-            # Trigger saga compensation
             await saga.compensate()
-
-            return PipelineResult(
-                success=False,
-                pipeline_name=pipeline.name,
-                outputs=outputs,
-                stage_results=stage_results,
-                total_duration_ms=(time.time() - start_time) * 1000,
-                error=error_message or str(e),
-                failed_stage=failed_stage,
-            )
+            return self._create_failure_result(pipeline.name, start_time, str(e), outputs, stage_results)
 
         return PipelineResult(
             success=True,
@@ -455,82 +487,98 @@ class PipelineOrchestrator:
             total_duration_ms=(time.time() - start_time) * 1000,
         )
 
-    async def _execute_stage(
+    def _check_stage_condition(
         self,
         stage: StageDefinition,
         state: HandoffState,
-        saga: Any,  # PipelineSaga
-    ) -> StageResult:
-        """Execute a single pipeline stage."""
-        start_time = time.time()
+        start_time: float,
+    ) -> StageResult | None:
+        """Check stage condition. Returns StageResult if should skip, None to continue."""
+        if not stage.condition:
+            return None
 
-        # Check condition
-        if stage.condition:
-            should_run = self._condition_evaluator.evaluate(stage.condition, state)
-            if not should_run:
-                if stage.condition.skip_on_false:
-                    return StageResult(
-                        stage_name=stage.name,
-                        status=StageStatus.SKIPPED,
-                        duration_ms=(time.time() - start_time) * 1000,
-                    )
-                else:
-                    raise RuntimeError(
-                        f"Stage '{stage.name}' condition not met: {stage.condition.expression}"
-                    )
+        should_run = self._condition_evaluator.evaluate(stage.condition, state)
+        if should_run:
+            return None
 
-        # Get function
-        if stage.function not in self._function_registry:
-            raise ValueError(f"Function '{stage.function}' not found in registry")
+        if stage.condition.skip_on_false:
+            return StageResult(
+                stage_name=stage.name,
+                status=StageStatus.SKIPPED,
+                duration_ms=(time.time() - start_time) * 1000,
+            )
 
-        function = self._function_registry[stage.function]
+        raise RuntimeError(f"Stage '{stage.name}' condition not met: {stage.condition.expression}")
 
-        # Build inputs from mapping
-        inputs = self._build_stage_inputs(stage, state)
-
-        # Execute with retry
-        retry_config = stage.retry_config or RetryConfig(max_retries=0)
+    async def _execute_with_retry(
+        self,
+        function: AgentFunction,
+        inputs: dict[str, Any],
+        retry_config: RetryConfig,
+    ) -> Any:
+        """Execute function with retry logic."""
         retries = 0
         last_error: Exception | None = None
 
         while retries <= retry_config.max_retries:
             try:
-                output = await function.run(**inputs)
-
-                # Record in handoff state
-                output_key = stage.output_key or stage.name
-                state.set_stage_output(output_key, output)
-
-                # Record for saga if compensatable
-                if stage.compensatable and hasattr(function, "compensate"):
-                    output_dict = (
-                        output.model_dump()
-                        if hasattr(output, "model_dump")
-                        else output
-                    )
-                    saga.register_compensation(stage.name, function.compensate)
-                    saga.record_completion(stage.name, output_dict)
-
-                return StageResult(
-                    stage_name=stage.name,
-                    status=StageStatus.COMPLETED,
-                    output=output,
-                    duration_ms=(time.time() - start_time) * 1000,
-                    retries=retries,
-                )
-
+                return await function.run(**inputs), retries
             except Exception as e:
                 last_error = e
                 retries += 1
-
                 if retries <= retry_config.max_retries:
-                    delay = retry_config.initial_delay * (
-                        retry_config.backoff_factor ** (retries - 1)
-                    )
+                    delay = retry_config.initial_delay * (retry_config.backoff_factor ** (retries - 1))
                     await asyncio.sleep(delay)
 
-        # All retries exhausted
-        raise last_error or RuntimeError(f"Stage '{stage.name}' failed")
+        raise last_error or RuntimeError(f"Function '{function.name}' failed")
+
+    def _record_saga_completion(
+        self,
+        stage: StageDefinition,
+        function: AgentFunction,
+        output: Any,
+        saga: Any,
+    ) -> None:
+        """Record stage completion for saga compensation if compensatable."""
+        if not stage.compensatable or not hasattr(function, "compensate"):
+            return
+
+        output_dict = output.model_dump() if hasattr(output, "model_dump") else output
+        saga.register_compensation(stage.name, function.compensate)
+        saga.record_completion(stage.name, output_dict)
+
+    async def _execute_stage(
+        self,
+        stage: StageDefinition,
+        state: HandoffState,
+        saga: Any,
+    ) -> StageResult:
+        """Execute a single pipeline stage."""
+        start_time = time.time()
+
+        if skip_result := self._check_stage_condition(stage, state, start_time):
+            return skip_result
+
+        if stage.function not in self._function_registry:
+            raise ValueError(f"Function '{stage.function}' not found in registry")
+
+        function = self._function_registry[stage.function]
+        inputs = self._build_stage_inputs(stage, state)
+        retry_config = stage.retry_config or RetryConfig(max_retries=0)
+
+        output, retries = await self._execute_with_retry(function, inputs, retry_config)
+
+        output_key = stage.output_key or stage.name
+        state.set_stage_output(output_key, output)
+        self._record_saga_completion(stage, function, output, saga)
+
+        return StageResult(
+            stage_name=stage.name,
+            status=StageStatus.COMPLETED,
+            output=output,
+            duration_ms=(time.time() - start_time) * 1000,
+            retries=retries,
+        )
 
     def _build_stage_inputs(
         self, stage: StageDefinition, state: HandoffState
