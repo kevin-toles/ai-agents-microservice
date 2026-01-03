@@ -24,6 +24,7 @@ from src.agents.cross_reference.nodes.search_taxonomy import (
     set_neo4j_client as set_node_neo4j_client,
 )
 from src.api.error_handlers import register_error_handlers
+from src.api.routes.conversation import router as conversation_router
 from src.api.routes.cross_reference import router as cross_reference_router
 from src.api.routes.enrich_metadata import router as enrich_metadata_router
 from src.api.routes.functions import router as functions_router
@@ -225,6 +226,9 @@ def create_app() -> FastAPI:
     # Legacy routers
     app.include_router(cross_reference_router)
     app.include_router(enrich_metadata_router)
+
+    # Inter-AI Conversation Orchestration (INTER_AI_ORCHESTRATION.md)
+    app.include_router(conversation_router)
 
     return app
 

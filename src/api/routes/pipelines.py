@@ -30,6 +30,7 @@ from src.api.error_handlers import PipelineExecutionError, PipelineNotFoundError
 from src.pipelines import (
     ChapterSummarizationPipeline,
     CodeGenerationPipeline,
+    CrossReferencePipeline,
 )
 from src.pipelines.summarization_pipeline import (
     SummarizationConfig,
@@ -58,6 +59,7 @@ router = APIRouter(
 PIPELINE_REGISTRY: dict[str, type] = {
     "chapter-summarization": ChapterSummarizationPipeline,
     "code-generation": CodeGenerationPipeline,
+    "cross-reference": CrossReferencePipeline,  # KB6: Kitchen Brigade orchestration
 }
 
 

@@ -34,8 +34,8 @@ from src.schemas.functions.summarize_content import (
 logger = logging.getLogger(__name__)
 
 # Environment variable to enable LLM-powered summarization
-# Set USE_LLM_SUMMARIZATION=true to use inference-service
-USE_LLM_SUMMARIZATION = os.getenv("USE_LLM_SUMMARIZATION", "false").lower() == "true"
+# Kitchen Brigade: LLM summarization enabled by default for full pipeline
+USE_LLM_SUMMARIZATION = os.getenv("USE_LLM_SUMMARIZATION", "true").lower() == "true"
 
 
 # Context budget for summarize_content

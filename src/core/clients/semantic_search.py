@@ -63,6 +63,64 @@ class SemanticSearchClient:
             await self._client.aclose()
             self._client = None
 
+    async def search(
+        self,
+        query: str,
+        top_k: int = 5,
+        collection: str = "chapters",
+    ) -> dict[str, Any]:
+        """Simple search matching SemanticSearchProtocol interface.
+
+        This method satisfies the SemanticSearchProtocol.search() contract
+        used by CrossReferenceFunction.
+
+        Args:
+            query: Search query text
+            top_k: Number of results to return
+            collection: Vector collection to search (default: chapters)
+
+        Returns:
+            Dict with results list containing source, content, score
+        """
+        client = await self._get_client()
+
+        payload = {
+            "query": query,
+            "collection": collection,
+            "limit": top_k,
+        }
+
+        try:
+            response = await client.post("/v1/search", json=payload)
+            response.raise_for_status()
+            data = response.json()
+
+            # Transform results to match protocol expectation
+            results = []
+            for item in data.get("results", []):
+                payload_data = item.get("payload", {})
+                results.append({
+                    "source": payload_data.get("book_title", "unknown"),
+                    "content": payload_data.get("summary", payload_data.get("title", "")),
+                    "score": item.get("score", 0.0),
+                    "source_type": "book_chapter",
+                    "chapter_id": payload_data.get("chapter_id"),
+                    "book_id": payload_data.get("book_id"),
+                })
+
+            return {
+                "results": results,
+                "total": data.get("total", len(results)),
+            }
+
+        except Exception as e:
+            logger.error("Search failed", extra={"error": str(e)})
+            return {
+                "results": [],
+                "total": 0,
+                "error": str(e),
+            }
+
     async def hybrid_search(
         self,
         query: str,

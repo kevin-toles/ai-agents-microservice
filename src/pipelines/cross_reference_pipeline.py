@@ -320,6 +320,9 @@ class CrossReferencePipeline:
                 if hasattr(result, "final_agreement_score")
                 else 0.0
             )
+            
+            # AC-KB5.4: Track provenance for each claim in discussion
+            self._track_discussion_provenance(result, state)
         else:
             # No discussion loop - simulate single cycle
             state.cycle_count = 1
@@ -551,9 +554,74 @@ class CrossReferencePipeline:
             self._provenance_tracker.track_claim(
                 claim=claim,
                 source=source,
-                participant=participant,
-                cycle=cycle,
+                participant_id=participant,
+                cycle_number=cycle,
             )
+
+    def _track_discussion_provenance(
+        self,
+        result: "DiscussionResult",
+        state: PipelineState,
+    ) -> None:
+        """Track provenance for all claims in discussion result.
+        
+        AC-KB5.4: ProvenanceTracker logs: claim, source, participant, cycle
+        
+        Exit Criteria:
+            Audit trail shows: "Claim X from Participant A in Cycle 2, source: agents.py#L135"
+        
+        Args:
+            result: Discussion result with history
+            state: Pipeline state with evidence for source extraction
+        """
+        if not self._provenance_tracker:
+            return
+        
+        if not hasattr(result, "history"):
+            return
+        
+        # Track claims from each cycle
+        for cycle in result.history:
+            # Build source mapping from evidence used in this cycle
+            sources = self._build_source_map(state.evidence)
+            
+            # Track provenance from cycle analyses
+            self._provenance_tracker.track_from_cycle(cycle, sources)
+        
+        logger.debug(
+            "Tracked provenance for %d cycles, %d total entries",
+            len(result.history),
+            len(self._provenance_tracker.get_entries()),
+        )
+
+    def _build_source_map(self, evidence: list[Any]) -> list[str]:
+        """Build list of source references from evidence.
+        
+        Args:
+            evidence: List of evidence items
+            
+        Returns:
+            List of source reference strings
+        """
+        sources = []
+        for item in evidence:
+            if hasattr(item, "source_id"):
+                sources.append(item.source_id)
+            elif hasattr(item, "source"):
+                sources.append(str(item.source))
+            elif isinstance(item, dict) and "source" in item:
+                sources.append(str(item["source"]))
+        return sources
+
+    def get_audit_trail(self) -> str:
+        """Get formatted audit trail from provenance tracker.
+        
+        Returns:
+            Formatted audit trail string or empty if no tracker.
+        """
+        if self._provenance_tracker:
+            return self._provenance_tracker.format_audit_trail()
+        return ""
 
 
 __all__ = [

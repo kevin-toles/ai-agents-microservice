@@ -55,17 +55,27 @@ services:
       AI_AGENTS_MAX_TRAVERSAL_HOPS: ${AI_AGENTS_MAX_TRAVERSAL_HOPS:-3}
       AI_AGENTS_DEFAULT_SIMILARITY_THRESHOLD: ${AI_AGENTS_DEFAULT_SIMILARITY_THRESHOLD:-0.7}
       
+      # Code Reference Engine integration (WBS-AGT21)
+      # Points to repo_registry.json which maps to code-reference-engine mirror
+      CODE_REFERENCE_REGISTRY: ${CODE_REFERENCE_REGISTRY:-/app/config/repo_registry.json}
+      CODE_REFERENCE_QDRANT_URL: ${CODE_REFERENCE_QDRANT_URL:-http://ai-platform-qdrant:6333}
+      CODE_REFERENCE_QDRANT_COLLECTION: ${CODE_REFERENCE_QDRANT_COLLECTION:-code_chunks}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      
       # Feature flags
       AI_AGENTS_ENABLE_CROSS_REFERENCE_AGENT: "true"
     env_file:
       - .env
+    volumes:
+      # Mount repo_registry.json for Code Reference Engine integration
+      - /Users/kevintoles/POC/ai-platform-data/repos/repo_registry.json:/app/config/repo_registry.json:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 10s
-    restart: unless-stopped
+    restart: "no"  # Manual control via Platform Control Panel
     networks:
       - ai-platform-network
       - data-network
