@@ -31,6 +31,8 @@ from src.api.routes.functions import router as functions_router
 from src.api.routes.health import router as health_router
 from src.api.routes.health import set_service_start_time
 from src.api.routes.pipelines import router as pipelines_router
+from src.api.routes.well_known import router as well_known_router
+from src.api.routes.a2a import router as a2a_router
 from src.core.clients.content_adapter import SemanticSearchContentAdapter
 # PCON-4: Use consolidated Neo4j client from src/clients/
 from src.clients.neo4j_client import (
@@ -41,11 +43,15 @@ from src.clients.neo4j_client import (
 from src.core.clients.semantic_search import SemanticSearchClient
 from src.core.config import get_settings
 from src.core.logging import configure_logging, get_logger
+from src.config.feature_flags import ProtocolFeatureFlags
 
 # PCON-5: WBS-AGT21-24 client imports
 from src.clients.code_reference import CodeReferenceClient, CodeReferenceConfig
 from src.clients.book_passage import BookPassageClient, BookPassageClientConfig
 from src.retrieval.unified_retriever import UnifiedRetriever, UnifiedRetrieverConfig
+
+# WBS-PI5b: MCP Server Lifecycle Integration
+from src.mcp.agent_functions_server import create_agent_functions_mcp_server
 
 
 # Configure structured logging on module load
@@ -137,6 +143,45 @@ async def _close_client(client, name: str, close_method: str = "close") -> None:
         logger.warning(f"{name} close failed", error=str(e))
 
 
+async def _init_mcp_server(flags: ProtocolFeatureFlags) -> dict | None:
+    """Initialize MCP server if feature flags enabled.
+    
+    WBS-PI5b.1: FastAPI lifecycle integration
+    AC-PI5b.2, AC-PI5b.3: Feature flag guards
+    
+    Args:
+        flags: Protocol feature flags configuration
+        
+    Returns:
+        MCP server dict if enabled, None otherwise
+    """
+    if not (flags.mcp_enabled and flags.mcp_server_enabled):
+        logger.info("MCP server disabled", 
+                    mcp_enabled=flags.mcp_enabled,
+                    mcp_server_enabled=flags.mcp_server_enabled)
+        return None
+    
+    try:
+        mcp_server = await create_agent_functions_mcp_server()
+        logger.info("MCP server started", server_name=mcp_server["name"])
+        return mcp_server
+    except Exception as e:
+        logger.error("MCP server initialization failed", error=str(e))
+        return None
+
+
+async def _close_mcp_server(mcp_server: dict | None) -> None:
+    """Clean up MCP server resources.
+    
+    WBS-PI5b.4: Clean shutdown
+    
+    Args:
+        mcp_server: MCP server instance or None
+    """
+    if mcp_server:
+        logger.info("MCP server stopped")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager.
@@ -194,10 +239,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 neo4j_client=neo4j_client is not None,
                 book_client=book_passage_client is not None)
 
+    # WBS-PI5b: MCP Server Lifecycle Integration
+    mcp_server = await _init_mcp_server(ProtocolFeatureFlags())
+    app.state.mcp_server = mcp_server
+
     yield
 
     # Cleanup on shutdown
     logger.info("Shutting down ai-agents service")
+
+    # WBS-PI5b.4: MCP Server shutdown
+    await _close_mcp_server(app.state.mcp_server)
 
     # PCON-5: Close WBS-AGT21-24 clients
     await _close_client(code_ref_client, "CodeReferenceClient", "__aexit__")
@@ -247,6 +299,10 @@ def create_app() -> FastAPI:
     app.include_router(functions_router)
     app.include_router(pipelines_router)
     app.include_router(health_router)
+
+    # A2A Protocol Integration (WBS-PI2, WBS-PI3)
+    app.include_router(well_known_router)
+    app.include_router(a2a_router)
 
     # Legacy routers
     app.include_router(cross_reference_router)

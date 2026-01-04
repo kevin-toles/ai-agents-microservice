@@ -18,6 +18,174 @@ This document tracks all implementation changes, their rationale, and git commit
 
 ---
 
+## 2026-01-03
+
+### CL-020: Feature Flag Rename - mcp_toolbox_qdrant → mcp_semantic_search
+
+| Field | Value |
+|-------|-------|
+| **Date/Time** | 2026-01-03 |
+| **WBS Item** | WBS-PI1 (Feature Flags), WBS-PI6 (MCP Client/Toolbox) |
+| **Change Type** | Architecture Correction, Refactor |
+| **Summary** | Renamed `mcp_toolbox_qdrant` flag to `mcp_semantic_search` after discovering genai-toolbox does NOT support Qdrant. Clarified that semantic-search-service is a hybrid RAG layer, not just a Qdrant proxy. |
+| **Files Changed** | `src/config/feature_flags.py`, `tests/unit/config/test_feature_flags.py`, `tests/integration/test_phase1_unchanged.py`, `PROTOCOL_INTEGRATION_ARCHITECTURE.md`, `WBS_PROTOCOL_INTEGRATION.md` |
+| **Rationale** | External documentation review (https://github.com/googleapis/genai-toolbox) confirmed Qdrant is not in the supported database list. The original flag name incorrectly implied genai-toolbox integration. semantic-search-service provides hybrid RAG (vector + graph fusion) which is critical for hallucination reduction. |
+| **Git Commit** | Pending |
+
+**Why This Matters for Kitchen Brigade:**
+
+| Concern | Previous Assumption | Corrected Understanding |
+|---------|---------------------|------------------------|
+| **genai-toolbox + Qdrant** | Qdrant supported via genai-toolbox | **NOT supported** - genai-toolbox supports Neo4j, Redis, PostgreSQL, MySQL, MongoDB, BigQuery, Spanner, Firestore |
+| **semantic-search-service** | Thin Qdrant wrapper | **Hybrid RAG layer** with score fusion (α=0.7 vector + 0.3 graph), domain taxonomy, multi-collection search |
+| **Hallucination Reduction** | Any Qdrant access is equivalent | Direct Qdrant access **bypasses** graph relationships and domain taxonomy scoring |
+
+**Flag Rename:**
+
+| Before | After | Env Var |
+|--------|-------|---------|
+| `mcp_toolbox_qdrant` | `mcp_semantic_search` | `AGENTS_MCP_SEMANTIC_SEARCH` |
+| `mcp_toolbox_qdrant_available` | `mcp_semantic_search_available` | (property) |
+
+**Architecture Clarification:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ CORRECT: MCP Semantic Search (hybrid RAG)                   │
+│                                                             │
+│  ai-agents ──MCP──▶ SemanticSearchMcpWrapper ──REST──▶      │
+│                      semantic-search-service:8081           │
+│                              │                              │
+│                    ┌─────────┴─────────┐                    │
+│                    ▼                   ▼                    │
+│              Qdrant:6333         Neo4j:7687                 │
+│              (vectors)           (graph)                    │
+│                    │                   │                    │
+│                    └─────────┬─────────┘                    │
+│                              ▼                              │
+│                    Score Fusion (α=0.7v + 0.3g)             │
+│                    Domain Taxonomy Scoring                  │
+│                    Hallucination Reduction ✓                │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ INCORRECT: Direct Qdrant via genai-toolbox (NOT SUPPORTED)  │
+│                                                             │
+│  ai-agents ──MCP──▶ genai-toolbox ──?──▶ Qdrant:6333       │
+│                            ╳                                │
+│                    Qdrant NOT in supported sources list     │
+│                    No hybrid search                         │
+│                    No domain taxonomy                       │
+│                    Hallucination risk ✗                     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Files Updated:**
+
+| File | Changes |
+|------|---------|
+| `src/config/feature_flags.py` | Renamed field, property, and docstrings |
+| `tests/unit/config/test_feature_flags.py` | Updated 6 test methods and fixtures |
+| `tests/integration/test_phase1_unchanged.py` | Updated env var in fixture |
+| `PROTOCOL_INTEGRATION_ARCHITECTURE.md` | Added MCP Integration Architecture section, corrected MCP Toolbox table, added SemanticSearchMcpWrapper code |
+| `WBS_PROTOCOL_INTEGRATION.md` | Updated code skeletons and env vars summary |
+
+---
+
+### CL-019: WBS-PI5/PI6 MCP Architecture Alignment
+
+| Field | Value |
+|-------|-------|
+| **Date/Time** | 2026-01-03 |
+| **WBS Item** | WBS-PI5 (MCP Server), WBS-PI6 (MCP Client/Toolbox) |
+| **Change Type** | Architecture, Documentation |
+| **Summary** | Aligned MCP implementation with official Google ADK patterns and genai-toolbox architecture. Updated to use FastMCP for server implementation and ToolboxClient SDK for consuming external MCP servers. |
+| **Files Changed** | `WBS_PROTOCOL_INTEGRATION.md`, `PROTOCOL_INTEGRATION_ARCHITECTURE.md` |
+| **Rationale** | Architecture review against https://google.github.io/adk-docs/mcp/ and https://github.com/googleapis/genai-toolbox revealed misalignment with ADK best practices. |
+| **Git Commit** | Pending |
+
+**Key Architecture Corrections:**
+
+| Component | Original Plan | Corrected Approach | Reference |
+|-----------|--------------|-------------------|-----------|
+| **MCP Server Library** | Generic `mcp` package | **FastMCP** (`fastmcp`) | [ADK MCP Tools](https://google.github.io/adk-docs/tools-custom/mcp-tools/) |
+| **MCP Server Pattern** | Decorator with Server class | Dict-based for testing, FastMCP decorators for production | FastMCP documentation |
+| **File Location** | `src/mcp/server.py` | `src/mcp/agent_functions_server.py` (avoid conflict with KB8) | Separation of concerns |
+| **genai-toolbox** | Python library to install | **External Go-based MCP server** (separate process) | [genai-toolbox repo](https://github.com/googleapis/genai-toolbox) |
+| **MCP Client SDK** | `google.adk.tools.mcp_tool.McpToolset` | **ToolboxClient** (`toolbox-core`) | [Toolbox Python SDK](https://github.com/googleapis/mcp-toolbox-sdk-python) |
+| **Toolbox Architecture** | Direct library integration | Client-server (ai-agents ← HTTP → genai-toolbox) | MCP client-server pattern |
+
+**Updated Dependencies:**
+
+| Package | Purpose | Installation |
+|---------|---------|-------------|
+| `fastmcp` | MCP server library for exposing agent functions | `pip install fastmcp` |
+| `toolbox-core` | Python SDK for consuming genai-toolbox MCP server | `pip install toolbox-core` |
+
+**WBS-PI5 Changes (MCP Server):**
+
+| Change | Before | After |
+|--------|--------|-------|
+| **Dependency** | `mcp a2a-sdk` | `fastmcp` |
+| **File** | `src/mcp/server.py` | `src/mcp/agent_functions_server.py` |
+| **Pattern** | Class-based Server with decorators | Dict-based for testing (list_tools, call_tool functions) |
+| **Function Registry** | `AgentFunctionRegistry()` (non-existent) | `FUNCTION_REGISTRY` dict from `src/api/routes/functions.py` |
+
+**WBS-PI6 Changes (MCP Client/Toolbox):**
+
+| Change | Before | After |
+|--------|--------|-------|
+| **Architecture** | Install genai-toolbox as Python lib | **External MCP server** (Go-based, runs separately) |
+| **Client Pattern** | `McpToolset` with stdio connection | `ToolboxClient` with HTTP connection to localhost:5000 |
+| **Toolset Loading** | Direct instantiation | `await client.load_toolset("qdrant_toolset")` |
+| **Configuration** | Python config | External `tools.yaml` for genai-toolbox server |
+
+**External genai-toolbox Setup:**
+
+```yaml
+# tools.yaml (for genai-toolbox server)
+sources:
+  qdrant-source:
+    kind: qdrant
+    url: http://localhost:6333
+  
+  neo4j-source:
+    kind: neo4j
+    url: neo4j://localhost:7687
+
+toolsets:
+  qdrant_toolset:
+    - qdrant_search
+    - qdrant_upsert
+  neo4j_toolset:
+    - neo4j_query
+```
+
+**Testing Approach:**
+
+| Test Type | Implementation |
+|-----------|----------------|
+| **Unit Tests** | Dict-based server for synchronous testing |
+| **Integration Tests** | FastMCP stdio transport with external toolbox |
+| **Production** | FastMCP decorators + genai-toolbox as sidecar container |
+
+**Architectural Benefits:**
+
+| Benefit | Description |
+|---------|-------------|
+| **ADK Alignment** | Follows official Google ADK MCP patterns |
+| **Separation of Concerns** | Agent functions (Python) separate from database tooling (Go) |
+| **Reusability** | genai-toolbox can serve multiple MCP clients |
+| **Scalability** | Toolbox handles connection pooling and auth centrally |
+| **Maintainability** | Updates to database tools don't require redeploying ai-agents |
+
+**Exit Criteria Updates:**
+- WBS-PI5: Use FastMCP for server implementation
+- WBS-PI6: Use ToolboxClient to consume external genai-toolbox server
+- Both: Follow ADK design patterns for MCP integration
+
+---
+
 ## 2026-01-01
 
 ### CL-018: Platform Consolidation (PCON-1 through PCON-9)

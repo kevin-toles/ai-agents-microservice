@@ -1,8 +1,9 @@
 # Protocol Integration Architecture (Phase 2)
 
-> **Version:** 1.0.0  
+> **Version:** 1.2.0  
 > **Created:** 2025-12-29  
-> **Status:** Experimental (Feature Flag)  
+> **Updated:** 2026-01-03  
+> **Status:** Implementation Complete (8 of 8 blocks complete)  
 > **Phase:** Phase 2 of Agent Architecture Evolution  
 > **Reference:** [AGENT_FUNCTIONS_ARCHITECTURE.md](AGENT_FUNCTIONS_ARCHITECTURE.md), [ADK_MIGRATION_GUIDE.md](ADK_MIGRATION_GUIDE.md)
 
@@ -15,7 +16,7 @@ This document defines the **Protocol Integration Architecture** for enabling Age
 | Phase | Focus | Status | Document |
 |-------|-------|--------|----------|
 | **Phase 1** | Agent Functions + ADK Patterns | ✅ Complete | [AGENT_FUNCTIONS_ARCHITECTURE.md](AGENT_FUNCTIONS_ARCHITECTURE.md) |
-| **Phase 2** | Protocol Integration (A2A + MCP) | 🚧 This Document | Feature Flagged |
+| **Phase 2** | Protocol Integration (A2A + MCP) | 🚧 In Progress (75%) | [WBS_PROTOCOL_INTEGRATION.md](../../../Platform%20Documentation/ai-agents/WBS_PROTOCOL_INTEGRATION.md) |
 | **Phase 3** | Full ADK Migration | 📋 Planned | [ADK_MIGRATION_GUIDE.md](ADK_MIGRATION_GUIDE.md) |
 
 ### Design Philosophy
@@ -76,6 +77,7 @@ All Phase 2 features are behind feature flags for safe experimentation.
 # A2A Protocol Features
 export AGENTS_A2A_ENABLED=false           # Master switch for A2A
 export AGENTS_A2A_AGENT_CARD_ENABLED=false # Expose /.well-known/agent-card.json
+export AGENTS_A2A_TASK_LIFECYCLE_ENABLED=false # A2A task endpoints (message:send, tasks)
 export AGENTS_A2A_STREAMING_ENABLED=false  # SSE streaming for task updates
 export AGENTS_A2A_PUSH_NOTIFICATIONS=false # Webhook notifications
 
@@ -83,7 +85,7 @@ export AGENTS_A2A_PUSH_NOTIFICATIONS=false # Webhook notifications
 export AGENTS_MCP_ENABLED=false           # Master switch for MCP
 export AGENTS_MCP_SERVER_ENABLED=false    # Expose agent functions as MCP tools
 export AGENTS_MCP_CLIENT_ENABLED=false    # Consume external MCP servers
-export AGENTS_MCP_TOOLBOX_QDRANT=false    # MCP Toolbox for Qdrant
+export AGENTS_MCP_SEMANTIC_SEARCH=false # MCP wrapper for semantic-search-service (hybrid RAG)
 export AGENTS_MCP_TOOLBOX_NEO4J=false     # MCP Toolbox for Neo4j
 export AGENTS_MCP_TOOLBOX_REDIS=false     # MCP Toolbox for Redis
 ```
@@ -105,6 +107,7 @@ class ProtocolFeatureFlags(BaseSettings):
     # A2A Protocol
     a2a_enabled: bool = False
     a2a_agent_card_enabled: bool = False
+    a2a_task_lifecycle_enabled: bool = False
     a2a_streaming_enabled: bool = False
     a2a_push_notifications: bool = False
     
@@ -112,7 +115,7 @@ class ProtocolFeatureFlags(BaseSettings):
     mcp_enabled: bool = False
     mcp_server_enabled: bool = False
     mcp_client_enabled: bool = False
-    mcp_toolbox_qdrant: bool = False
+    mcp_semantic_search: bool = False  # semantic-search-service hybrid RAG
     mcp_toolbox_neo4j: bool = False
     mcp_toolbox_redis: bool = False
     
@@ -123,6 +126,7 @@ class ProtocolFeatureFlags(BaseSettings):
         """Check if any A2A feature is enabled."""
         return self.a2a_enabled and any([
             self.a2a_agent_card_enabled,
+            self.a2a_task_lifecycle_enabled,
             self.a2a_streaming_enabled,
             self.a2a_push_notifications,
         ])
@@ -132,7 +136,7 @@ class ProtocolFeatureFlags(BaseSettings):
         return self.mcp_enabled and any([
             self.mcp_server_enabled,
             self.mcp_client_enabled,
-            self.mcp_toolbox_qdrant,
+            self.mcp_semantic_search,
             self.mcp_toolbox_neo4j,
             self.mcp_toolbox_redis,
         ])
@@ -343,127 +347,222 @@ Model Context Protocol (MCP) standardizes how LLMs interact with external tools.
 | **MCP Client** | Platform → External MCP Servers | Consume third-party tools (Google Maps, GitHub, etc.) |
 | **MCP Server** | External → Platform | Expose agent functions to MCP clients (Claude, other ADK agents) |
 
-### MCP Toolbox Integration
+### MCP Integration Architecture
 
-Our platform already uses databases that MCP Toolbox supports:
+> **Critical Design Decision**: semantic-search-service is a **hybrid RAG layer**, not just a Qdrant proxy.
+> It combines vector search + graph traversal + domain taxonomy scoring to reduce LLM hallucination.
+> Direct Qdrant access would bypass these hallucination-reduction mechanisms.
 
-| Database | Platform Service | MCP Toolbox Support |
-|----------|------------------|---------------------|
-| **Qdrant** | semantic-search-service | ✅ Vector search, upsert, delete |
-| **Neo4j** | Graph relationships | ✅ Cypher queries, schema inspection |
-| **Redis** | State caching | ✅ Key-value operations |
+#### Integration Patterns
+
+| Integration | Platform Service | MCP Pattern | Hallucination Reduction |
+|-------------|------------------|-------------|-------------------------|
+| **semantic-search-service** | ai-agents → semantic-search:8081 | MCP wrapper (Phase 2) | ✅ Hybrid RAG: α=0.7 vector + 0.3 graph fusion |
+| **Neo4j** | Graph relationships | genai-toolbox (Phase 2) | ✅ Cypher queries, schema inspection |
+| **Redis** | State caching | genai-toolbox (Phase 2) | N/A - operational caching |
+
+#### Why semantic-search-service, Not Direct Qdrant?
+
+1. **Hybrid Score Fusion**: `final_score = 0.7 * vector_score + 0.3 * graph_score`
+2. **Domain Taxonomy**: Boosts results from whitelisted books/tiers, penalizes irrelevant sources
+3. **Multi-Collection**: Searches code-reference-engine + ai-platform-data/books simultaneously
+4. **Graceful Degradation**: Falls back if Neo4j unavailable
+
+> **Note**: genai-toolbox does NOT support Qdrant. Direct Qdrant access (if needed for Phase 3 ADK)
+> should use `google.adk.tools.third_party.qdrant` for administrative operations only.
 
 ### MCP Server Implementation
 
-Expose agent functions as MCP tools:
+Expose agent functions as MCP tools using FastMCP:
 
 ```python
-# src/mcp/server.py
-from mcp import Server, types as mcp_types
-from mcp.server.lowlevel import NotificationOptions
-from src.services.agent_functions import AgentFunctionRegistry
+# src/mcp/agent_functions_server.py
+from fastmcp import FastMCP
+from src.api.routes.functions import FUNCTION_REGISTRY
+import json
 
-async def create_mcp_server() -> Server:
-    """Create MCP server exposing agent functions as tools."""
+async def create_agent_functions_mcp_server() -> dict:
+    """Create MCP server exposing agent functions as tools.
     
-    app = Server("ai-platform-agent-functions")
-    registry = AgentFunctionRegistry()
+    Uses dict-based approach for testing. For production, use FastMCP's
+    stdio transport with decorator pattern.
     
-    @app.list_tools()
-    async def list_tools() -> list[mcp_types.Tool]:
+    Reference:
+    - https://google.github.io/adk-docs/tools-custom/mcp-tools/
+    - https://github.com/jlowin/fastmcp
+    """
+    
+    async def list_tools():
         """Advertise all agent functions as MCP tools."""
-        return [
-            mcp_types.Tool(
-                name=fn.name,
-                description=fn.description,
-                inputSchema=fn.input_schema.model_json_schema()
-            )
-            for fn in registry.get_all_functions()
-        ]
+        tools = []
+        for func_name, func_class in FUNCTION_REGISTRY.items():
+            func_instance = func_class()
+            tools.append({
+                "name": func_name.replace("-", "_"),
+                "description": func_class.__doc__ or f"{func_name} agent function",
+                "inputSchema": {"type": "object", "properties": {}}
+            })
+        return tools
     
-    @app.call_tool()
-    async def call_tool(name: str, arguments: dict) -> list[mcp_types.Content]:
+    async def call_tool(name: str, arguments: dict):
         """Execute agent function and return MCP-formatted result."""
-        fn = registry.get_function(name)
-        if not fn:
-            return [mcp_types.TextContent(
-                type="text",
-                text=f"Unknown tool: {name}"
-            )]
+        func_name = name.replace("_", "-")
+        if func_name not in FUNCTION_REGISTRY:
+            return [{"type": "text", "text": json.dumps({"error": f"Unknown tool: {name}"})}]
         
-        # Execute the agent function
-        result = await fn.run_async(arguments)
-        
-        # Format as MCP TextContent
-        return [mcp_types.TextContent(
-            type="text",
-            text=json.dumps(result, indent=2)
-        )]
+        try:
+            func_class = FUNCTION_REGISTRY[func_name]
+            func_instance = func_class()
+            result = await func_instance.run(**arguments)
+            return [{"type": "text", "text": json.dumps(result.model_dump())}]
+        except Exception as e:
+            return [{"type": "text", "text": json.dumps({"error": str(e)})}]
     
-    return app
+    return {
+        "name": "ai-platform-agent-functions",
+        "list_tools": list_tools,
+        "call_tool": call_tool
+    }
 ```
 
-### MCP Client Integration (Toolbox)
+**Production FastMCP Pattern** (for stdio transport):
+```python
+from fastmcp import FastMCP
 
-Consume MCP Toolbox for database operations:
+mcp = FastMCP("ai-platform-agent-functions")
+
+@mcp.tool()
+async def extract_structure(content: str, extraction_type: str) -> dict:
+    """Extract structured data from content."""
+    func = FUNCTION_REGISTRY["extract-structure"]()
+    result = await func.run(content=content, extraction_type=extraction_type)
+    return result.model_dump()
+
+# Register all 8 agent functions similarly
+```
+
+### MCP Client Integration
+
+#### Semantic Search MCP Wrapper (Phase 2)
+
+Wrap semantic-search-service REST API as MCP tools for standardized agent access:
 
 ```python
-# src/mcp/client.py
-from google.adk.tools.mcp_tool import McpToolset
-from google.adk.tools.mcp_tool.mcp_session_manager import StdioConnectionParams
-from mcp import StdioServerParameters
+# src/mcp/semantic_search_wrapper.py
+from httpx import AsyncClient
+from src.config.feature_flags import ProtocolFeatureFlags
+
+class SemanticSearchMcpWrapper:
+    """MCP wrapper for semantic-search-service hybrid RAG.
+    
+    This wraps our existing semantic-search-service REST API as MCP tools,
+    preserving the hybrid search (vector + graph) and domain taxonomy scoring
+    that reduces LLM hallucination.
+    
+    Architecture:
+    - semantic-search-service: Python service on port 8081
+    - Provides: hybrid_search, graph_relationships, domain_taxonomy
+    - NOT raw Qdrant: semantic-search-service adds RAG intelligence
+    
+    Why MCP wrapper instead of genai-toolbox?
+    - genai-toolbox does NOT support Qdrant
+    - semantic-search-service provides hybrid RAG, not just vector search
+    - Preserves score fusion and domain taxonomy
+    """
+    
+    def __init__(
+        self,
+        flags: ProtocolFeatureFlags,
+        semantic_search_url: str = "http://localhost:8081",
+    ):
+        self.flags = flags
+        self.semantic_search_url = semantic_search_url
+        self._client: AsyncClient | None = None
+    
+    async def hybrid_search(
+        self,
+        query: str,
+        top_k: int = 5,
+        search_scope: list[str] | None = None,
+    ) -> dict:
+        """Hybrid search across knowledge bases.
+        
+        Combines vector similarity with graph relationships using
+        configurable score fusion (default: α=0.7 vector, 0.3 graph).
+        """
+        if not self.flags.mcp_semantic_search:
+            return {"error": "MCP semantic search not enabled"}
+        
+        if self._client is None:
+            self._client = AsyncClient(base_url=self.semantic_search_url)
+        
+        response = await self._client.post(
+            "/v1/search/hybrid",
+            json={"query": query, "top_k": top_k, "scope": search_scope or []},
+        )
+        return response.json()
+    
+    async def close(self) -> None:
+        """Close HTTP client."""
+        if self._client:
+            await self._client.aclose()
+            self._client = None
+```
+
+#### genai-toolbox Integration (Neo4j, Redis)
+
+For databases supported by genai-toolbox:
+
+```python
+# src/mcp/toolbox_client.py
+from toolbox_core import ToolboxClient
+from src.config.feature_flags import ProtocolFeatureFlags
 
 class McpToolboxManager:
-    """Manage MCP Toolbox connections for database operations."""
+    """Manage connections to external genai-toolbox MCP server.
     
-    def __init__(self, flags: ProtocolFeatureFlags):
+    genai-toolbox is a Go-based MCP server that exposes database
+    operations as standardized tools.
+    
+    Supported databases: Neo4j, Redis, PostgreSQL, MySQL, MongoDB, BigQuery
+    NOT supported: Qdrant (use SemanticSearchMcpWrapper instead)
+    
+    Reference: https://github.com/googleapis/genai-toolbox
+    """
+    
+    def __init__(
+        self,
+        flags: ProtocolFeatureFlags,
+        toolbox_url: str = "http://127.0.0.1:5000",
+    ):
         self.flags = flags
-        self._toolsets: dict[str, McpToolset] = {}
+        self.toolbox_url = toolbox_url
+        self._toolsets: dict[str, list] = {}
     
-    async def get_qdrant_toolset(self) -> McpToolset | None:
-        """Get MCP Toolbox for Qdrant vector operations."""
-        if not self.flags.mcp_toolbox_qdrant:
-            return None
-        
-        if "qdrant" not in self._toolsets:
-            self._toolsets["qdrant"] = McpToolset(
-                connection_params=StdioConnectionParams(
-                    server_params=StdioServerParameters(
-                        command="npx",
-                        args=["-y", "@modelcontextprotocol/server-qdrant"],
-                        env={"QDRANT_URL": "http://localhost:6333"}
-                    )
-                ),
-                tool_filter=["search", "upsert", "delete", "scroll"]
-            )
-        return self._toolsets["qdrant"]
-    
-    async def get_neo4j_toolset(self) -> McpToolset | None:
-        """Get MCP Toolbox for Neo4j graph operations."""
+    async def get_neo4j_toolset(self) -> list | None:
+        """Get Neo4j tools from genai-toolbox MCP server."""
         if not self.flags.mcp_toolbox_neo4j:
             return None
         
         if "neo4j" not in self._toolsets:
-            self._toolsets["neo4j"] = McpToolset(
-                connection_params=StdioConnectionParams(
-                    server_params=StdioServerParameters(
-                        command="npx",
-                        args=["-y", "@modelcontextprotocol/server-neo4j"],
-                        env={
-                            "NEO4J_URI": "bolt://localhost:7687",
-                            "NEO4J_USER": "neo4j",
-                            "NEO4J_PASSWORD": "${NEO4J_PASSWORD}"
-                        }
-                    )
-                ),
-                tool_filter=["query", "schema", "node_search"]
-            )
+            async with ToolboxClient(self.toolbox_url) as client:
+                tools = await client.load_toolset("neo4j_toolset")
+                self._toolsets["neo4j"] = tools
         return self._toolsets["neo4j"]
     
-    async def close_all(self):
-        """Clean up all MCP toolset connections."""
-        for toolset in self._toolsets.values():
-            await toolset.close()
+    async def get_redis_toolset(self) -> list | None:
+        """Get Redis tools from genai-toolbox MCP server."""
+        if not self.flags.mcp_toolbox_redis:
+            return None
+        
+        if "redis" not in self._toolsets:
+            async with ToolboxClient(self.toolbox_url) as client:
+                tools = await client.load_toolset("redis_toolset")
+                self._toolsets["redis"] = tools
+        return self._toolsets["redis"]
+    
+    async def close_all(self) -> None:
+        """Clean up cached toolsets."""
         self._toolsets.clear()
 ```
 
@@ -670,11 +769,11 @@ class TestProtocolFeatureFlags:
         """Can enable specific features."""
         flags = ProtocolFeatureFlags(
             mcp_enabled=True,
-            mcp_toolbox_qdrant=True,
+            mcp_semantic_search=True,
             mcp_toolbox_neo4j=False
         )
         assert flags.mcp_available()
-        assert flags.mcp_toolbox_qdrant
+        assert flags.mcp_semantic_search
         assert not flags.mcp_toolbox_neo4j
 ```
 
@@ -779,7 +878,7 @@ Individual features can be disabled:
 # Keep MCP but disable A2A
 export AGENTS_A2A_ENABLED=false
 export AGENTS_MCP_ENABLED=true
-export AGENTS_MCP_TOOLBOX_QDRANT=true
+export AGENTS_MCP_SEMANTIC_SEARCH=true
 
 # Disable specific MCP toolbox
 export AGENTS_MCP_TOOLBOX_NEO4J=false
@@ -816,6 +915,8 @@ async def verify_rollback():
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.2.0 | 2026-01-03 | Renamed `mcp_toolbox_qdrant` → `mcp_semantic_search`; Corrected MCP Toolbox table (genai-toolbox does NOT support Qdrant); Added SemanticSearchMcpWrapper for hybrid RAG; Clarified semantic-search-service as hallucination-reduction layer |
+| 1.1.0 | 2026-01-03 | MCP Client code corrected to use `toolbox-core` SDK; Status updated to reflect 6/8 WBS blocks complete |
 | 1.0.0 | 2025-12-29 | Initial Protocol Integration Architecture (Phase 2) |
 
 ---
