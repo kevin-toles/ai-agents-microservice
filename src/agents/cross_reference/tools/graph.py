@@ -15,10 +15,7 @@ import logging
 from typing import Any
 
 from src.agents.cross_reference.state import RelationshipType
-from src.core.clients.semantic_search import (
-    SemanticSearchClient,
-    get_semantic_search_client,
-)
+from src.core.clients.semantic_search import get_semantic_search_client
 
 
 logger = logging.getLogger(__name__)
@@ -56,10 +53,13 @@ async def traverse_graph(
     _direction = direction
     _start_tier = start_tier
 
-    # Get or create client
+    # Get injected client (set via set_semantic_search_client in main.py lifespan)
     client = get_semantic_search_client()
     if client is None:
-        client = SemanticSearchClient(focus_areas=["llm_rag"])
+        raise RuntimeError(
+            "SemanticSearchClient not initialized. "
+            "Ensure ai-agents service started properly (set_semantic_search_client called)."
+        )
 
     # Build node ID from book + chapter
     start_node_id = _build_node_id(start_book, start_chapter)

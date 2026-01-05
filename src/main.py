@@ -40,7 +40,10 @@ from src.clients.neo4j_client import (
     create_neo4j_client_from_env,
     set_neo4j_client as set_global_neo4j_client,
 )
-from src.core.clients.semantic_search import SemanticSearchClient
+from src.core.clients.semantic_search import (
+    SemanticSearchClient,
+    set_semantic_search_client,
+)
 from src.core.config import get_settings
 from src.core.logging import configure_logging, get_logger
 from src.config.feature_flags import ProtocolFeatureFlags
@@ -211,8 +214,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     semantic_search_client = SemanticSearchClient()
     content_adapter = SemanticSearchContentAdapter(semantic_search_client)
     set_content_client(content_adapter)
+    # PCON-6: Inject client for cross_reference tools (MCP cross_reference fix)
+    set_semantic_search_client(semantic_search_client)
     app.state.semantic_search_client = semantic_search_client
-    logger.info("SemanticSearch content client initialized")
+    logger.info("SemanticSearch content client initialized (MCP tools injected)")
 
     # =========================================================================
     # PCON-5: Initialize WBS-AGT21-24 Clients
@@ -258,6 +263,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Close semantic search client
     if semantic_search_client:
         await semantic_search_client.close()
+        # PCON-6: Reset global client reference
+        set_semantic_search_client(None)
         logger.info("SemanticSearch client closed")
 
     # Close Neo4j (PCON-4: async close)

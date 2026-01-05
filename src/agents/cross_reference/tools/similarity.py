@@ -11,10 +11,7 @@ irrelevant C++/game programming content when searching for LLM topics.
 import logging
 from typing import Any
 
-from src.core.clients.semantic_search import (
-    SemanticSearchClient,
-    get_semantic_search_client,
-)
+from src.core.clients.semantic_search import get_semantic_search_client
 
 
 logger = logging.getLogger(__name__)
@@ -41,11 +38,13 @@ async def search_similar(
     Returns:
         Dict with similar chapters and similarity scores
     """
-    # Get or create client
+    # Get injected client (set via set_semantic_search_client in main.py lifespan)
     client = get_semantic_search_client()
     if client is None:
-        # Create default client with llm_rag focus
-        client = SemanticSearchClient(focus_areas=["llm_rag"])
+        raise RuntimeError(
+            "SemanticSearchClient not initialized. "
+            "Ensure ai-agents service started properly (set_semantic_search_client called)."
+        )
 
     # Use provided focus_areas or default to llm_rag
     effective_focus_areas = focus_areas if focus_areas is not None else ["llm_rag"]

@@ -17,3 +17,4 @@ numpy>=1.24.0
 # Protocol Integration (WBS-PI5, WBS-PI6)
 fastmcp>=0.1.0  # MCP server for exposing agent functions as tools
 toolbox-core>=0.1.0  # MCP client for genai-toolbox (Neo4j, Redis)
+aiofiles

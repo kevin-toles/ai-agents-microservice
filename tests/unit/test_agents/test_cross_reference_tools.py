@@ -55,18 +55,13 @@ class TestSearchTaxonomy:
         assert result["taxonomy_id"] == "ai-ml"
     
     @pytest.mark.asyncio
-    async def test_search_taxonomy_handles_no_client(self) -> None:
-        """Test that search_taxonomy creates client if none injected."""
+    async def test_search_taxonomy_raises_when_no_client(self) -> None:
+        """Test that search_taxonomy raises RuntimeError if no client injected."""
         with patch("src.agents.cross_reference.tools.taxonomy.get_semantic_search_client", return_value=None):
-            with patch("src.agents.cross_reference.tools.taxonomy.SemanticSearchClient") as mock_class:
-                mock_instance = AsyncMock()
-                mock_instance.hybrid_search.return_value = {"results": [], "total": 0}
-                mock_class.return_value = mock_instance
-                
-                result = await search_taxonomy("test", "ai-ml")
+            with pytest.raises(RuntimeError) as exc_info:
+                await search_taxonomy("test", "ai-ml")
         
-        mock_class.assert_called_once()
-        assert "results" in result
+        assert "SemanticSearchClient not initialized" in str(exc_info.value)
     
     @pytest.mark.asyncio
     async def test_search_taxonomy_handles_errors(self) -> None:

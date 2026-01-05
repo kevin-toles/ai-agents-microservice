@@ -45,10 +45,40 @@ _DEFAULT_TIMEOUT = 30.0
 _DEFAULT_MAX_RETRIES = 3
 _RETRY_BACKOFF_FACTOR = 0.5
 
-_ENDPOINT_KEYWORDS_EXTRACT = "/api/v1/codet5/keywords"
-_ENDPOINT_TERM_VALIDATE = "/api/v1/graphcodebert/validate"
-_ENDPOINT_CODE_RANK = "/api/v1/codebert/rank"
-_ENDPOINT_CODE_SIMILARITY = "/api/v1/codebert/similarity"
+# =============================================================================
+# CodeT5+ Endpoints (summarize, generate, translate, complete, understand, detect)
+# =============================================================================
+_ENDPOINT_CODET5_SUMMARIZE = "/v1/codet5/summarize"
+_ENDPOINT_CODET5_GENERATE = "/v1/codet5/generate"
+_ENDPOINT_CODET5_TRANSLATE = "/v1/codet5/translate"
+_ENDPOINT_CODET5_COMPLETE = "/v1/codet5/complete"
+_ENDPOINT_CODET5_UNDERSTAND = "/v1/codet5/understand"
+_ENDPOINT_CODET5_DEFECTS = "/v1/codet5/detect-defects"
+_ENDPOINT_CODET5_CLONES = "/v1/codet5/detect-clones"
+
+# =============================================================================
+# GraphCodeBERT Endpoints (validate, classify, expand, embeddings, similarity)
+# =============================================================================
+_ENDPOINT_GRAPHCODEBERT_VALIDATE = "/v1/graphcodebert/validate"
+_ENDPOINT_GRAPHCODEBERT_CLASSIFY = "/v1/graphcodebert/classify-domain"
+_ENDPOINT_GRAPHCODEBERT_EXPAND = "/v1/graphcodebert/expand"
+_ENDPOINT_GRAPHCODEBERT_EMBEDDINGS = "/v1/graphcodebert/embeddings"
+_ENDPOINT_GRAPHCODEBERT_SIMILARITY = "/v1/graphcodebert/similarity"
+
+# =============================================================================
+# CodeBERT Endpoints (embed, similarity, rank)
+# =============================================================================
+_ENDPOINT_CODEBERT_EMBED = "/api/v1/codebert/embed"
+_ENDPOINT_CODEBERT_SIMILARITY = "/api/v1/codebert/similarity"
+_ENDPOINT_CODEBERT_RANK = "/api/v1/codebert/rank"
+
+# =============================================================================
+# Embedding Endpoints (fused, BGE, UnixCoder, Instructor)
+# =============================================================================
+_ENDPOINT_EMBED_FUSED = "/api/v1/embed"
+_ENDPOINT_BGE_EMBED = "/api/v1/bge/embed"
+_ENDPOINT_UNIXCODER_EMBED = "/api/v1/unixcoder/embed"
+_ENDPOINT_INSTRUCTOR_CONCEPTS = "/api/v1/instructor/concepts"
 
 _MODEL_CODET5P = "codet5p"
 _MODEL_GRAPHCODEBERT = "graphcodebert"
@@ -116,6 +146,41 @@ class KeywordResult(BaseModel):
     )
 
 
+class CodeT5Result(BaseModel):
+    """Result from CodeT5+ operations (summarize, generate, translate, etc.)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    result: str = Field(
+        default="",
+        description="Generated text from CodeT5+",
+    )
+    model: str = Field(
+        default=_MODEL_CODET5P,
+        description="Model used",
+    )
+
+
+class DefectDetectionResult(BaseModel):
+    """Result from CodeT5+ defect detection."""
+
+    model_config = ConfigDict(frozen=True)
+
+    has_defect: bool = Field(default=False, description="Whether defect detected")
+    confidence: float = Field(default=0.0, description="Confidence score")
+    defect_type: str | None = Field(None, description="Type of defect if detected")
+
+
+class CloneDetectionResult(BaseModel):
+    """Result from CodeT5+ clone detection."""
+
+    model_config = ConfigDict(frozen=True)
+
+    is_clone: bool = Field(default=False, description="Whether code is a clone")
+    similarity: float = Field(default=0.0, description="Similarity score")
+    clone_type: str | None = Field(None, description="Type of clone (1/2/3)")
+
+
 class TermValidationResult(BaseModel):
     """Result from term validation.
     
@@ -160,6 +225,44 @@ class CodeRankingResult(BaseModel):
     )
 
 
+class DomainClassificationResult(BaseModel):
+    """Result from GraphCodeBERT domain classification."""
+
+    model_config = ConfigDict(frozen=True)
+
+    domain: str = Field(default="general", description="Classified domain")
+    confidence: float = Field(default=0.0, description="Classification confidence")
+
+
+class TermExpansionResult(BaseModel):
+    """Result from GraphCodeBERT term expansion."""
+
+    model_config = ConfigDict(frozen=True)
+
+    original_terms: list[str] = Field(default_factory=list, description="Original terms")
+    expanded_terms: list[str] = Field(default_factory=list, description="All terms including expansions")
+    expansion_count: int = Field(default=0, description="Number of new terms added")
+
+
+class EmbeddingResult(BaseModel):
+    """Result from embedding operations (BGE, UnixCoder, Instructor)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    embedding: list[float] = Field(default_factory=list, description="Embedding vector")
+    dimension: int = Field(default=0, description="Embedding dimension")
+    model: str = Field(default="", description="Model used")
+
+
+class SimilarityScoresResult(BaseModel):
+    """Result from batch similarity scoring."""
+
+    model_config = ConfigDict(frozen=True)
+
+    scores: dict[str, float] = Field(default_factory=dict, description="Term -> similarity score")
+    query: str = Field(default="", description="Query used")
+
+
 # =============================================================================
 # Protocol Definition
 # =============================================================================
@@ -172,34 +275,108 @@ class CodeAnalysisProtocol(Protocol):
     Defines interface for CodeT5+, GraphCodeBERT, and CodeBERT operations.
     """
 
-    async def extract_keywords(
-        self, code: str, top_k: int = 5
-    ) -> KeywordResult:
-        """Extract keywords from code using CodeT5+."""
+    # =========================================================================
+    # CodeT5+ Operations (7 capabilities)
+    # =========================================================================
+
+    async def summarize_code(self, code: str, max_length: int = 64) -> CodeT5Result:
+        """Summarize code using CodeT5+."""
         ...
+
+    async def generate_code(self, prompt: str, max_length: int = 128) -> CodeT5Result:
+        """Generate code from natural language prompt using CodeT5+."""
+        ...
+
+    async def translate_code(self, code: str, source_lang: str, target_lang: str) -> CodeT5Result:
+        """Translate code between programming languages using CodeT5+."""
+        ...
+
+    async def complete_code(self, code: str, max_length: int = 64) -> CodeT5Result:
+        """Complete partial code using CodeT5+."""
+        ...
+
+    async def understand_code(self, code: str) -> CodeT5Result:
+        """Generate natural language description of code using CodeT5+."""
+        ...
+
+    async def detect_defects(self, code: str) -> DefectDetectionResult:
+        """Detect potential defects in code using CodeT5+."""
+        ...
+
+    async def detect_clones(self, code1: str, code2: str) -> CloneDetectionResult:
+        """Detect if two code snippets are clones using CodeT5+."""
+        ...
+
+    # =========================================================================
+    # GraphCodeBERT Operations (5 capabilities)
+    # =========================================================================
 
     async def validate_terms(
         self,
         terms: list[str],
         query: str,
-        threshold: float = 0.5,
+        domain: str = "general",
+        min_similarity: float = 0.15,
     ) -> TermValidationResult:
         """Validate terms against query using GraphCodeBERT."""
         ...
 
-    async def rank_code_results(
+    async def classify_domain(self, text: str) -> DomainClassificationResult:
+        """Classify the domain of text using GraphCodeBERT."""
+        ...
+
+    async def expand_terms(
         self,
-        code_snippets: list[str],
-        query: str,
-        top_k: int | None = None,
-    ) -> CodeRankingResult:
-        """Rank code snippets by relevance using CodeBERT."""
+        terms: list[str],
+        domain: str = "general",
+        max_expansions: int = 3,
+        candidates: list[str] | None = None,
+    ) -> TermExpansionResult:
+        """Expand terms with related terms using GraphCodeBERT."""
+        ...
+
+    async def get_term_embeddings(self, terms: list[str]) -> dict[str, list[float]]:
+        """Get GraphCodeBERT embeddings for terms."""
+        ...
+
+    async def batch_similarity(self, terms: list[str], query: str) -> SimilarityScoresResult:
+        """Calculate batch similarity scores using GraphCodeBERT."""
+        ...
+
+    # =========================================================================
+    # CodeBERT Operations (3 capabilities)
+    # =========================================================================
+
+    async def embed_code(self, code: str) -> EmbeddingResult:
+        """Generate CodeBERT embedding for code."""
+        ...
+
+    async def rank_terms(self, terms: list[str], query: str) -> CodeRankingResult:
+        """Rank terms by relevance to query using CodeBERT."""
         ...
 
     async def calculate_similarity(
         self, code_a: str, code_b: str
     ) -> float:
-        """Calculate similarity between two code snippets."""
+        """Calculate similarity between two code snippets using CodeBERT."""
+        ...
+
+    # =========================================================================
+    # Direct Embedding Access (BGE, UnixCoder, Instructor)
+    # =========================================================================
+
+    async def bge_embed(self, text: str) -> EmbeddingResult:
+        """Get BGE embedding for text (384-dim)."""
+        ...
+
+    async def unixcoder_embed(self, code: str) -> EmbeddingResult:
+        """Get UnixCoder embedding for code (768-dim)."""
+        ...
+
+    async def instructor_embed_concepts(
+        self, concepts: list[str], domain: str = "general"
+    ) -> EmbeddingResult:
+        """Get Instructor embedding for domain concepts (768-dim)."""
         ...
 
     async def close(self) -> None:
@@ -372,52 +549,174 @@ class CodeAnalysisClient(CodeAnalysisProtocol):
         await asyncio.sleep(delay)
 
     # =========================================================================
-    # API Methods (AC-KB7.2, AC-KB7.3, AC-KB7.4)
+    # CodeT5+ API Methods
     # =========================================================================
 
-    async def extract_keywords(
-        self, code: str, top_k: int = 5
-    ) -> KeywordResult:
-        """Extract keywords from code using CodeT5+.
-        
-        AC-KB7.2: keyword_extraction tool uses CodeT5+ via Code-Orchestrator
+    async def summarize_code(self, code: str, max_length: int = 64) -> CodeT5Result:
+        """Summarize code using CodeT5+.
         
         Args:
-            code: Source code to analyze
-            top_k: Number of keywords to extract
+            code: Source code to summarize
+            max_length: Maximum output length
             
         Returns:
-            KeywordResult with keywords and confidence scores
+            CodeT5Result with generated summary
         """
         if not code:
-            return KeywordResult(keywords=[], scores=[], model=_MODEL_CODET5P)
+            return CodeT5Result(result="", model=_MODEL_CODET5P)
 
         data = await self._request_with_retry(
             method="POST",
-            endpoint=_ENDPOINT_KEYWORDS_EXTRACT,
-            json={"code": code, "top_k": top_k},
+            endpoint=_ENDPOINT_CODET5_SUMMARIZE,
+            json={"code": code, "max_length": max_length},
+        )
+        return CodeT5Result(result=data.get("summary", ""), model=_MODEL_CODET5P)
+
+    async def generate_code(self, prompt: str, max_length: int = 128) -> CodeT5Result:
+        """Generate code from natural language prompt using CodeT5+.
+        
+        Args:
+            prompt: Natural language description
+            max_length: Maximum output length
+            
+        Returns:
+            CodeT5Result with generated code
+        """
+        if not prompt:
+            return CodeT5Result(result="", model=_MODEL_CODET5P)
+
+        data = await self._request_with_retry(
+            method="POST",
+            endpoint=_ENDPOINT_CODET5_GENERATE,
+            json={"prompt": prompt, "max_length": max_length},
+        )
+        return CodeT5Result(result=data.get("generated_code", ""), model=_MODEL_CODET5P)
+
+    async def translate_code(self, code: str, source_lang: str, target_lang: str) -> CodeT5Result:
+        """Translate code between programming languages using CodeT5+.
+        
+        Args:
+            code: Source code to translate
+            source_lang: Source programming language
+            target_lang: Target programming language
+            
+        Returns:
+            CodeT5Result with translated code
+        """
+        if not code:
+            return CodeT5Result(result="", model=_MODEL_CODET5P)
+
+        data = await self._request_with_retry(
+            method="POST",
+            endpoint=_ENDPOINT_CODET5_TRANSLATE,
+            json={"code": code, "source_lang": source_lang, "target_lang": target_lang},
+        )
+        return CodeT5Result(result=data.get("translated_code", ""), model=_MODEL_CODET5P)
+
+    async def complete_code(self, code: str, max_length: int = 64) -> CodeT5Result:
+        """Complete partial code using CodeT5+.
+        
+        Args:
+            code: Partial code to complete
+            max_length: Maximum output length
+            
+        Returns:
+            CodeT5Result with completed code
+        """
+        if not code:
+            return CodeT5Result(result="", model=_MODEL_CODET5P)
+
+        data = await self._request_with_retry(
+            method="POST",
+            endpoint=_ENDPOINT_CODET5_COMPLETE,
+            json={"code": code, "max_length": max_length},
+        )
+        return CodeT5Result(result=data.get("completed_code", ""), model=_MODEL_CODET5P)
+
+    async def understand_code(self, code: str) -> CodeT5Result:
+        """Generate natural language description of code using CodeT5+.
+        
+        Args:
+            code: Source code to describe
+            
+        Returns:
+            CodeT5Result with natural language description
+        """
+        if not code:
+            return CodeT5Result(result="", model=_MODEL_CODET5P)
+
+        data = await self._request_with_retry(
+            method="POST",
+            endpoint=_ENDPOINT_CODET5_UNDERSTAND,
+            json={"code": code},
+        )
+        return CodeT5Result(result=data.get("description", ""), model=_MODEL_CODET5P)
+
+    async def detect_defects(self, code: str) -> DefectDetectionResult:
+        """Detect potential defects in code using CodeT5+.
+        
+        Args:
+            code: Source code to analyze
+            
+        Returns:
+            DefectDetectionResult with detection results
+        """
+        if not code:
+            return DefectDetectionResult(has_defect=False, confidence=0.0)
+
+        data = await self._request_with_retry(
+            method="POST",
+            endpoint=_ENDPOINT_CODET5_DEFECTS,
+            json={"code": code},
+        )
+        return DefectDetectionResult(
+            has_defect=data.get("has_defect", False),
+            confidence=data.get("confidence", 0.0),
+            defect_type=data.get("defect_type"),
         )
 
-        return KeywordResult(
-            keywords=data.get("keywords", []),
-            scores=data.get("scores", []),
-            model=data.get("model", _MODEL_CODET5P),
+    async def detect_clones(self, code1: str, code2: str) -> CloneDetectionResult:
+        """Detect if two code snippets are clones using CodeT5+.
+        
+        Args:
+            code1: First code snippet
+            code2: Second code snippet
+            
+        Returns:
+            CloneDetectionResult with detection results
+        """
+        if not code1 or not code2:
+            return CloneDetectionResult(is_clone=False, similarity=0.0)
+
+        data = await self._request_with_retry(
+            method="POST",
+            endpoint=_ENDPOINT_CODET5_CLONES,
+            json={"code1": code1, "code2": code2},
         )
+        return CloneDetectionResult(
+            is_clone=data.get("is_clone", False),
+            similarity=data.get("similarity", 0.0),
+            clone_type=data.get("clone_type"),
+        )
+
+    # =========================================================================
+    # GraphCodeBERT API Methods
+    # =========================================================================
 
     async def validate_terms(
         self,
         terms: list[str],
         query: str,
-        threshold: float = 0.5,
+        domain: str = "general",
+        min_similarity: float = 0.15,
     ) -> TermValidationResult:
         """Validate terms against query using GraphCodeBERT.
-        
-        AC-KB7.3: term_validation tool uses GraphCodeBERT via Code-Orchestrator
         
         Args:
             terms: List of terms to validate
             query: Query context for validation
-            threshold: Minimum score for term to be valid
+            domain: Target domain (ai-ml, systems, web, data, general)
+            min_similarity: Minimum similarity threshold
             
         Returns:
             TermValidationResult with validation results
@@ -431,61 +730,205 @@ class CodeAnalysisClient(CodeAnalysisProtocol):
 
         data = await self._request_with_retry(
             method="POST",
-            endpoint=_ENDPOINT_TERM_VALIDATE,
-            json={"terms": terms, "query": query, "threshold": threshold},
+            endpoint=_ENDPOINT_GRAPHCODEBERT_VALIDATE,
+            json={
+                "terms": terms,
+                "query": query,
+                "domain": domain,
+                "min_similarity": min_similarity,
+            },
         )
+
+        # Convert to expected format
+        validated_terms = []
+        for term in data.get("valid_terms", []):
+            validated_terms.append({
+                "term": term,
+                "score": data.get("similarity_scores", {}).get(term, 0.0),
+                "valid": True,
+            })
+        for term in data.get("rejected_terms", []):
+            validated_terms.append({
+                "term": term,
+                "score": 0.0,
+                "valid": False,
+                "reason": data.get("rejection_reasons", {}).get(term, ""),
+            })
 
         return TermValidationResult(
-            terms=data.get("terms", []),
-            model=data.get("model", _MODEL_GRAPHCODEBERT),
-            query=data.get("query", query),
+            terms=validated_terms,
+            model=_MODEL_GRAPHCODEBERT,
+            query=query,
         )
 
-    async def rank_code_results(
-        self,
-        code_snippets: list[str],
-        query: str,
-        top_k: int | None = None,
-    ) -> CodeRankingResult:
-        """Rank code snippets by relevance using CodeBERT.
-        
-        AC-KB7.4: code_ranking tool uses CodeBERT via Code-Orchestrator
+    async def classify_domain(self, text: str) -> DomainClassificationResult:
+        """Classify the domain of text using GraphCodeBERT.
         
         Args:
-            code_snippets: List of code snippets to rank
-            query: Query to rank against
-            top_k: Maximum number of results to return
+            text: Text to classify
             
         Returns:
-            CodeRankingResult with ranked code snippets
+            DomainClassificationResult with domain and confidence
         """
-        if not code_snippets:
-            return CodeRankingResult(
-                rankings=[],
-                model=_MODEL_CODEBERT,
-                query=query,
-            )
-
-        payload: dict[str, Any] = {"codes": code_snippets, "query": query}
-        if top_k is not None:
-            payload["top_k"] = top_k
+        if not text:
+            return DomainClassificationResult(domain="general", confidence=0.0)
 
         data = await self._request_with_retry(
             method="POST",
-            endpoint=_ENDPOINT_CODE_RANK,
-            json=payload,
+            endpoint=_ENDPOINT_GRAPHCODEBERT_CLASSIFY,
+            json={"text": text},
+        )
+        return DomainClassificationResult(
+            domain=data.get("domain", "general"),
+            confidence=data.get("confidence", 0.0),
         )
 
+    async def expand_terms(
+        self,
+        terms: list[str],
+        domain: str = "general",
+        max_expansions: int = 3,
+        candidates: list[str] | None = None,
+    ) -> TermExpansionResult:
+        """Expand terms with related terms using GraphCodeBERT.
+        
+        Args:
+            terms: Terms to expand
+            domain: Target domain for context
+            max_expansions: Max related terms per input
+            candidates: Optional candidate terms to search
+            
+        Returns:
+            TermExpansionResult with expanded terms
+        """
+        if not terms:
+            return TermExpansionResult(original_terms=[], expanded_terms=[], expansion_count=0)
+
+        payload: dict[str, Any] = {
+            "terms": terms,
+            "domain": domain,
+            "max_expansions": max_expansions,
+        }
+        if candidates:
+            payload["candidates"] = candidates
+
+        data = await self._request_with_retry(
+            method="POST",
+            endpoint=_ENDPOINT_GRAPHCODEBERT_EXPAND,
+            json=payload,
+        )
+        return TermExpansionResult(
+            original_terms=data.get("original_terms", terms),
+            expanded_terms=data.get("expanded_terms", terms),
+            expansion_count=data.get("expansion_count", 0),
+        )
+
+    async def get_term_embeddings(self, terms: list[str]) -> dict[str, list[float]]:
+        """Get GraphCodeBERT embeddings for terms.
+        
+        Args:
+            terms: Terms to embed
+            
+        Returns:
+            Dictionary mapping term -> embedding vector
+        """
+        if not terms:
+            return {}
+
+        data = await self._request_with_retry(
+            method="POST",
+            endpoint=_ENDPOINT_GRAPHCODEBERT_EMBEDDINGS,
+            json={"terms": terms},
+        )
+        return data.get("embeddings", {})
+
+    async def batch_similarity(self, terms: list[str], query: str) -> SimilarityScoresResult:
+        """Calculate batch similarity scores using GraphCodeBERT.
+        
+        Args:
+            terms: Terms to score
+            query: Query for comparison
+            
+        Returns:
+            SimilarityScoresResult with scores for each term
+        """
+        if not terms or not query:
+            return SimilarityScoresResult(scores={}, query=query)
+
+        data = await self._request_with_retry(
+            method="POST",
+            endpoint=_ENDPOINT_GRAPHCODEBERT_SIMILARITY,
+            json={"terms": terms, "query": query},
+        )
+        return SimilarityScoresResult(
+            scores=data.get("scores", {}),
+            query=data.get("query", query),
+        )
+
+    # =========================================================================
+    # CodeBERT API Methods
+    # =========================================================================
+
+    async def embed_code(self, code: str) -> EmbeddingResult:
+        """Generate CodeBERT embedding for code.
+        
+        Args:
+            code: Source code to embed
+            
+        Returns:
+            EmbeddingResult with 768-dimensional embedding
+        """
+        if not code:
+            return EmbeddingResult(embedding=[], dimension=0, model=_MODEL_CODEBERT)
+
+        data = await self._request_with_retry(
+            method="POST",
+            endpoint=_ENDPOINT_CODEBERT_EMBED,
+            json={"code": code},
+        )
+        return EmbeddingResult(
+            embedding=data.get("embedding", []),
+            dimension=data.get("dimension", 768),
+            model=_MODEL_CODEBERT,
+        )
+
+    async def rank_terms(self, terms: list[str], query: str) -> CodeRankingResult:
+        """Rank terms by relevance to query using CodeBERT.
+        
+        Args:
+            terms: List of terms to rank
+            query: Query to rank against
+            
+        Returns:
+            CodeRankingResult with ranked terms
+        """
+        if not terms:
+            return CodeRankingResult(rankings=[], model=_MODEL_CODEBERT, query=query)
+
+        data = await self._request_with_retry(
+            method="POST",
+            endpoint=_ENDPOINT_CODEBERT_RANK,
+            json={"terms": terms, "query": query},
+        )
+
+        # Convert API response format to rankings list
+        rankings = []
+        for item in data.get("ranked_terms", []):
+            rankings.append({
+                "term": item.get("term", ""),
+                "score": item.get("score", 0.0),
+            })
+
         return CodeRankingResult(
-            rankings=data.get("rankings", []),
-            model=data.get("model", _MODEL_CODEBERT),
+            rankings=rankings,
+            model=_MODEL_CODEBERT,
             query=data.get("query", query),
         )
 
     async def calculate_similarity(
         self, code_a: str, code_b: str
     ) -> float:
-        """Calculate similarity between two code snippets.
+        """Calculate similarity between two code snippets using CodeBERT.
         
         Args:
             code_a: First code snippet
@@ -499,82 +942,128 @@ class CodeAnalysisClient(CodeAnalysisProtocol):
 
         data = await self._request_with_retry(
             method="POST",
-            endpoint=_ENDPOINT_CODE_SIMILARITY,
+            endpoint=_ENDPOINT_CODEBERT_SIMILARITY,
             json={"code_a": code_a, "code_b": code_b},
         )
 
         return float(data.get("similarity", 0.0))
 
+    # =========================================================================
+    # Direct Embedding API Methods (BGE, UnixCoder, Instructor)
+    # =========================================================================
 
-# =============================================================================
-# FakeCodeAnalysisClient (KB7.11)
-# =============================================================================
+    async def bge_embed(self, text: str) -> EmbeddingResult:
+        """Get BGE embedding for text (384-dim).
+        
+        Args:
+            text: Text to embed
+            
+        Returns:
+            EmbeddingResult with 384-dimensional embedding
+        """
+        if not text:
+            return EmbeddingResult(embedding=[], dimension=0, model="bge")
 
+        data = await self._request_with_retry(
+            method="POST",
+            endpoint=_ENDPOINT_BGE_EMBED,
+            json={"text": text},
+        )
+        return EmbeddingResult(
+            embedding=data.get("embedding", []),
+            dimension=data.get("dimension", 384),
+            model=data.get("model", "BAAI/bge-small-en-v1.5"),
+        )
 
-class FakeCodeAnalysisClient(CodeAnalysisProtocol):
-    """Fake Code Analysis client for testing.
-    
-    Produces deterministic results based on input hashes.
-    Pattern: FakeClient per CODING_PATTERNS_ANALYSIS.md
-    """
+    async def unixcoder_embed(self, code: str) -> EmbeddingResult:
+        """Get UnixCoder embedding for code (768-dim).
+        
+        Args:
+            code: Code to embed
+            
+        Returns:
+            EmbeddingResult with 768-dimensional embedding
+        """
+        if not code:
+            return EmbeddingResult(embedding=[], dimension=0, model="unixcoder")
 
-    async def extract_keywords(
-        self, code: str, top_k: int = 5
-    ) -> KeywordResult:
-        """Extract deterministic keywords from code.
+        data = await self._request_with_retry(
+            method="POST",
+            endpoint=_ENDPOINT_UNIXCODER_EMBED,
+            json={"code": code},
+        )
+        return EmbeddingResult(
+            embedding=data.get("embedding", []),
+            dimension=data.get("dimension", 768),
+            model=data.get("model", "microsoft/unixcoder-base"),
+        )
+
+    async def instructor_embed_concepts(
+        self, concepts: list[str], domain: str = "general"
+    ) -> EmbeddingResult:
+        """Get Instructor embedding for domain concepts (768-dim).
+        
+        Args:
+            concepts: Concepts to embed
+            domain: Domain for context (ai-ml, systems, web, data)
+            
+        Returns:
+            EmbeddingResult with 768-dimensional embedding
+        """
+        if not concepts:
+            return EmbeddingResult(embedding=[], dimension=0, model="instructor")
+
+        data = await self._request_with_retry(
+            method="POST",
+            endpoint=_ENDPOINT_INSTRUCTOR_CONCEPTS,
+            json={"concepts": concepts, "domain": domain},
+        )
+        return EmbeddingResult(
+            embedding=data.get("embedding", []),
+            dimension=data.get("dimension", 768),
+            model=data.get("model", "hkunlp/instructor-xl"),
+        )
+
+    # =========================================================================
+    # Legacy API Methods (for backward compatibility)
+    # =========================================================================
+
+    async def extract_keywords(self, code: str, top_k: int = 5) -> KeywordResult:
+        """Extract keywords from code using CodeT5+ summarization.
+        
+        DEPRECATED: Use summarize_code() instead. This is a wrapper that
+        extracts keywords from the summary for backward compatibility.
         
         Args:
             code: Source code to analyze
             top_k: Number of keywords to extract
             
         Returns:
-            Deterministic KeywordResult
+            KeywordResult with keywords and scores
         """
-        if not code:
+        # Use summarization and extract keywords from summary
+        result = await self.summarize_code(code)
+        if not result.result:
             return KeywordResult(keywords=[], scores=[], model=_MODEL_CODET5P)
 
-        # Generate deterministic keywords based on code content
-        keywords = self._extract_simple_keywords(code)[:top_k]
-        # Generate high scores (0.85-0.95) for fake client validation
-        scores = [0.95 - (i * 0.02) for i in range(len(keywords))]
+        # Simple keyword extraction from summary
+        import re
+        words = re.findall(r"[a-zA-Z_][a-zA-Z0-9_]*", result.result)
+        stopwords = {"the", "a", "an", "is", "are", "and", "or", "of", "for", "to", "in", "it"}
+        keywords = [w.lower() for w in words if len(w) > 2 and w.lower() not in stopwords]
 
-        return KeywordResult(
-            keywords=keywords,
-            scores=scores,
-            model=_MODEL_CODET5P,
-        )
+        # Deduplicate
+        seen: set[str] = set()
+        unique_keywords: list[str] = []
+        for kw in keywords:
+            if kw not in seen:
+                seen.add(kw)
+                unique_keywords.append(kw)
 
-    async def validate_terms(
-        self,
-        terms: list[str],
-        query: str,
-        threshold: float = 0.5,
-    ) -> TermValidationResult:
-        """Validate terms with deterministic scores.
-        
-        Args:
-            terms: List of terms to validate
-            query: Query context
-            threshold: Minimum score for validity
-            
-        Returns:
-            Deterministic TermValidationResult
-        """
-        validated_terms = []
-        for term in terms:
-            # Deterministic scoring based on term/query similarity
-            score = self._calculate_term_score(term, query)
-            validated_terms.append({
-                "term": term,
-                "score": score,
-                "valid": score >= threshold,
-            })
+        keywords_final = unique_keywords[:top_k]
+        scores = [0.95 - (i * 0.05) for i in range(len(keywords_final))]
 
-        return TermValidationResult(
-            terms=validated_terms,
-            model=_MODEL_GRAPHCODEBERT,
-            query=query,
-        )
+        return KeywordResult(keywords=keywords_final, scores=scores, model=_MODEL_CODET5P)
 
     async def rank_code_results(
         self,
@@ -582,19 +1071,26 @@ class FakeCodeAnalysisClient(CodeAnalysisProtocol):
         query: str,
         top_k: int | None = None,
     ) -> CodeRankingResult:
-        """Rank code snippets deterministically.
+        """Rank code snippets by relevance using CodeBERT.
+        
+        DEPRECATED: Use rank_terms() for term ranking.
+        This method ranks code snippets using similarity calculations.
         
         Args:
-            code_snippets: List of code snippets
+            code_snippets: List of code snippets to rank
             query: Query to rank against
-            top_k: Maximum results
+            top_k: Maximum number of results to return
             
         Returns:
-            Deterministic CodeRankingResult
+            CodeRankingResult with ranked code snippets
         """
+        if not code_snippets:
+            return CodeRankingResult(rankings=[], model=_MODEL_CODEBERT, query=query)
+
+        # Calculate similarity for each snippet
         rankings = []
         for i, code in enumerate(code_snippets):
-            score = self._calculate_code_score(code, query)
+            score = await self.calculate_similarity(code, query)
             rankings.append({
                 "code": code,
                 "score": score,
@@ -611,41 +1107,292 @@ class FakeCodeAnalysisClient(CodeAnalysisProtocol):
         if top_k is not None:
             rankings = rankings[:top_k]
 
-        return CodeRankingResult(
-            rankings=rankings,
-            model=_MODEL_CODEBERT,
+        return CodeRankingResult(rankings=rankings, model=_MODEL_CODEBERT, query=query)
+
+
+# =============================================================================
+# FakeCodeAnalysisClient (KB7.11)
+# =============================================================================
+
+
+class FakeCodeAnalysisClient(CodeAnalysisProtocol):
+    """Fake Code Analysis client for testing.
+    
+    Produces deterministic results based on input hashes.
+    Pattern: FakeClient per CODING_PATTERNS_ANALYSIS.md
+    """
+
+    # =========================================================================
+    # CodeT5+ Fake Methods
+    # =========================================================================
+
+    async def summarize_code(self, code: str, max_length: int = 64) -> CodeT5Result:
+        """Generate deterministic summary."""
+        if not code:
+            return CodeT5Result(result="", model=_MODEL_CODET5P)
+
+        # Extract key elements for fake summary
+        keywords = self._extract_simple_keywords(code)[:3]
+        summary = f"Code implementing {', '.join(keywords)}" if keywords else "Code snippet"
+        return CodeT5Result(result=summary[:max_length], model=_MODEL_CODET5P)
+
+    async def generate_code(self, prompt: str, max_length: int = 128) -> CodeT5Result:
+        """Generate deterministic code from prompt."""
+        if not prompt:
+            return CodeT5Result(result="", model=_MODEL_CODET5P)
+
+        # Simple template-based generation
+        code = f"def generated_from_prompt():\n    # {prompt[:50]}\n    pass"
+        return CodeT5Result(result=code[:max_length], model=_MODEL_CODET5P)
+
+    async def translate_code(self, code: str, source_lang: str, target_lang: str) -> CodeT5Result:
+        """Return translated code (fake)."""
+        if not code:
+            return CodeT5Result(result="", model=_MODEL_CODET5P)
+        # Just return original code with comment
+        return CodeT5Result(
+            result=f"# Translated from {source_lang} to {target_lang}\n{code}",
+            model=_MODEL_CODET5P,
+        )
+
+    async def complete_code(self, code: str, max_length: int = 64) -> CodeT5Result:
+        """Complete code deterministically."""
+        if not code:
+            return CodeT5Result(result="", model=_MODEL_CODET5P)
+        return CodeT5Result(result=f"{code}\n    pass  # auto-completed", model=_MODEL_CODET5P)
+
+    async def understand_code(self, code: str) -> CodeT5Result:
+        """Generate description of code."""
+        if not code:
+            return CodeT5Result(result="", model=_MODEL_CODET5P)
+
+        keywords = self._extract_simple_keywords(code)[:3]
+        desc = f"This code handles {', '.join(keywords)}" if keywords else "This is a code snippet"
+        return CodeT5Result(result=desc, model=_MODEL_CODET5P)
+
+    async def detect_defects(self, code: str) -> DefectDetectionResult:
+        """Detect defects deterministically."""
+        if not code:
+            return DefectDetectionResult(has_defect=False, confidence=0.0)
+
+        # Check for common issues
+        has_defect = "except:" in code or "pass" in code
+        return DefectDetectionResult(
+            has_defect=has_defect,
+            confidence=0.75 if has_defect else 0.1,
+            defect_type="bare-except" if "except:" in code else None,
+        )
+
+    async def detect_clones(self, code1: str, code2: str) -> CloneDetectionResult:
+        """Detect code clones deterministically."""
+        if not code1 or not code2:
+            return CloneDetectionResult(is_clone=False, similarity=0.0)
+
+        if code1 == code2:
+            return CloneDetectionResult(is_clone=True, similarity=1.0, clone_type="1")
+
+        # Hash-based similarity
+        hash_a = hashlib.md5(code1.encode()).hexdigest()
+        hash_b = hashlib.md5(code2.encode()).hexdigest()
+        matches = sum(a == b for a, b in zip(hash_a, hash_b))
+        similarity = matches / len(hash_a)
+
+        return CloneDetectionResult(
+            is_clone=similarity > 0.5,
+            similarity=similarity,
+            clone_type="3" if similarity > 0.5 else None,
+        )
+
+    # =========================================================================
+    # GraphCodeBERT Fake Methods
+    # =========================================================================
+
+    async def validate_terms(
+        self,
+        terms: list[str],
+        query: str,
+        domain: str = "general",
+        min_similarity: float = 0.15,
+    ) -> TermValidationResult:
+        """Validate terms with deterministic scores."""
+        validated_terms = []
+        for term in terms:
+            score = self._calculate_term_score(term, query)
+            validated_terms.append({
+                "term": term,
+                "score": score,
+                "valid": score >= min_similarity,
+            })
+
+        return TermValidationResult(
+            terms=validated_terms,
+            model=_MODEL_GRAPHCODEBERT,
             query=query,
         )
 
-    async def calculate_similarity(
-        self, code_a: str, code_b: str
-    ) -> float:
-        """Calculate deterministic similarity.
-        
-        Args:
-            code_a: First code snippet
-            code_b: Second code snippet
-            
-        Returns:
-            Deterministic similarity score
-        """
+    async def classify_domain(self, text: str) -> DomainClassificationResult:
+        """Classify domain deterministically."""
+        if not text:
+            return DomainClassificationResult(domain="general", confidence=0.0)
+
+        text_lower = text.lower()
+        if any(w in text_lower for w in ["neural", "ml", "model", "train"]):
+            return DomainClassificationResult(domain="ai-ml", confidence=0.85)
+        if any(w in text_lower for w in ["http", "api", "web", "html"]):
+            return DomainClassificationResult(domain="web", confidence=0.85)
+        if any(w in text_lower for w in ["docker", "k8s", "deploy", "server"]):
+            return DomainClassificationResult(domain="systems", confidence=0.85)
+        if any(w in text_lower for w in ["sql", "database", "table", "query"]):
+            return DomainClassificationResult(domain="data", confidence=0.85)
+
+        return DomainClassificationResult(domain="general", confidence=0.5)
+
+    async def expand_terms(
+        self,
+        terms: list[str],
+        domain: str = "general",
+        max_expansions: int = 3,
+        candidates: list[str] | None = None,
+    ) -> TermExpansionResult:
+        """Expand terms deterministically."""
+        if not terms:
+            return TermExpansionResult(original_terms=[], expanded_terms=[], expansion_count=0)
+
+        # Simple suffix-based expansion
+        expanded = list(terms)
+        for term in terms[:max_expansions]:
+            expanded.append(f"{term}_related")
+
+        return TermExpansionResult(
+            original_terms=terms,
+            expanded_terms=expanded,
+            expansion_count=len(expanded) - len(terms),
+        )
+
+    async def get_term_embeddings(self, terms: list[str]) -> dict[str, list[float]]:
+        """Get fake embeddings for terms."""
+        result = {}
+        for term in terms:
+            # Hash-based deterministic embedding
+            hash_bytes = hashlib.sha256(term.encode()).digest()
+            embedding = [float(b) / 255.0 for b in hash_bytes[:768]]
+            result[term] = embedding
+        return result
+
+    async def batch_similarity(self, terms: list[str], query: str) -> SimilarityScoresResult:
+        """Calculate batch similarity deterministically."""
+        scores = {}
+        for term in terms:
+            scores[term] = self._calculate_term_score(term, query)
+        return SimilarityScoresResult(scores=scores, query=query)
+
+    # =========================================================================
+    # CodeBERT Fake Methods
+    # =========================================================================
+
+    async def embed_code(self, code: str) -> EmbeddingResult:
+        """Generate fake CodeBERT embedding."""
+        if not code:
+            return EmbeddingResult(embedding=[], dimension=0, model=_MODEL_CODEBERT)
+
+        hash_bytes = hashlib.sha256(code.encode()).digest()
+        embedding = [float(b) / 255.0 for b in hash_bytes[:768]]
+        return EmbeddingResult(embedding=embedding, dimension=768, model=_MODEL_CODEBERT)
+
+    async def rank_terms(self, terms: list[str], query: str) -> CodeRankingResult:
+        """Rank terms deterministically."""
+        rankings = []
+        for term in terms:
+            score = self._calculate_term_score(term, query)
+            rankings.append({"term": term, "score": score})
+
+        rankings.sort(key=lambda x: x["score"], reverse=True)
+        return CodeRankingResult(rankings=rankings, model=_MODEL_CODEBERT, query=query)
+
+    async def calculate_similarity(self, code_a: str, code_b: str) -> float:
+        """Calculate fake similarity."""
         if code_a == code_b:
             return 1.0
-
         if not code_a or not code_b:
             return 0.0
 
-        # Hash-based similarity
         hash_a = hashlib.md5(code_a.encode()).hexdigest()
         hash_b = hashlib.md5(code_b.encode()).hexdigest()
-
-        # Count matching characters
         matches = sum(a == b for a, b in zip(hash_a, hash_b))
         return matches / len(hash_a)
+
+    # =========================================================================
+    # Direct Embedding Fake Methods
+    # =========================================================================
+
+    async def bge_embed(self, text: str) -> EmbeddingResult:
+        """Generate fake BGE embedding."""
+        if not text:
+            return EmbeddingResult(embedding=[], dimension=0, model="bge")
+
+        hash_bytes = hashlib.sha256(f"bge:{text}".encode()).digest()
+        embedding = [float(b) / 255.0 for b in hash_bytes[:384]]
+        return EmbeddingResult(embedding=embedding, dimension=384, model="BAAI/bge-small-en-v1.5")
+
+    async def unixcoder_embed(self, code: str) -> EmbeddingResult:
+        """Generate fake UnixCoder embedding."""
+        if not code:
+            return EmbeddingResult(embedding=[], dimension=0, model="unixcoder")
+
+        hash_bytes = hashlib.sha256(f"unix:{code}".encode()).digest()
+        embedding = [float(b) / 255.0 for b in hash_bytes[:768]]
+        return EmbeddingResult(embedding=embedding, dimension=768, model="microsoft/unixcoder-base")
+
+    async def instructor_embed_concepts(
+        self, concepts: list[str], domain: str = "general"
+    ) -> EmbeddingResult:
+        """Generate fake Instructor embedding."""
+        if not concepts:
+            return EmbeddingResult(embedding=[], dimension=0, model="instructor")
+
+        combined = f"{domain}:{','.join(concepts)}"
+        hash_bytes = hashlib.sha256(combined.encode()).digest()
+        embedding = [float(b) / 255.0 for b in hash_bytes[:768]]
+        return EmbeddingResult(embedding=embedding, dimension=768, model="hkunlp/instructor-xl")
 
     async def close(self) -> None:
         """No-op for fake client."""
         pass
+
+    # =========================================================================
+    # Legacy Methods (for backward compatibility)
+    # =========================================================================
+
+    async def extract_keywords(self, code: str, top_k: int = 5) -> KeywordResult:
+        """Extract deterministic keywords from code."""
+        if not code:
+            return KeywordResult(keywords=[], scores=[], model=_MODEL_CODET5P)
+
+        keywords = self._extract_simple_keywords(code)[:top_k]
+        scores = [0.95 - (i * 0.02) for i in range(len(keywords))]
+
+        return KeywordResult(keywords=keywords, scores=scores, model=_MODEL_CODET5P)
+
+    async def rank_code_results(
+        self,
+        code_snippets: list[str],
+        query: str,
+        top_k: int | None = None,
+    ) -> CodeRankingResult:
+        """Rank code snippets deterministically."""
+        rankings = []
+        for i, code in enumerate(code_snippets):
+            score = self._calculate_code_score(code, query)
+            rankings.append({"code": code, "score": score, "rank": i + 1})
+
+        rankings.sort(key=lambda x: x["score"], reverse=True)
+        for i, ranking in enumerate(rankings):
+            ranking["rank"] = i + 1
+
+        if top_k is not None:
+            rankings = rankings[:top_k]
+
+        return CodeRankingResult(rankings=rankings, model=_MODEL_CODEBERT, query=query)
 
     # =========================================================================
     # Helper Methods
@@ -770,7 +1517,14 @@ __all__ = [
     "CodeAnalysisConfig",
     "CodeAnalysisProtocol",
     "CodeRankingResult",
+    "CodeT5Result",
+    "CloneDetectionResult",
+    "DefectDetectionResult",
+    "DomainClassificationResult",
+    "EmbeddingResult",
     "FakeCodeAnalysisClient",
     "KeywordResult",
+    "SimilarityScoresResult",
+    "TermExpansionResult",
     "TermValidationResult",
 ]

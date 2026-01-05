@@ -13,10 +13,7 @@ Anti-Pattern References (CODING_PATTERNS_ANALYSIS.md):
 import logging
 from typing import Any
 
-from src.core.clients.semantic_search import (
-    SemanticSearchClient,
-    get_semantic_search_client,
-)
+from src.core.clients.semantic_search import get_semantic_search_client
 
 
 logger = logging.getLogger(__name__)
@@ -38,10 +35,13 @@ async def get_chapter_metadata(
     Returns:
         Dict with chapter metadata
     """
-    # Get or create client
+    # Get injected client (set via set_semantic_search_client in main.py lifespan)
     client = get_semantic_search_client()
     if client is None:
-        client = SemanticSearchClient(focus_areas=["llm_rag"])
+        raise RuntimeError(
+            "SemanticSearchClient not initialized. "
+            "Ensure ai-agents service started properly (set_semantic_search_client called)."
+        )
 
     # Build a targeted query for the specific chapter
     query = f"{book} chapter {chapter}"
