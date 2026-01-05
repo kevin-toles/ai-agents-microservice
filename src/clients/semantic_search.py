@@ -83,7 +83,7 @@ class MSEPSemanticSearchClient:
             self._client = None
 
     async def search(
-        self, query: str, top_k: int = 5
+        self, query: str, top_k: int = 5, collection: str = "chapters"
     ) -> dict[str, Any]:
         """Hybrid search across chapters.
 
@@ -93,6 +93,7 @@ class MSEPSemanticSearchClient:
         Args:
             query: Search query
             top_k: Number of results to return (default: 5)
+            collection: Qdrant collection to search (default: "chapters")
 
         Returns:
             Dict with results list, total count, and metadata.
@@ -103,7 +104,7 @@ class MSEPSemanticSearchClient:
         try:
             response = await client.post(
                 ENDPOINT_SEARCH_HYBRID,
-                json={"query": query, "limit": top_k},
+                json={"query": query, "limit": top_k, "collection": collection},
             )
             response.raise_for_status()
             result: dict[str, Any] = response.json()

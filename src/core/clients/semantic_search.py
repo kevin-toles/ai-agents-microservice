@@ -125,7 +125,7 @@ class SemanticSearchClient:
         self,
         query: str,
         limit: int = 10,
-        collection: str = "documents",
+        collection: str = "chapters",
         alpha: float = 0.7,
         tier_filter: list[int] | None = None,
         focus_areas: list[str] | None = None,
@@ -137,7 +137,7 @@ class SemanticSearchClient:
         Args:
             query: Text query to search for
             limit: Maximum results to return
-            collection: Vector collection name
+            collection: Vector collection name (default: chapters)
             alpha: Weight for vector vs graph score (0-1)
             tier_filter: Filter to specific tiers (1, 2, 3)
             focus_areas: Domain focus areas (default: self.focus_areas)

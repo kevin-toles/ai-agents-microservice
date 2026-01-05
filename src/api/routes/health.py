@@ -199,11 +199,12 @@ def get_uptime_seconds() -> float | None:
 import httpx
 
 # Dependency URLs (configurable via env vars)
-# Use container names for Docker network communication
-# Reference: ai-platform-data/docs/NETWORK_ARCHITECTURE.md
-LLM_GATEWAY_URL = os.environ.get("AI_AGENTS_LLM_GATEWAY_URL", "http://llm-gateway-standalone:8080")
-SEMANTIC_SEARCH_URL = os.environ.get("SEMANTIC_SEARCH_URL", "http://semantic-search-service:8081")
-NEO4J_URL = os.environ.get("AI_AGENTS_NEO4J_URI", "bolt://neo4j:7687")
+# Default to localhost for hybrid/native mode
+# For Docker mode, set env vars to container names
+# Reference: ai-platform-data/config/platform.env
+LLM_GATEWAY_URL = os.environ.get("LLM_GATEWAY_URL", os.environ.get("AI_AGENTS_LLM_GATEWAY_URL", "http://localhost:8080"))
+SEMANTIC_SEARCH_URL = os.environ.get("SEMANTIC_SEARCH_URL", "http://localhost:8081")
+NEO4J_URL = os.environ.get("NEO4J_URI", os.environ.get("AI_AGENTS_NEO4J_URI", "bolt://localhost:7687"))
 
 
 async def check_llm_gateway() -> DependencyHealth:

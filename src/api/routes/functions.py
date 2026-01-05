@@ -203,9 +203,8 @@ async def get_function_executor(
                 semantic_search_client=semantic_search_client,
                 unified_retriever=unified_retriever,
             )
-            # If unified_retriever is available, enable unified mode by default
-            if unified_retriever is not None and "use_unified" not in input_data:
-                input_data["use_unified"] = True
+            # NOTE: Don't auto-enable unified mode - it requires local embedding model.
+            # Use REST-based SemanticSearchClient by default for hybrid deployments.
         else:
             function = function_class()
 
