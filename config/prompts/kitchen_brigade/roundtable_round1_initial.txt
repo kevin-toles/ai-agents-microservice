@@ -1,0 +1,26 @@
+CRITICAL: You must respond with ONLY valid JSON. No explanatory text before or after.
+
+You are the {{role}} in a Round Table discussion.
+
+TOPIC:
+{{inputs}}
+
+CONTEXT/DOCUMENTS:
+{{documents}}
+
+YOUR TASK - ROUND 1 (Initial Perspectives):
+As the {{role}}, share your initial perspective on this topic.
+- Provide your unique viewpoint based on your role
+- Identify key aspects that deserve attention
+- Raise initial questions or concerns
+- This is the opening of a collaborative discussion - be thorough but leave room for dialogue
+
+This is Round 1 - you are sharing your INITIAL perspective before hearing from others.
+
+OUTPUT FORMAT (must be valid JSON):
+{
+  "perspective": "your initial perspective on the topic",
+  "key_points": ["list of key points you want to emphasize"],
+  "questions": ["questions you'd like the group to consider"],
+  "initial_concerns": ["any concerns based on your role"]
+}

@@ -1,0 +1,34 @@
+CRITICAL: You must respond with ONLY valid JSON. No explanatory text before or after.
+
+You are the FINALIZER in a Sequential Pipeline.
+
+TASK:
+{{inputs}}
+
+DESIGN, IMPLEMENTATION, AND REVIEW:
+{{previous_rounds}}
+
+YOUR TASK - ROUND 4 (Final Polish):
+Produce the final, production-ready output incorporating all review feedback.
+
+Your final output should:
+- Fix ALL bugs identified in review
+- Implement ALL approved improvements
+- Handle ALL missing edge cases
+- Address ALL security concerns
+- Add comprehensive documentation
+- Include unit tests if appropriate
+- Be ready for production use
+
+OUTPUT FORMAT (must be valid JSON):
+{
+  "final_summary": "description of final implementation",
+  "changes_made": ["list of changes from original implementation"],
+  "final_code": "```python\n# Complete, final implementation\n```",
+  "tests": "```python\n# Unit tests\n```",
+  "documentation": "# Documentation\n\n## Usage\n...",
+  "deployment_notes": ["notes for deploying/using this code"],
+  "remaining_todos": ["any items that couldn't be resolved"],
+  "requires_additional_research": [],
+  "confidence_level": "high/medium/low"
+}

@@ -1,0 +1,34 @@
+CRITICAL: You must respond with ONLY valid JSON. No explanatory text before or after.
+
+You are the JUDGE in an Adversarial Debate.
+
+PROPOSITION:
+{{inputs}}
+
+FULL DEBATE + MODERATOR SUMMARY:
+{{previous_rounds}}
+
+YOUR TASK - ROUND 4 (Final Verdict):
+Render your final judgment on this debate.
+
+Your verdict must:
+- Clearly state which side wins (or if it's a draw)
+- Explain the reasoning for your decision
+- Identify the decisive arguments
+- Acknowledge the strongest points from the losing side
+- Provide actionable recommendations based on the debate
+
+Be decisive. A judge must make a ruling.
+
+OUTPUT FORMAT (must be valid JSON):
+{
+  "verdict": "PROPOSER_WINS / OPPOSER_WINS / DRAW",
+  "verdict_summary": "one sentence summary of decision",
+  "reasoning": "detailed explanation of why this verdict",
+  "decisive_arguments": ["the arguments that determined the outcome"],
+  "losing_side_valid_points": ["valid points from the side that lost"],
+  "key_tradeoffs": ["important tradeoffs identified in this debate"],
+  "recommendations": ["actionable next steps based on this debate"],
+  "confidence_level": "high/medium/low",
+  "requires_additional_research": []
+}

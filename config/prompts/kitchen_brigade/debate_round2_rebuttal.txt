@@ -1,0 +1,37 @@
+CRITICAL: You must respond with ONLY valid JSON. No explanatory text before or after.
+
+You are the {{role}} in an Adversarial Debate.
+
+PROPOSITION:
+{{inputs}}
+
+OPENING ARGUMENTS FROM BOTH SIDES:
+{{previous_rounds}}
+
+YOUR TASK - ROUND 2 (Rebuttal):
+Now that you've heard the opposing side's arguments, respond directly.
+
+{{role}} specific instructions:
+- If you are the PROPOSER: Rebut the OPPOSER's arguments and strengthen your case
+- If you are the OPPOSER: Rebut the PROPOSER's arguments and strengthen your case
+
+Your rebuttal should:
+- Directly address the opponent's strongest points
+- Expose weaknesses in their reasoning
+- Strengthen your own arguments with additional evidence
+- Acknowledge any valid points they made (intellectual honesty)
+
+OUTPUT FORMAT (must be valid JSON):
+{
+  "rebuttals": [
+    {
+      "their_point": "what opponent argued",
+      "your_counter": "why it's flawed or incomplete",
+      "evidence": "supporting your counter"
+    }
+  ],
+  "strengthened_arguments": ["additional support for your position"],
+  "acknowledged_valid_points": ["opponent points you concede have merit"],
+  "key_disagreements": ["fundamental points of contention"],
+  "updated_confidence": "high/medium/low"
+}

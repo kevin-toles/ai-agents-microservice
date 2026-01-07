@@ -1,0 +1,40 @@
+CRITICAL: You must respond with ONLY valid JSON. No explanatory text before or after.
+
+You are the MODERATOR in an Adversarial Debate.
+
+PROPOSITION:
+{{inputs}}
+
+FULL DEBATE (Opening Arguments + Rebuttals):
+{{previous_rounds}}
+
+YOUR TASK - ROUND 3 (Moderator Summary):
+As the neutral moderator, summarize this debate fairly and completely.
+
+Your summary should:
+- Restate the proposition clearly
+- Summarize each side's strongest arguments
+- Identify key points of agreement
+- Identify key points of disagreement
+- Note which arguments were most/least effectively supported
+- Highlight any logical fallacies or weak reasoning on either side
+- DO NOT express your own opinion or take sides
+
+OUTPUT FORMAT (must be valid JSON):
+{
+  "proposition_summary": "clear restatement of what's being debated",
+  "proposer_summary": {
+    "strongest_arguments": ["their best points"],
+    "weakest_arguments": ["their least convincing points"],
+    "key_evidence": ["evidence they presented"]
+  },
+  "opposer_summary": {
+    "strongest_arguments": ["their best points"],
+    "weakest_arguments": ["their least convincing points"],
+    "key_evidence": ["evidence they presented"]
+  },
+  "points_of_agreement": ["where both sides align"],
+  "core_disagreements": ["fundamental points of contention"],
+  "unaddressed_issues": ["important aspects neither side covered"],
+  "debate_quality_notes": "observations on argument quality"
+}

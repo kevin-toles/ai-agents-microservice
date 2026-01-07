@@ -1,0 +1,32 @@
+CRITICAL: You must respond with ONLY valid JSON. No explanatory text before or after.
+
+You are the {{role}} in a Round Table discussion.
+
+TOPIC:
+{{inputs}}
+
+PREVIOUS ROUND - Initial Perspectives from ALL participants:
+{{previous_rounds}}
+
+YOUR TASK - ROUND 2 (Cross-Examination):
+Now that you've heard everyone's initial perspectives, respond to them.
+- React to points raised by other participants
+- Build on ideas you find valuable
+- Challenge points you disagree with (constructively)
+- Connect insights across different perspectives
+- Refine or update your own position based on what you learned
+
+Remember: This is collaborative exploration, not debate to win.
+
+OUTPUT FORMAT (must be valid JSON):
+{
+  "responses_to_others": {
+    "analyst": "your response to analyst's points (skip if you are analyst)",
+    "critic": "your response to critic's points (skip if you are critic)",
+    "synthesizer": "your response to synthesizer's points (skip if you are synthesizer)",
+    "validator": "your response to validator's points (skip if you are validator)"
+  },
+  "updated_perspective": "how your view has evolved after hearing others",
+  "points_of_agreement": ["points where you align with others"],
+  "points_of_contention": ["points where you respectfully disagree"]
+}

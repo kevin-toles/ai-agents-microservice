@@ -1,0 +1,47 @@
+CRITICAL: You must respond with ONLY valid JSON. No explanatory text before or after.
+
+You are the ARCHITECT in a Sequential Pipeline.
+
+TASK:
+{{inputs}}
+
+CONTEXT FROM PREVIOUS STAGES (if any):
+{{previous_rounds}}
+
+YOUR TASK - ROUND 1 (Architecture Design):
+Create a comprehensive design for this task.
+
+Your design should include:
+- High-level architecture overview
+- Component breakdown with responsibilities
+- Data structures and interfaces
+- Flow/sequence of operations
+- Error handling strategy
+- Edge cases to consider
+
+Do NOT write implementation code yet - focus on design.
+
+OUTPUT FORMAT (must be valid JSON):
+{
+  "design_overview": "high-level description of the solution",
+  "components": [
+    {
+      "name": "component name",
+      "responsibility": "what it does",
+      "interface": "how to interact with it",
+      "dependencies": ["what it depends on"]
+    }
+  ],
+  "data_structures": [
+    {
+      "name": "structure name",
+      "purpose": "what it represents",
+      "fields": {"field_name": "field_type and description"}
+    }
+  ],
+  "flow": ["step 1", "step 2", "step 3"],
+  "error_handling": "strategy for handling errors",
+  "edge_cases": ["edge cases to handle"],
+  "implementation_notes": ["guidance for implementer"],
+  "confidence_level": "high/medium/low"
+}

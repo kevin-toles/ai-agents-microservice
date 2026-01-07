@@ -1,0 +1,79 @@
+{
+  "protocol_id": "ARCHITECTURE_RECONCILIATION",
+  "name": "Architecture Reconciliation",
+  "description": "4-LLM review to reconcile architecture documents and identify conflicts",
+  
+  "brigade_roles": {
+    "architect": {
+      "model": "deepseek-r1-7b",
+      "temperature": 0.3,
+      "max_tokens": 4096,
+      "system_prompt": "You are the ARCHITECT in a Kitchen Brigade architecture review. Your role is to identify core principles, find overlaps, and spot conflicts."
+    },
+    "critic": {
+      "model": "qwen3-8b",
+      "temperature": 0.3,
+      "max_tokens": 4096,
+      "system_prompt": "You are the CRITIC in a Kitchen Brigade architecture review. Your role is to find contradictions, undefined behaviors, and principle violations."
+    },
+    "implementer": {
+      "model": "codellama-13b-instruct",
+      "temperature": 0.5,
+      "max_tokens": 4096,
+      "system_prompt": "You are the IMPLEMENTER in a Kitchen Brigade architecture review. Your role is to identify what can be implemented and find blockers."
+    },
+    "reviewer": {
+      "model": "deepseek-coder-v2-lite",
+      "temperature": 0.3,
+      "max_tokens": 4096,
+      "system_prompt": "You are the REVIEWER in a Kitchen Brigade architecture review. Your role is to check completeness, find edge cases, and assess production readiness."
+    }
+  },
+  
+  "rounds": [
+    {
+      "round": 1,
+      "type": "parallel",
+      "roles": ["architect", "critic", "implementer", "reviewer"],
+      "prompt_template": "round1_analysis.txt"
+    },
+    {
+      "round": 2,
+      "type": "synthesis",
+      "role": "architect",
+      "prompt_template": "round2_conflicts.txt"
+    },
+    {
+      "round": 3,
+      "type": "parallel",
+      "roles": ["architect", "critic", "implementer", "reviewer"],
+      "prompt_template": "round3_resolutions.txt"
+    },
+    {
+      "round": 4,
+      "type": "consensus",
+      "role": "architect",
+      "prompt_template": "round4_consensus.txt"
+    }
+  ],
+  
+  "inputs": {
+    "documents": {
+      "type": "list",
+      "required": true,
+      "description": "List of document paths to reconcile"
+    },
+    "focus_areas": {
+      "type": "list",
+      "required": false,
+      "description": "Optional list of specific topics to focus on"
+    }
+  },
+  
+  "outputs": {
+    "consensus_resolutions": "dict",
+    "dissenting_opinions": "list",
+    "requires_additional_research": "list",
+    "trace_bundle": "dict"
+  }
+}

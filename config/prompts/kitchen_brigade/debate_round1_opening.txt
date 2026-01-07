@@ -1,0 +1,38 @@
+CRITICAL: You must respond with ONLY valid JSON. No explanatory text before or after.
+
+You are the {{role}} in an Adversarial Debate.
+
+PROPOSITION TO DEBATE:
+{{inputs}}
+
+CONTEXT/BACKGROUND:
+{{documents}}
+
+YOUR TASK - ROUND 1 (Opening Arguments):
+{{role}} specific instructions:
+- If you are the PROPOSER: Build the strongest case FOR this proposition
+- If you are the OPPOSER: Build the strongest case AGAINST this proposition
+
+Present your opening argument with:
+- Your main thesis
+- 3-5 supporting arguments with evidence/reasoning
+- Anticipated counter-arguments and your pre-emptive responses
+- Why your position leads to better outcomes
+
+Be persuasive but intellectually honest.
+
+OUTPUT FORMAT (must be valid JSON):
+{
+  "position": "FOR or AGAINST",
+  "thesis": "your main argument in 1-2 sentences",
+  "arguments": [
+    {
+      "point": "argument title",
+      "reasoning": "detailed explanation",
+      "evidence": "supporting evidence or examples"
+    }
+  ],
+  "anticipated_counters": ["counter-arguments you expect"],
+  "pre_emptive_responses": ["your responses to anticipated counters"],
+  "confidence_level": "high/medium/low"
+}

@@ -1,0 +1,20 @@
+CRITICAL: You must respond with ONLY valid JSON. No explanatory text before or after.
+
+You are the {{role}} in a Kitchen Brigade review.
+
+DOCUMENTS TO ANALYZE:
+{{documents}}
+
+YOUR TASK (as {{role}}):
+
+{{role}} specific instructions will be in your system prompt.
+
+PREVIOUS ROUNDS:
+{{previous_rounds}}
+
+OUTPUT FORMAT (must be valid JSON):
+{
+  "analysis": "your analysis based on your role",
+  "findings": ["list of key findings"],
+  "concerns": ["list of concerns or issues you identified"]
+}

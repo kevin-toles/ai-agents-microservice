@@ -1,0 +1,28 @@
+CRITICAL: You must respond with ONLY valid JSON. No explanatory text before or after.
+
+You are the {{role}} in a Round Table discussion.
+
+TOPIC:
+{{inputs}}
+
+DISCUSSION SO FAR (Rounds 1 and 2):
+{{previous_rounds}}
+
+YOUR TASK - ROUND 3 (Refinement):
+Based on the full discussion so far, refine your position.
+- Incorporate valuable insights from other participants
+- Address criticisms of your earlier points
+- Propose solutions to points of contention
+- Start moving toward actionable conclusions
+- Identify what still needs resolution
+
+This is the refinement phase - aim for clarity and practical outcomes.
+
+OUTPUT FORMAT (must be valid JSON):
+{
+  "refined_position": "your refined, nuanced position after discussion",
+  "incorporated_insights": ["insights from others you've adopted"],
+  "addressed_criticisms": ["how you've addressed critiques of your views"],
+  "proposed_resolutions": ["solutions to contentious points"],
+  "remaining_questions": ["what still needs to be resolved"]
+}

@@ -1,0 +1,82 @@
+{
+  "protocol_id": "WBS_GENERATION",
+  "name": "Work Breakdown Structure Generation",
+  "description": "4-LLM collaborative WBS creation with task decomposition and effort estimation",
+  
+  "brigade_roles": {
+    "architect": {
+      "model": "deepseek-r1-7b",
+      "temperature": 0.4,
+      "max_tokens": 6144,
+      "system_prompt": "You are the ARCHITECT. Break down high-level goals into logical phases and major deliverables."
+    },
+    "engineer": {
+      "model": "codellama-13b-instruct",
+      "temperature": 0.5,
+      "max_tokens": 6144,
+      "system_prompt": "You are the ENGINEER. Break down deliverables into specific technical tasks with dependencies."
+    },
+    "estimator": {
+      "model": "qwen3-8b",
+      "temperature": 0.3,
+      "max_tokens": 4096,
+      "system_prompt": "You are the ESTIMATOR. Provide realistic effort estimates and identify risks."
+    },
+    "reviewer": {
+      "model": "deepseek-coder-v2-lite",
+      "temperature": 0.3,
+      "max_tokens": 4096,
+      "system_prompt": "You are the REVIEWER. Check for missing tasks, circular dependencies, and completeness."
+    }
+  },
+  
+  "rounds": [
+    {
+      "round": 1,
+      "type": "synthesis",
+      "role": "architect",
+      "prompt_template": "wbs_round1_phases.txt"
+    },
+    {
+      "round": 2,
+      "type": "parallel",
+      "roles": ["engineer", "estimator"],
+      "prompt_template": "wbs_round2_tasks.txt"
+    },
+    {
+      "round": 3,
+      "type": "synthesis",
+      "role": "reviewer",
+      "prompt_template": "wbs_round3_validation.txt"
+    },
+    {
+      "round": 4,
+      "type": "consensus",
+      "role": "architect",
+      "prompt_template": "wbs_round4_finalize.txt"
+    }
+  ],
+  
+  "inputs": {
+    "project_description": {
+      "type": "string",
+      "required": true
+    },
+    "constraints": {
+      "type": "list",
+      "required": false
+    },
+    "team_size": {
+      "type": "number",
+      "required": false
+    }
+  },
+  
+  "outputs": {
+    "phases": "list",
+    "tasks": "list",
+    "dependencies": "dict",
+    "effort_estimates": "dict",
+    "risks": "list"
+  }
+}

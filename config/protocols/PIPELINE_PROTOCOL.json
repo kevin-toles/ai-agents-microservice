@@ -1,0 +1,98 @@
+{
+  "protocol_id": "PIPELINE_PROTOCOL",
+  "name": "Sequential Pipeline",
+  "description": "Sequential handoff pipeline where each LLM builds on the previous output - ideal for code generation and refinement",
+  
+  "brigade_roles": {
+    "architect": {
+      "model": "deepseek-r1-7b",
+      "temperature": 0.3,
+      "max_tokens": 4096,
+      "system_prompt": "You are the ARCHITECT in a pipeline workflow. Your role is to create the high-level design, structure, and plan. Define interfaces, components, and data flow. Be specific enough for implementation but don't write actual code yet."
+    },
+    "implementer": {
+      "model": "codellama-13b-instruct",
+      "temperature": 0.2,
+      "max_tokens": 8192,
+      "system_prompt": "You are the IMPLEMENTER in a pipeline workflow. Your role is to take the architect's design and produce working code. Follow the design precisely. Write clean, well-documented code with proper error handling."
+    },
+    "reviewer": {
+      "model": "qwen3-8b",
+      "temperature": 0.2,
+      "max_tokens": 4096,
+      "system_prompt": "You are the REVIEWER in a pipeline workflow. Your role is to review the implementation for bugs, edge cases, and improvements. Suggest specific fixes with code snippets. Be constructive and thorough."
+    },
+    "finalizer": {
+      "model": "deepseek-coder-v2-lite",
+      "temperature": 0.1,
+      "max_tokens": 8192,
+      "system_prompt": "You are the FINALIZER in a pipeline workflow. Your role is to incorporate review feedback and produce the final, polished output. Ensure code is production-ready, well-tested, and documented."
+    }
+  },
+  
+  "rounds": [
+    {
+      "round": 1,
+      "type": "synthesis",
+      "name": "Architecture Design",
+      "description": "Architect creates high-level design",
+      "role": "architect",
+      "prompt_template": "pipeline_round1_design.txt"
+    },
+    {
+      "round": 2,
+      "type": "synthesis",
+      "name": "Implementation",
+      "description": "Implementer produces code based on design",
+      "role": "implementer",
+      "prompt_template": "pipeline_round2_implement.txt"
+    },
+    {
+      "round": 3,
+      "type": "synthesis",
+      "name": "Code Review",
+      "description": "Reviewer examines implementation",
+      "role": "reviewer",
+      "prompt_template": "pipeline_round3_review.txt"
+    },
+    {
+      "round": 4,
+      "type": "synthesis",
+      "name": "Final Polish",
+      "description": "Finalizer incorporates feedback and produces final output",
+      "role": "finalizer",
+      "prompt_template": "pipeline_round4_finalize.txt"
+    }
+  ],
+  
+  "inputs": {
+    "task": {
+      "type": "string",
+      "required": true,
+      "description": "What to build or generate"
+    },
+    "requirements": {
+      "type": "list",
+      "required": false,
+      "description": "Specific requirements or constraints"
+    },
+    "existing_code": {
+      "type": "string",
+      "required": false,
+      "description": "Existing code to build upon or refactor"
+    },
+    "language": {
+      "type": "string",
+      "required": false,
+      "description": "Programming language (default: Python)"
+    }
+  },
+  
+  "outputs": {
+    "design": "dict",
+    "implementation": "string",
+    "review_findings": "list",
+    "final_code": "string",
+    "documentation": "string"
+  }
+}

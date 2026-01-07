@@ -1,0 +1,98 @@
+{
+  "protocol_id": "ROUNDTABLE_DISCUSSION",
+  "name": "Round Table Discussion",
+  "description": "All LLMs participate in every round - collaborative exploration where all perspectives are heard each iteration",
+  
+  "brigade_roles": {
+    "analyst": {
+      "model": "deepseek-r1-7b",
+      "temperature": 0.4,
+      "max_tokens": 4096,
+      "system_prompt": "You are the ANALYST in a Round Table discussion. Your role is deep reasoning and strategic analysis. Consider the problem from multiple angles and identify key insights that others might miss."
+    },
+    "critic": {
+      "model": "qwen3-8b",
+      "temperature": 0.3,
+      "max_tokens": 4096,
+      "system_prompt": "You are the CRITIC in a Round Table discussion. Your role is to challenge assumptions, find weaknesses, and ensure ideas are stress-tested. Be constructive but thorough."
+    },
+    "synthesizer": {
+      "model": "phi-4",
+      "temperature": 0.3,
+      "max_tokens": 4096,
+      "system_prompt": "You are the SYNTHESIZER in a Round Table discussion. Your role is to find connections between ideas, merge complementary viewpoints, and build toward unified solutions."
+    },
+    "validator": {
+      "model": "codellama-13b-instruct",
+      "temperature": 0.2,
+      "max_tokens": 4096,
+      "system_prompt": "You are the VALIDATOR in a Round Table discussion. Your role is to verify claims, check for logical consistency, and ensure proposals are actionable and complete."
+    }
+  },
+  
+  "rounds": [
+    {
+      "round": 1,
+      "type": "parallel",
+      "name": "Initial Perspectives",
+      "description": "All participants share their initial take on the topic",
+      "roles": ["analyst", "critic", "synthesizer", "validator"],
+      "prompt_template": "roundtable_round1_initial.txt"
+    },
+    {
+      "round": 2,
+      "type": "parallel",
+      "name": "Cross-Examination",
+      "description": "All participants respond to each other's initial perspectives",
+      "roles": ["analyst", "critic", "synthesizer", "validator"],
+      "prompt_template": "roundtable_round2_respond.txt"
+    },
+    {
+      "round": 3,
+      "type": "parallel",
+      "name": "Refinement",
+      "description": "All participants refine their positions based on discussion",
+      "roles": ["analyst", "critic", "synthesizer", "validator"],
+      "prompt_template": "roundtable_round3_refine.txt"
+    },
+    {
+      "round": 4,
+      "type": "parallel",
+      "name": "Final Positions",
+      "description": "All participants present their final synthesized view",
+      "roles": ["analyst", "critic", "synthesizer", "validator"],
+      "prompt_template": "roundtable_round4_final.txt"
+    }
+  ],
+  
+  "inputs": {
+    "topic": {
+      "type": "string",
+      "required": true,
+      "description": "The main topic or question for round table discussion"
+    },
+    "context": {
+      "type": "string",
+      "required": false,
+      "description": "Additional context or background information"
+    },
+    "documents": {
+      "type": "list",
+      "required": false,
+      "description": "Optional list of document paths to reference"
+    },
+    "constraints": {
+      "type": "list",
+      "required": false,
+      "description": "Any constraints or requirements to consider"
+    }
+  },
+  
+  "outputs": {
+    "round_discussions": "dict",
+    "convergent_points": "list",
+    "divergent_points": "list",
+    "action_items": "list",
+    "trace_bundle": "dict"
+  }
+}

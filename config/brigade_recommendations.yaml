@@ -1,0 +1,344 @@
+# =============================================================================
+# Kitchen Brigade Recommendation Matrix
+# =============================================================================
+# Maps task scenarios to recommended LLM configurations.
+# Agents use this to make intelligent recommendations or auto-select.
+# =============================================================================
+
+version: "1.0.0"
+
+# =============================================================================
+# ENDPOINTS
+# =============================================================================
+endpoints:
+  local: "http://localhost:8085"      # inference-service (Metal GPU)
+  gateway: "http://localhost:8080"    # llm-gateway (routes to external APIs)
+
+# =============================================================================
+# AVAILABLE MODELS
+# =============================================================================
+models:
+  local:
+    reasoning:
+      - id: deepseek-r1-7b
+        strengths: [chain-of-thought, analysis, architecture]
+        size_gb: 4.7
+      - id: phi-4
+        strengths: [general, summarization, reasoning]
+        size_gb: 8.4
+      - id: qwen3-8b
+        strengths: [general, code, instruction-following]
+        size_gb: 4.7
+    
+    code:
+      - id: codellama-13b-instruct
+        strengths: [code-generation, debugging, refactoring]
+        size_gb: 7.4
+      - id: deepseek-coder-v2-lite
+        strengths: [code-review, implementation, edge-cases]
+        size_gb: 9.0
+      - id: qwen2.5-coder-7b
+        strengths: [code-generation, completion]
+        size_gb: 4.5
+    
+    fast:
+      - id: llama-3.2-3b
+        strengths: [quick-responses, simple-tasks]
+        size_gb: 2.0
+    
+    long_context:
+      - id: phi-3-medium-128k
+        strengths: [long-documents, full-file-analysis]
+        size_gb: 8.6
+      - id: granite-8b-code-128k
+        strengths: [large-codebases, full-repo-analysis]
+        size_gb: 4.5
+
+  external:
+    tier1_premium:
+      - id: claude-opus-4.5
+        provider: anthropic
+        env_key: ANTHROPIC_API_KEY
+        strengths: [reasoning, code, safety, nuance]
+        cost: high
+      - id: gpt-5.2
+        provider: openai
+        env_key: OPENAI_API_KEY
+        strengths: [general, instruction-following, creativity]
+        cost: high
+    
+    tier2_balanced:
+      - id: claude-sonnet-4.5
+        provider: anthropic
+        env_key: ANTHROPIC_API_KEY
+        strengths: [code, analysis, speed]
+        cost: medium
+      - id: gemini-2.0-flash
+        provider: google
+        env_key: GOOGLE_API_KEY
+        strengths: [speed, multimodal, reasoning]
+        cost: medium
+    
+    tier3_economy:
+      - id: gpt-5-mini
+        provider: openai
+        env_key: OPENAI_API_KEY
+        strengths: [fast, cheap, simple-tasks]
+        cost: low
+      - id: gemini-1.5-flash
+        provider: google
+        env_key: GOOGLE_API_KEY
+        strengths: [fast, cheap, long-context]
+        cost: low
+
+# =============================================================================
+# PROTOCOL TYPES
+# =============================================================================
+protocols:
+  round_table:
+    description: "Open collaborative discussion - all LLMs participate every round"
+    best_for: [exploration, brainstorming, reconciliation, design]
+    rounds: 3-5
+    pattern: "parallel → parallel → parallel → synthesis"
+    
+  design_review:
+    description: "Structured review with synthesis phases"
+    best_for: [validation, compliance, formal-review, sign-off]
+    rounds: 4
+    pattern: "parallel → synthesis → parallel → consensus"
+    
+  debate:
+    description: "Adversarial discussion to find best solution"
+    best_for: [decision-making, option-analysis, trade-offs]
+    rounds: 3
+    pattern: "propose → critique → resolve"
+    
+  pipeline:
+    description: "Sequential handoff - each LLM builds on previous"
+    best_for: [code-generation, document-creation, refinement]
+    rounds: N
+    pattern: "draft → refine → review → polish"
+
+# =============================================================================
+# SCENARIO → RECOMMENDATION MAPPING
+# =============================================================================
+scenarios:
+  architecture_discussion:
+    description: "Multi-perspective architecture exploration or reconciliation"
+    recommended_protocol: round_table
+    recommended_brigades:
+      premium:
+        name: "Premium Mixed (External + Local)"
+        models:
+          architect: claude-opus-4.5
+          critic: gpt-5.2
+          implementer: deepseek-r1-7b
+          reviewer: qwen3-8b
+        estimated_cost: "$0.50-2.00 per run"
+        quality: "highest"
+      balanced:
+        name: "Balanced Mixed"
+        models:
+          architect: gemini-2.0-flash
+          critic: deepseek-r1-7b
+          implementer: codellama-13b-instruct
+          reviewer: qwen3-8b
+        estimated_cost: "$0.10-0.30 per run"
+        quality: "high"
+      local_only:
+        name: "Local Only (Zero Cost)"
+        models:
+          architect: deepseek-r1-7b
+          critic: qwen3-8b
+          implementer: codellama-13b-instruct
+          reviewer: deepseek-coder-v2-lite
+        estimated_cost: "$0.00"
+        quality: "good"
+    default: local_only
+
+  code_review:
+    description: "Review code for quality, bugs, and improvements"
+    recommended_protocol: design_review
+    recommended_brigades:
+      premium:
+        name: "Premium Code Review"
+        models:
+          architect: claude-opus-4.5
+          critic: codellama-13b-instruct
+          implementer: deepseek-coder-v2-lite
+          reviewer: gpt-5.2
+        estimated_cost: "$0.30-1.00 per run"
+        quality: "highest"
+      local_only:
+        name: "Local Code Specialists"
+        models:
+          architect: deepseek-r1-7b
+          critic: codellama-13b-instruct
+          implementer: qwen2.5-coder-7b
+          reviewer: deepseek-coder-v2-lite
+        estimated_cost: "$0.00"
+        quality: "good"
+    default: local_only
+
+  wbs_generation:
+    description: "Create Work Breakdown Structure for a project"
+    recommended_protocol: round_table
+    recommended_brigades:
+      premium:
+        name: "Premium Planning"
+        models:
+          planner: claude-opus-4.5
+          technical: deepseek-r1-7b
+          pragmatist: gpt-5.2
+          critic: qwen3-8b
+        estimated_cost: "$0.50-1.50 per run"
+        quality: "highest"
+      local_only:
+        name: "Local Planning"
+        models:
+          planner: phi-4
+          technical: deepseek-r1-7b
+          pragmatist: qwen3-8b
+          critic: codellama-13b-instruct
+        estimated_cost: "$0.00"
+        quality: "good"
+    default: local_only
+
+  document_reconciliation:
+    description: "Reconcile multiple documents for conflicts and gaps"
+    recommended_protocol: round_table
+    recommended_brigades:
+      premium:
+        name: "Premium Reconciliation"
+        models:
+          analyst: claude-opus-4.5
+          critic: gpt-5.2
+          synthesizer: gemini-2.0-flash
+          validator: deepseek-r1-7b
+        estimated_cost: "$0.50-2.00 per run"
+        quality: "highest"
+      local_only:
+        name: "Local Reconciliation"
+        models:
+          analyst: deepseek-r1-7b
+          critic: qwen3-8b
+          synthesizer: phi-4
+          validator: codellama-13b-instruct
+        estimated_cost: "$0.00"
+        quality: "good"
+    default: local_only
+
+  quick_analysis:
+    description: "Fast single-model analysis for simple questions"
+    recommended_protocol: single
+    recommended_brigades:
+      fast_local:
+        name: "Fast Local"
+        models:
+          analyst: llama-3.2-3b
+        estimated_cost: "$0.00"
+        quality: "basic"
+      quality_local:
+        name: "Quality Local"
+        models:
+          analyst: deepseek-r1-7b
+        estimated_cost: "$0.00"
+        quality: "good"
+    default: fast_local
+
+  external_validation:
+    description: "Get outside perspective from external LLMs"
+    recommended_protocol: design_review
+    recommended_brigades:
+      multi_provider:
+        name: "Multi-Provider Validation"
+        models:
+          anthropic_view: claude-opus-4.5
+          openai_view: gpt-5.2
+          google_view: gemini-2.0-flash
+          local_baseline: deepseek-r1-7b
+        estimated_cost: "$1.00-3.00 per run"
+        quality: "diverse perspectives"
+    default: multi_provider
+
+# =============================================================================
+# HARDWARE DETECTION
+# =============================================================================
+hardware_profiles:
+  mac_16gb:
+    max_loaded_models: 2
+    max_model_size_gb: 10
+    recommended_presets: [S1, S2, S3, D1, D2, D4]
+    
+  mac_32gb:
+    max_loaded_models: 4
+    max_model_size_gb: 16
+    recommended_presets: [S1-S10, D1-D10, T1-T5, Q1-Q4]
+    
+  mac_64gb:
+    max_loaded_models: 6
+    max_model_size_gb: 30
+    recommended_presets: [all]
+    
+  server_24gb_vram:
+    max_loaded_models: 3
+    max_model_size_gb: 20
+    recommended_presets: [S7, S8, D1-D15, T1-T13, Q1-Q7]
+
+# =============================================================================
+# USER INTERACTION TEMPLATES
+# =============================================================================
+interaction_templates:
+  brigade_selection:
+    prompt: |
+      Before starting the Kitchen Brigade, I need a few decisions:
+      
+      **1. Protocol Type:**
+      {{#each available_protocols}}
+      - {{name}}: {{description}}
+      {{/each}}
+      
+      **2. LLM Configuration:**
+      {{#each available_brigades}}
+      - **{{name}}** ({{quality}}, {{estimated_cost}})
+        {{#each models}}
+        - {{role}}: {{model}}
+        {{/each}}
+      {{/each}}
+      
+      **3. Number of Rounds:** {{default_rounds}} (or specify)
+      
+      Reply with your choices, or say:
+      - "defaults" - Use {{default_brigade}} with {{default_protocol}}
+      - "you decide" - I'll choose based on the task
+      - "premium" / "balanced" / "local" - Quick selection
+      
+  confirmation:
+    prompt: |
+      Ready to run Kitchen Brigade:
+      - **Protocol:** {{protocol}}
+      - **Brigade:** {{brigade_name}}
+      - **Models:** {{models_summary}}
+      - **Rounds:** {{rounds}}
+      - **Estimated Cost:** {{estimated_cost}}
+      
+      Proceed? (yes/no/modify)
+
+  progress_update:
+    prompt: |
+      **Round {{current_round}}/{{total_rounds}}: {{round_type}}**
+      {{#each participants}}
+      - {{role}} ({{model}}): {{status}}
+      {{/each}}
+
+  completion:
+    prompt: |
+      **Kitchen Brigade Complete**
+      - Rounds: {{total_rounds}}
+      - Duration: {{duration}}
+      - Cost: {{actual_cost}}
+      - Trace: {{trace_file}}
+      
+      {{#if requires_action}}
+      **Action Required:** {{action_description}}
+      {{/if}}

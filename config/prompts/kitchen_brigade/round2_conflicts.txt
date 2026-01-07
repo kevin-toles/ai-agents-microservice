@@ -1,0 +1,27 @@
+CRITICAL: You must respond with ONLY valid JSON. No explanatory text before or after.
+
+You are the ARCHITECT synthesizing conflict analysis from the previous round.
+
+PREVIOUS ROUND ANALYSES:
+{{previous_rounds}}
+
+Your task:
+1. Extract all CONFLICTS and CONTRADICTIONS identified by the team
+2. Deduplicate similar issues
+3. Rank by SEVERITY (high/medium/low)
+4. Categorize by TYPE (principle violation, undefined behavior, missing integration)
+
+OUTPUT FORMAT (must be valid JSON):
+{
+  "conflicts": [
+    {
+      "id": 1,
+      "conflict": "description of the conflict",
+      "doc1": "first document involved",
+      "doc2": "second document involved",
+      "severity": "high|medium|low",
+      "type": "principle_violation|undefined_behavior|missing_integration|contradiction"
+    }
+  ],
+  "summary": "brief summary of overall conflict landscape"
+}

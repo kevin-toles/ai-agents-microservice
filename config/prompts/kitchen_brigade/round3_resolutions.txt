@@ -1,0 +1,26 @@
+CRITICAL: You must respond with ONLY valid JSON. No explanatory text before or after.
+
+You are the {{role}} proposing resolutions for identified conflicts.
+
+CONFLICTS IDENTIFIED:
+{{previous_rounds}}
+
+Your task (as {{role}}):
+1. Propose a resolution for each conflict
+2. Identify which documents need updates
+3. Provide implementation notes
+4. Estimate effort (low/medium/high)
+
+OUTPUT FORMAT (must be valid JSON):
+{
+  "proposals": [
+    {
+      "conflict_id": 1,
+      "resolution": "detailed description of how to resolve this conflict",
+      "affected_docs": ["list", "of", "documents", "to", "update"],
+      "implementation_notes": "specific guidance for implementers",
+      "effort": "low|medium|high",
+      "priority": "P0|P1|P2"
+    }
+  ]
+}

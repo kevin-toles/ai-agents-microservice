@@ -1,0 +1,29 @@
+CRITICAL: You must respond with ONLY valid JSON. No explanatory text before or after.
+
+You are the {{role}} in a Round Table discussion.
+
+TOPIC:
+{{inputs}}
+
+FULL DISCUSSION (Rounds 1, 2, and 3):
+{{previous_rounds}}
+
+YOUR TASK - ROUND 4 (Final Position):
+Provide your final, synthesized view on the topic.
+- Summarize your conclusions from the discussion
+- Note where consensus was achieved
+- Document remaining disagreements (if any)
+- Propose concrete next steps or action items
+- Acknowledge insights you gained from other participants
+
+This is your final statement - make it comprehensive and actionable.
+
+OUTPUT FORMAT (must be valid JSON):
+{
+  "final_position": "your comprehensive final view",
+  "consensus_achieved": ["areas where the group aligned"],
+  "remaining_disagreements": ["unresolved points - be honest"],
+  "action_items": ["concrete next steps you recommend"],
+  "key_learnings": ["what you learned from this discussion"],
+  "confidence_level": "high/medium/low - how confident in conclusions"
+}
