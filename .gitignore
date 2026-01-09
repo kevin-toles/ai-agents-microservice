@@ -95,3 +95,4 @@ dmypy.json
 # Sonar
 .scannerwork/
 .scannerwork/
+trace_*.json

@@ -334,10 +334,21 @@ async def llm_complete(
             inference_url = os.getenv("INFERENCE_SERVICE_URL", "http://localhost:8085")
             
             async with httpx.AsyncClient(timeout=30.0) as client:
+                # Query what model is currently loaded
+                models_response = await client.get(inference_url + "/v1/models")
+                if models_response.status_code == 200:
+                    models_data = models_response.json()
+                    loaded_models = [m["id"] for m in models_data.get("data", []) if m.get("status") == "loaded"]
+                    if not loaded_models:
+                        raise ValueError("No model currently loaded in inference-service")
+                    local_model = loaded_models[0]
+                else:
+                    raise ValueError(f"Failed to query models: {models_response.status_code}")
+                
                 response = await client.post(
                     inference_url + "/v1/chat/completions",
                     json={
-                        "model": "auto",
+                        "model": local_model,
                         "messages": messages,
                         "max_tokens": max_tokens,
                         "temperature": temperature,

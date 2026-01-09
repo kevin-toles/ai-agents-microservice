@@ -1,0 +1,151 @@
+{
+  "protocol_id": "FIVE_LLM_DISCUSSION",
+  "name": "Five-LLM Discussion Loop",
+  "description": "Premium 5-way parallel LLM discussion combining external APIs and local inference for maximum perspective diversity",
+  
+  "config_reference": "brigade_recommendations.yaml → discussion_loop_configs.five_llm_discussion",
+  "default_tier": "balanced",
+  "available_tiers": ["cost_efficient", "balanced", "premium"],
+  "notes": "Cost-efficient tier uses all local models. Balanced uses 2 external + 3 local. Premium uses 4 external + 1 local.",
+  
+  "brigade_roles": {
+    "analyst": {
+      "model": "gpt-5.2",
+      "provider": "gateway",
+      "temperature": 0.4,
+      "max_tokens": 4096,
+      "system_prompt": "You are the ANALYST (GPT-5.2). Your role is strategic analysis and problem decomposition. Break down complex topics into clear components, identify dependencies, and provide structured frameworks for understanding.",
+      "cost_efficient_override": { "model": "qwen3-8b", "provider": "inference" }
+    },
+    "critic": {
+      "model": "claude-opus-4-5-20250514",
+      "provider": "gateway",
+      "temperature": 0.3,
+      "max_tokens": 4096,
+      "system_prompt": "You are the CRITIC (Claude Opus). Your role is to challenge assumptions, identify logical gaps, evaluate risks, and stress-test proposals. Be thorough but constructive - your goal is to strengthen ideas, not tear them down.",
+      "cost_efficient_override": { "model": "qwen2.5-7b", "provider": "inference" },
+      "balanced_override": { "model": "qwen3-8b", "provider": "inference" }
+    },
+    "synthesizer": {
+      "model": "deepseek-reasoner",
+      "provider": "gateway",
+      "temperature": 0.3,
+      "max_tokens": 4096,
+      "system_prompt": "You are the SYNTHESIZER (DeepSeek Reasoner). Your role is deep reasoning and reconciliation. Find connections between viewpoints, resolve apparent contradictions, and build unified solutions that incorporate the best insights from all participants.",
+      "cost_efficient_override": { "model": "qwen3-8b", "provider": "inference" },
+      "balanced_override": { "model": "qwen3-8b", "provider": "inference" }
+    },
+    "researcher": {
+      "model": "gemini-2.0-flash",
+      "provider": "gateway",
+      "temperature": 0.4,
+      "max_tokens": 4096,
+      "system_prompt": "You are the RESEARCHER (Gemini). Your role is to provide factual grounding, cite relevant patterns and precedents, and ensure claims are substantiated. Focus on evidence-based analysis and real-world examples.",
+      "cost_efficient_override": { "model": "qwen3-8b", "provider": "inference" }
+    },
+    "validator": {
+      "model": "qwen3-8b",
+      "provider": "inference",
+      "temperature": 0.2,
+      "max_tokens": 4096,
+      "system_prompt": "You are the VALIDATOR (Qwen3). Your role is to verify logical consistency, check implementation feasibility, and ensure proposals are complete and actionable. Flag any gaps or ambiguities that need resolution."
+    }
+  },
+  
+  "rounds": [
+    {
+      "round": 1,
+      "type": "parallel",
+      "name": "Initial Analysis",
+      "description": "All 5 LLMs provide their initial perspective on the topic",
+      "roles": ["analyst", "critic", "synthesizer", "researcher", "validator"],
+      "prompt_template": "five_llm_round1_initial.txt"
+    },
+    {
+      "round": 2,
+      "type": "parallel",
+      "name": "Cross-Examination",
+      "description": "Each LLM responds to the others' perspectives, identifying agreements and disagreements",
+      "roles": ["analyst", "critic", "synthesizer", "researcher", "validator"],
+      "prompt_template": "five_llm_round2_respond.txt"
+    },
+    {
+      "round": 3,
+      "type": "parallel",
+      "name": "Deep Dive",
+      "description": "Focus on areas of disagreement - request additional evidence or reasoning",
+      "roles": ["analyst", "critic", "synthesizer", "researcher", "validator"],
+      "prompt_template": "five_llm_round3_deepdive.txt"
+    },
+    {
+      "round": 4,
+      "type": "parallel",
+      "name": "Convergence",
+      "description": "All participants work toward consensus, explicitly noting remaining differences",
+      "roles": ["analyst", "critic", "synthesizer", "researcher", "validator"],
+      "prompt_template": "five_llm_round4_converge.txt"
+    },
+    {
+      "round": 5,
+      "type": "sequential",
+      "name": "Final Synthesis",
+      "description": "Synthesizer produces final unified response, Validator confirms completeness",
+      "roles": ["synthesizer", "validator"],
+      "prompt_template": "five_llm_round5_final.txt"
+    }
+  ],
+  
+  "inputs": {
+    "topic": {
+      "type": "string",
+      "required": true,
+      "description": "The main topic or problem for 5-LLM discussion"
+    },
+    "context": {
+      "type": "string",
+      "required": false,
+      "description": "Additional context, constraints, or background information"
+    },
+    "documents": {
+      "type": "list",
+      "required": false,
+      "description": "Document paths to include as reference material"
+    },
+    "constraints": {
+      "type": "list",
+      "required": false,
+      "description": "Specific constraints or requirements the solution must satisfy"
+    }
+  },
+  
+  "outputs": {
+    "consensus": {
+      "type": "string",
+      "description": "The synthesized consensus view from all 5 LLMs"
+    },
+    "dissenting_points": {
+      "type": "list",
+      "description": "Any points where LLMs could not reach agreement"
+    },
+    "confidence_score": {
+      "type": "number",
+      "description": "Agreement score 0-1 based on convergence across rounds"
+    },
+    "round_summaries": {
+      "type": "list",
+      "description": "Summary of each round's key insights and shifts"
+    },
+    "citations": {
+      "type": "list",
+      "description": "Citations and references mentioned by participants"
+    }
+  },
+  
+  "config": {
+    "max_rounds": 5,
+    "allow_feedback_loops": true,
+    "early_termination_threshold": 0.95,
+    "timeout_per_round_seconds": 120,
+    "run_cross_reference": true
+  }
+}

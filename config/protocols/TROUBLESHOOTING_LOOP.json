@@ -1,0 +1,380 @@
+{
+  "protocol_id": "TROUBLESHOOTING_LOOP",
+  "name": "5-LLM Troubleshooting Loop with Cross-Reference",
+  "description": "Full troubleshooting cycle with Tiered Relevance: decompose → cross_reference → discuss → classify blockers by tier → propose fix → apply fix → test → if fail, summarize and restart loop until issue resolved. Tier 2+ blockers require user approval to expand scope.",
+  "version": "2.4.0",
+  "created": "2026-01-09",
+  "updated": "2026-01-09",
+  
+  "usage": {
+    "when_to_use": "When debugging an issue that requires iterative fix-test-retry cycles",
+    "flow": [
+      "1. decompose_task: Extract search terms from problem + original issue context",
+      "2. cross_reference: Parallel search (Qdrant, Neo4j, textbooks, code)",
+      "3. LLM Discussion: All 5 LLMs analyze evidence (any can say NEED_MORE_INFO)",
+      "4. If NEED_MORE_INFO → back to step 2 with new queries",
+      "5. classify_blockers: Determine tier of any discovered issues",
+      "   - Tier 1: Directly blocks original issue → auto-explore OK",
+      "   - Tier 2+: Only blocks a Tier 1 → document + seek approval OR workaround",
+      "6. propose_fix: Generate concrete fix with code/commands",
+      "7. apply_fix: Execute the fix (code changes, commands)",
+      "8. test_fix: Run verification commands",
+      "9. If test PASSES → DONE, output resolution",
+      "10. If test FAILS → summarize_failure: Connect failure to original issue",
+      "11. Restart from step 1 with failure context added to problem"
+    ],
+    "termination": "Loop continues until fix passes verification OR max_iterations reached OR user declines scope expansion",
+    "input_format": {
+      "original_issue": "The root problem we are trying to solve (preserved across iterations)",
+      "problem": "Current symptoms or failure (updated each iteration)",
+      "attempted_fix": "What was tried this iteration (if any)",
+      "result": "What happened - errors, logs, behavior",
+      "context": "Service names, file paths, recent changes"
+    }
+  },
+  
+  "tiered_relevance": {
+    "description": "Scope containment to prevent rabbit holes. Issues discovered during troubleshooting are classified by their distance from the original issue.",
+    "tiers": {
+      "tier_0": {
+        "name": "Original Issue",
+        "description": "The root problem the user asked to fix",
+        "auto_explore": true,
+        "requires_approval": false
+      },
+      "tier_1_blocker": {
+        "name": "Direct Blocker",
+        "description": "An issue that DIRECTLY prevents fixing the original issue. Must be resolved to continue.",
+        "auto_explore": true,
+        "requires_approval": false,
+        "example": "Can't test metadata extraction because inference-service returns 413 Content Too Large"
+      },
+      "tier_2_blocker": {
+        "name": "Indirect Blocker", 
+        "description": "An issue that blocks a Tier 1 Blocker but does NOT directly relate to the original issue.",
+        "auto_explore": false,
+        "requires_approval": true,
+        "actions": [
+          "Document the Tier 2 issue with full context",
+          "Attempt to resolve Tier 1 WITHOUT fixing Tier 2 (workaround)",
+          "If no workaround possible, alert user with options:",
+          "  (a) Expand scope to include Tier 2 in troubleshooting",
+          "  (b) Pause troubleshooting until Tier 2 is manually resolved",
+          "  (c) Abort with partial findings"
+        ],
+        "example": "inference-service 413 is caused by Redis connection pool exhaustion - but we could just restart the service"
+      },
+      "tier_3_plus": {
+        "name": "Out of Scope",
+        "description": "Issues discovered that are 2+ hops away from original issue",
+        "auto_explore": false,
+        "requires_approval": true,
+        "actions": [
+          "Document only - do not explore",
+          "Include in final report as 'Related Issues Discovered'",
+          "User can choose to start new troubleshooting session for these"
+        ]
+      }
+    },
+    "classification_prompt": "For each issue discovered, determine: (1) Does fixing this issue DIRECTLY enable fixing the original issue? If yes → Tier 1. (2) Does it only enable fixing another blocker? If yes → Tier 2+. (3) Is it unrelated but worth noting? → Document only.",
+    "user_approval_format": {
+      "type": "scope_expansion_request",
+      "message": "Tier 2 Blocker Discovered",
+      "details": {
+        "original_issue": "string",
+        "tier_1_blocker": "string - what directly blocks the original",
+        "tier_2_blocker": "string - what blocks the Tier 1",
+        "workaround_attempted": "string - what we tried to avoid Tier 2",
+        "workaround_result": "string - why it didn't work (if applicable)"
+      },
+      "options": [
+        {"id": "expand", "label": "Expand scope to include Tier 2", "action": "add_to_scope"},
+        {"id": "workaround", "label": "Try different workaround", "action": "suggest_alternatives"},
+        {"id": "pause", "label": "Pause - I'll fix Tier 2 manually", "action": "pause_and_wait"},
+        {"id": "abort", "label": "Abort with current findings", "action": "generate_partial_report"}
+      ]
+    }
+  },
+  
+  "brigade_roles": {
+    "analyst": {
+      "model": "qwen3-8b",
+      "provider": "inference-service",
+      "temperature": 0.3,
+      "max_tokens": 2048,
+      "system_prompt": "You are a root cause analyst. Given evidence from cross_reference, identify the root cause. Connect findings back to the ORIGINAL ISSUE. If you need more information, say 'NEED_MORE_INFO: <specific search query>'."
+    },
+    "implementer": {
+      "model": "codellama-7b-instruct",
+      "provider": "inference-service",
+      "temperature": 0.2,
+      "max_tokens": 4096,
+      "system_prompt": "You are a fix implementer. Propose concrete fixes with exact file paths, line numbers, and code. Include verification commands to test if fix works. If evidence is missing, say 'NEED_MORE_INFO: <what to search for>'."
+    },
+    "critic": {
+      "model": "claude-opus-4-5-20250514",
+      "provider": "llm-gateway",
+      "temperature": 0.4,
+      "max_tokens": 2048,
+      "system_prompt": "You are a critic. Challenge assumptions and identify edge cases. If the evidence doesn't support the proposed fix, say 'NEED_MORE_INFO: <what would prove or disprove this>'."
+    },
+    "validator": {
+      "model": "deepseek-reasoner",
+      "provider": "llm-gateway",
+      "temperature": 0.2,
+      "max_tokens": 2048,
+      "system_prompt": "You are a validator using chain-of-thought reasoning. Verify the fix addresses root cause, not symptoms. If logical gaps exist, say 'NEED_MORE_INFO: <what would fill the gap>'."
+    },
+    "synthesizer": {
+      "model": "gpt-5.2",
+      "provider": "llm-gateway",
+      "temperature": 0.3,
+      "max_tokens": 3072,
+      "system_prompt": "You are a synthesizer. When fix fails, summarize what was learned and how it connects to the ORIGINAL ISSUE. Identify what to search for next iteration."
+    }
+  },
+  
+  "stages": [
+    {
+      "stage": 1,
+      "name": "decompose_task",
+      "description": "Extract search terms from problem, keeping original issue in context",
+      "execution": "single",
+      "role": "analyst",
+      "inputs": ["original_issue", "problem", "attempted_fix", "result"],
+      "outputs": ["search_terms", "diagnostic_queries", "hypothesis_seeds"],
+      "prompt_includes": "Always reference how findings relate to the ORIGINAL ISSUE: {original_issue}"
+    },
+    {
+      "stage": 2,
+      "name": "cross_reference",
+      "description": "Parallel 4-layer search across all sources",
+      "execution": "parallel",
+      "sources": ["qdrant_vectors", "neo4j_graph", "textbooks_json", "code_orchestrator"],
+      "inputs_from": "stage_1.search_terms",
+      "outputs": ["code_matches", "doc_matches", "textbook_matches", "graph_relations"]
+    },
+    {
+      "stage": 3,
+      "name": "llm_discussion_loop",
+      "description": "Iterative multi-LLM discussion - ANY participant can request more info",
+      "execution": "iterative",
+      "max_cycles": 5,
+      "agreement_threshold": 0.85,
+      
+      "cycle": {
+        "phase_1": {
+          "name": "parallel_analysis",
+          "roles": ["analyst", "implementer"],
+          "execution": "parallel",
+          "task": "Analyze cross_reference evidence, propose root cause and fix",
+          "can_trigger": "cross_reference",
+          "trigger_pattern": "NEED_MORE_INFO:"
+        },
+        "phase_2": {
+          "name": "critique",
+          "roles": ["critic"],
+          "execution": "single",
+          "task": "Challenge proposals, request more info if needed",
+          "can_trigger": "cross_reference",
+          "trigger_pattern": "NEED_MORE_INFO:"
+        },
+        "phase_3": {
+          "name": "validate",
+          "roles": ["validator"],
+          "execution": "single", 
+          "task": "Verify logical consistency of root cause → fix chain",
+          "can_trigger": "cross_reference",
+          "trigger_pattern": "NEED_MORE_INFO:"
+        },
+        "phase_4": {
+          "name": "agreement_check",
+          "task": "Calculate agreement score across all participants",
+          "if_need_more_info": "Extract queries → run cross_reference → merge evidence → repeat cycle",
+          "if_disagreement": "Extract disagreement points as new queries → cross_reference → repeat",
+          "if_agreement": "Proceed to classify_blockers"
+        }
+      }
+    },
+    {
+      "stage": 4,
+      "name": "classify_blockers",
+      "description": "Classify any discovered issues by their relevance tier to prevent scope creep",
+      "execution": "single",
+      "role": "validator",
+      "inputs": ["original_issue", "discussion_findings", "discovered_issues"],
+      "outputs": {
+        "tier_1_blockers": "Issues that DIRECTLY block fixing original issue - auto-explore OK",
+        "tier_2_blockers": "Issues that block Tier 1 but not original - need approval",
+        "tier_3_plus": "Out of scope issues to document only",
+        "recommended_action": "proceed | seek_approval | workaround"
+      },
+      "classification_logic": {
+        "tier_1_test": "Does fixing this issue DIRECTLY enable fixing the original issue?",
+        "tier_2_test": "Does it only enable fixing a Tier 1 blocker (indirect)?",
+        "tier_3_test": "Is it unrelated but discovered during investigation?"
+      },
+      "branching": {
+        "if_tier_1_only": "goto stage_5_propose_fix",
+        "if_tier_2_found": "goto stage_4b_scope_decision",
+        "if_tier_3_only": "document and goto stage_5_propose_fix"
+      }
+    },
+    {
+      "stage": "4b",
+      "name": "scope_decision",
+      "description": "Handle Tier 2 blockers - try workaround or seek user approval",
+      "execution": "conditional",
+      "steps": [
+        {
+          "step": 1,
+          "name": "attempt_workaround",
+          "description": "Try to resolve Tier 1 without fixing Tier 2",
+          "role": "implementer",
+          "outputs": ["workaround_proposal", "feasibility_assessment"]
+        },
+        {
+          "step": 2,
+          "name": "evaluate_workaround",
+          "role": "validator",
+          "branching": {
+            "if_feasible": "Apply workaround, document Tier 2 for later, goto stage_5",
+            "if_not_feasible": "goto step_3_seek_approval"
+          }
+        },
+        {
+          "step": 3,
+          "name": "seek_user_approval",
+          "description": "Present Tier 2 blocker to user with options",
+          "execution": "user_interaction",
+          "message_template": "TIER 2 BLOCKER DISCOVERED\n\nOriginal Issue: {original_issue}\nTier 1 Blocker: {tier_1_blocker}\nTier 2 Blocker: {tier_2_blocker}\n\nWorkaround attempted: {workaround_proposal}\nResult: {feasibility_assessment}\n\nOptions:\n[1] Expand scope to include Tier 2 fix\n[2] Suggest alternative workaround\n[3] Pause - I'll fix Tier 2 manually\n[4] Abort with current findings",
+          "user_response_handling": {
+            "expand": "Add Tier 2 to scope, restart from stage_1 with expanded problem",
+            "alternative": "Generate alternative workarounds, present to user",
+            "pause": "Save state, wait for user signal to resume",
+            "abort": "Generate partial report with all findings, terminate"
+          }
+        }
+      ]
+    },
+    {
+      "stage": 5,
+      "name": "propose_fix",
+      "description": "Generate concrete fix based on discussion consensus",
+      "execution": "single",
+      "role": "implementer",
+      "outputs": {
+        "code_changes": "list of {file, line, old_code, new_code}",
+        "commands": "list of terminal commands to apply fix",
+        "verification_commands": "list of commands to test if fix worked",
+        "tier_addressed": "Which tier this fix addresses (0, 1, or expanded 2)"
+      }
+    },
+    {
+      "stage": 6,
+      "name": "apply_fix",
+      "description": "Execute the proposed fix",
+      "execution": "tool_call",
+      "tools": ["file_edit", "run_command"],
+      "inputs_from": "stage_5",
+      "outputs": {
+        "changes_applied": "list of files modified",
+        "commands_run": "list of commands executed",
+        "apply_errors": "any errors during application"
+      }
+    },
+    {
+      "stage": 7,
+      "name": "test_fix",
+      "description": "Run verification commands to check if fix resolved the issue",
+      "execution": "tool_call",
+      "tools": ["run_command", "check_logs", "health_check"],
+      "inputs_from": "stage_5.verification_commands",
+      "outputs": {
+        "test_passed": "boolean",
+        "test_output": "command outputs",
+        "errors": "any errors encountered"
+      },
+      "branching": {
+        "if_passed": "goto stage_8_success",
+        "if_failed": "goto stage_8_failure"
+      }
+    },
+    {
+      "stage": "8_success",
+      "name": "resolution_complete",
+      "description": "Fix worked - synthesize final report",
+      "execution": "single",
+      "role": "synthesizer",
+      "outputs": {
+        "summary": "What was fixed and how",
+        "root_cause": "Final determined root cause",
+        "fix_applied": "What changes were made",
+        "verification": "How we confirmed it works",
+        "prevention": "How to prevent recurrence",
+        "deferred_issues": {
+          "tier_2_blockers": "Issues that were worked around, not fixed",
+          "tier_3_plus": "Related issues discovered but out of scope",
+          "recommendation": "Which deferred issues should be addressed next"
+        }
+      },
+      "terminates": true
+    },
+    {
+      "stage": "8_failure",
+      "name": "summarize_failure",
+      "description": "Fix failed - summarize learnings and prepare for next iteration",
+      "execution": "single",
+      "role": "synthesizer",
+      "inputs": ["original_issue", "attempted_fix", "test_output", "errors"],
+      "outputs": {
+        "failure_summary": "What went wrong with this fix attempt",
+        "learnings": "What we learned that rules out certain approaches",
+        "connection_to_original": "How this failure relates to the ORIGINAL ISSUE",
+        "next_search_terms": "What to search for in next iteration",
+        "updated_problem": "Refined problem statement for next iteration",
+        "new_blockers_discovered": "Any new blockers found during this iteration"
+      },
+      "next_action": "restart_from_stage_1",
+      "passes_to_next_iteration": {
+        "original_issue": "preserved unchanged",
+        "problem": "from failure_summary.updated_problem",
+        "attempted_fix": "from stage_5 (what we tried)",
+        "result": "from test_output + errors",
+        "iteration_history": "append this iteration's learnings",
+        "known_blockers": "accumulated tier classifications"
+      }
+    }
+  ],
+  
+  "outer_loop": {
+    "description": "The entire protocol restarts from Stage 1 when fix fails",
+    "max_iterations": 5,
+    "preserves": ["original_issue", "iteration_history", "known_blockers", "deferred_tier_2", "documented_tier_3"],
+    "updates_each_iteration": ["problem", "attempted_fix", "result"],
+    "termination_conditions": [
+      "test_fix passes (success)",
+      "max_iterations reached (partial failure)",
+      "user declines scope expansion for required Tier 2 blocker",
+      "LLMs agree issue is not fixable with available information"
+    ]
+  },
+  
+  "config": {
+    "max_outer_iterations": 5,
+    "max_discussion_cycles": 5,
+    "timeout_per_stage_seconds": 120,
+    "agreement_threshold": 0.85
+  },
+  
+  "tier_overrides": {
+    "local_only": {
+      "description": "All local models - $0 cost, works offline",
+      "analyst": "qwen3-8b",
+      "implementer": "codellama-7b-instruct",
+      "critic": "qwen3-8b",
+      "validator": "qwen3-8b",
+      "synthesizer": "qwen3-8b"
+    }
+  }
+}
