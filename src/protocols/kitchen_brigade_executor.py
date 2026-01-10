@@ -1195,8 +1195,254 @@ class KitchenBrigadeExecutor:
             
             formatted += "\n"
         
-        return formatted[:5000]  # Limit total size
+        # Include file requests if any were fetched
+        if self.cross_reference_evidence.get("file_requests"):
+            formatted += "\n## Requested Files (via REQUEST_FILE)\n\n"
+            for file_req in self.cross_reference_evidence["file_requests"]:
+                repo = file_req.get("repo", "unknown")
+                path = file_req.get("path", "unknown")
+                content = file_req.get("content", "")[:1000]
+                formatted += f"### {repo}/{path}\n"
+                formatted += f"```{file_req.get('language', '')}\n{content}\n```\n\n"
+        
+        return formatted[:6000]  # Increased limit for file content
     
+    # =========================================================================
+    # REQUEST_FILE and NEED_MORE_INFO Support
+    # =========================================================================
+    
+    def _extract_request_file(self, llm_output: str) -> List[Dict]:
+        """Extract REQUEST_FILE directives from LLM output.
+        
+        Parses patterns like:
+        - REQUEST_FILE: kubernetes/kubernetes/pkg/scheduler/scheduler.go
+        - REQUEST_FILE: pytorch/pytorch/torch/nn/modules/linear.py#L1-L100
+        
+        Returns list of {"repo": "owner/repo", "path": "path/to/file", "lines": (start, end) or None}
+        """
+        import re
+        
+        requests = []
+        # Match REQUEST_FILE: owner/repo/path/to/file.ext or with #L1-L100 line range
+        pattern = r'REQUEST_FILE:\s*([^/\s]+)/([^/\s]+)/([^\s#]+)(?:#L(\d+)-L?(\d+))?'
+        
+        for match in re.finditer(pattern, llm_output, re.IGNORECASE):
+            owner, repo, path = match.group(1), match.group(2), match.group(3)
+            start_line = int(match.group(4)) if match.group(4) else None
+            end_line = int(match.group(5)) if match.group(5) else None
+            
+            requests.append({
+                "owner": owner,
+                "repo": repo,
+                "full_repo": f"{owner}/{repo}",
+                "path": path.strip(),
+                "lines": (start_line, end_line) if start_line else None
+            })
+        
+        return requests
+    
+    async def _fetch_requested_files(self, requests: List[Dict]) -> List[Dict]:
+        """Fetch requested files from GitHub raw content API.
+        
+        Uses: https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}
+        
+        Returns list of {"repo": str, "path": str, "content": str, "language": str}
+        """
+        fetched = []
+        
+        for req in requests[:5]:  # Limit to 5 files per cycle
+            owner = req.get("owner", "")
+            repo = req.get("repo", "")
+            path = req.get("path", "")
+            lines = req.get("lines")
+            
+            if not all([owner, repo, path]):
+                continue
+            
+            # Try main, then master branch
+            for branch in ["main", "master"]:
+                url = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}"
+                try:
+                    response = await self.client.get(url, timeout=10.0)
+                    if response.status_code == 200:
+                        content = response.text
+                        
+                        # Extract line range if specified
+                        if lines and lines[0] and lines[1]:
+                            content_lines = content.split('\n')
+                            start, end = lines[0] - 1, lines[1]  # Convert to 0-indexed
+                            content = '\n'.join(content_lines[start:end])
+                        elif lines and lines[0]:
+                            # Single line
+                            content_lines = content.split('\n')
+                            content = content_lines[lines[0] - 1] if lines[0] <= len(content_lines) else content
+                        
+                        # Detect language from extension
+                        ext = path.split('.')[-1] if '.' in path else ''
+                        lang_map = {
+                            'py': 'python', 'go': 'go', 'rs': 'rust', 'java': 'java',
+                            'ts': 'typescript', 'js': 'javascript', 'cpp': 'cpp', 
+                            'c': 'c', 'rb': 'ruby', 'scala': 'scala', 'kt': 'kotlin'
+                        }
+                        
+                        fetched.append({
+                            "repo": f"{owner}/{repo}",
+                            "path": path,
+                            "content": content[:3000],  # Limit content size
+                            "language": lang_map.get(ext, ext),
+                            "lines": lines,
+                            "url": url
+                        })
+                        console.print(f"[dim]    Fetched: {owner}/{repo}/{path}[/dim]")
+                        break  # Success, don't try other branches
+                        
+                except Exception as e:
+                    console.print(f"[dim]    Failed to fetch {url}: {e}[/dim]")
+                    continue
+        
+        return fetched
+    
+    def _extract_need_more_info(self, llm_output: str) -> List[str]:
+        """Extract NEED_MORE_INFO queries from LLM output.
+        
+        Parses patterns like:
+        - NEED_MORE_INFO: how does kubernetes implement pod scheduling
+        - NEED_MORE_INFO: graph traversal algorithms for dependency resolution
+        
+        Returns list of query strings.
+        """
+        import re
+        
+        queries = []
+        pattern = r'NEED_MORE_INFO:\s*(.+?)(?:\n|$)'
+        
+        for match in re.finditer(pattern, llm_output, re.IGNORECASE):
+            query = match.group(1).strip()
+            if query and len(query) > 5:  # Skip very short queries
+                queries.append(query)
+        
+        return queries
+    
+    def _generate_refinement_queries(self, round_num: int, prev_outputs: Dict) -> List[str]:
+        """Auto-generate refinement queries when LLMs don't provide NEED_MORE_INFO.
+        
+        Strategy varies by cycle:
+        - Cycles 1-2: Focus on gaps and implementation patterns
+        - Cycles 3+: Focus on validation and edge cases
+        
+        Returns list of auto-generated queries.
+        """
+        queries = []
+        topic = self.inputs.get("topic", "")
+        context = self.inputs.get("context", "")
+        
+        # Extract key terms from previous outputs
+        key_terms = set()
+        for round_key, round_output in prev_outputs.items():
+            if not isinstance(round_output, dict):
+                continue
+            for role, result in round_output.items():
+                if isinstance(result, dict):
+                    parsed = result.get("parsed", {})
+                    # Extract from key_points, concerns, questions
+                    for field in ["key_points", "initial_concerns", "questions", "remaining_questions"]:
+                        items = parsed.get(field, [])
+                        if isinstance(items, list):
+                            for item in items[:3]:
+                                if isinstance(item, str):
+                                    # Extract meaningful terms (3+ chars, not common words)
+                                    words = [w.strip('.,!?()[]"\'') for w in item.split() 
+                                             if len(w) > 3 and w.lower() not in 
+                                             {'the', 'and', 'for', 'this', 'that', 'with', 'from', 'should', 'could', 'would'}]
+                                    key_terms.update(words[:5])
+        
+        if round_num <= 2:
+            # Early cycles: focus on implementation patterns and gaps
+            base_queries = [
+                f"{topic} implementation patterns",
+                f"{topic} best practices production",
+                f"how to implement {list(key_terms)[:3] if key_terms else topic}",
+            ]
+            if context:
+                base_queries.append(f"{context} architecture patterns")
+        else:
+            # Later cycles: focus on validation and edge cases
+            base_queries = [
+                f"{topic} edge cases failure modes",
+                f"{topic} production issues solutions",
+                f"validating {list(key_terms)[:2] if key_terms else topic} implementation",
+            ]
+        
+        # Add queries based on key terms from previous rounds
+        if key_terms:
+            term_list = list(key_terms)[:5]
+            queries.append(f"{' '.join(term_list[:3])} implementation")
+            if len(term_list) > 3:
+                queries.append(f"{' '.join(term_list[3:])} patterns")
+        
+        queries.extend(base_queries)
+        
+        # Deduplicate and limit
+        seen = set()
+        unique = []
+        for q in queries:
+            q_lower = q.lower()
+            if q_lower not in seen and len(q) > 10:
+                seen.add(q_lower)
+                unique.append(q)
+        
+        console.print(f"[dim]    Auto-generated {len(unique[:4])} refinement queries[/dim]")
+        return unique[:4]  # Max 4 auto-queries
+    
+    async def _process_llm_requests(self, round_output: Dict, round_num: int, prev_outputs: Dict) -> Dict[str, Any]:
+        """Process REQUEST_FILE and NEED_MORE_INFO from LLM outputs.
+        
+        Returns dict with:
+        - file_requests: List of fetched files
+        - refinement_queries: List of queries for next cross-reference
+        - has_requests: Whether any requests were found
+        """
+        all_file_requests = []
+        all_queries = []
+        
+        for role, result in round_output.items():
+            if not isinstance(result, dict):
+                continue
+            
+            content = result.get("content", "")
+            if not content:
+                continue
+            
+            # Extract REQUEST_FILE
+            file_requests = self._extract_request_file(content)
+            if file_requests:
+                console.print(f"[cyan]{role}[/cyan] requested {len(file_requests)} file(s)")
+                fetched = await self._fetch_requested_files(file_requests)
+                all_file_requests.extend(fetched)
+            
+            # Extract NEED_MORE_INFO
+            queries = self._extract_need_more_info(content)
+            if queries:
+                console.print(f"[cyan]{role}[/cyan] requested {len(queries)} additional search(es)")
+                all_queries.extend(queries)
+        
+        # If no explicit NEED_MORE_INFO, generate refinement queries automatically
+        if not all_queries and round_num < len(self.protocol.get("rounds", [])):
+            console.print("[dim]No explicit NEED_MORE_INFO - generating refinement queries[/dim]")
+            all_queries = self._generate_refinement_queries(round_num, prev_outputs)
+        
+        # Store fetched files in evidence
+        if all_file_requests:
+            if "file_requests" not in self.cross_reference_evidence:
+                self.cross_reference_evidence["file_requests"] = []
+            self.cross_reference_evidence["file_requests"].extend(all_file_requests)
+        
+        return {
+            "file_requests": all_file_requests,
+            "refinement_queries": all_queries,
+            "has_requests": bool(all_file_requests or all_queries)
+        }
+
     def load_recommendations(self) -> Optional[Dict]:
         """Load brigade recommendations configuration."""
         if RECOMMENDATIONS_FILE.exists():
@@ -1472,6 +1718,25 @@ class KitchenBrigadeExecutor:
                 "type": round_type,
                 "output": output
             })
+            
+            # Process REQUEST_FILE and NEED_MORE_INFO from LLM outputs
+            # This runs after every round to extract file requests and refinement queries
+            total_rounds = len(self.protocol.get("rounds", []))
+            is_not_final_round = round_num < total_rounds
+            
+            if self.enable_cross_reference and is_not_final_round:
+                console.print(f"\n[dim]━━━ Processing LLM Requests (Round {round_num}) ━━━[/dim]")
+                llm_requests = await self._process_llm_requests(output, round_num, round_outputs)
+                
+                # Always run cross-reference with refinement queries (mandatory except final round)
+                if llm_requests.get("refinement_queries"):
+                    console.print(f"[cyan]Running refinement cross-reference with {len(llm_requests['refinement_queries'])} queries[/cyan]")
+                    await self.run_cross_reference(queries=llm_requests["refinement_queries"])
+                    
+                self.trace["rounds"][-1]["llm_requests"] = {
+                    "file_requests_count": len(llm_requests.get("file_requests", [])),
+                    "refinement_queries": llm_requests.get("refinement_queries", []),
+                }
             
             # Check for feedback needs after each round
             if allow_feedback and feedback_loop_count < max_feedback_loops:
