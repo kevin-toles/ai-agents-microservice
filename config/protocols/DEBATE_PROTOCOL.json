@@ -5,28 +5,28 @@
   
   "brigade_roles": {
     "proposer": {
-      "model": "deepseek-r1-7b",
+      "model": "gpt-5.2",
       "temperature": 0.4,
       "max_tokens": 4096,
-      "system_prompt": "You are the PROPOSER in an adversarial debate. Your role is to argue FOR the proposed solution/approach. Build the strongest possible case with evidence and reasoning. Acknowledge weaknesses but explain why benefits outweigh them."
+      "system_prompt": "You are the PROPOSER in an adversarial debate. Your role is to argue FOR the proposed solution/approach. Build the strongest possible case with evidence from cross-reference results. Use citations [^N] for key claims. If you need supporting evidence, say 'NEED_MORE_INFO: <specific search query>'."
     },
     "opposer": {
-      "model": "qwen3-8b",
+      "model": "claude-opus-4-5-20250514",
       "temperature": 0.4,
       "max_tokens": 4096,
-      "system_prompt": "You are the OPPOSER in an adversarial debate. Your role is to argue AGAINST the proposed solution/approach. Find flaws, risks, and alternatives. Be rigorous but fair - acknowledge valid points while exposing weaknesses."
+      "system_prompt": "You are the OPPOSER in an adversarial debate. Your role is to argue AGAINST the proposed solution/approach. Find flaws, risks, and alternatives using cross-reference evidence. Use citations [^N] to support counter-arguments. If you need evidence to disprove claims, say 'NEED_MORE_INFO: <what to search for>'."
     },
     "moderator": {
-      "model": "phi-4",
+      "model": "qwen3-8b",
       "temperature": 0.2,
       "max_tokens": 4096,
-      "system_prompt": "You are the MODERATOR in an adversarial debate. Your role is to remain neutral, summarize both sides fairly, identify the strongest arguments, and guide toward a reasoned conclusion. Do not take sides."
+      "system_prompt": "You are the MODERATOR in an adversarial debate. Your role is to remain neutral, summarize both sides fairly, identify which arguments have the strongest evidence from cross-reference, and guide toward a reasoned conclusion. Flag unsubstantiated claims with 'NEED_MORE_INFO: <verification query>'."
     },
     "judge": {
-      "model": "codellama-13b-instruct",
+      "model": "codellama-7b-instruct",
       "temperature": 0.2,
       "max_tokens": 4096,
-      "system_prompt": "You are the JUDGE in an adversarial debate. Your role is to evaluate arguments based on logic, evidence, and practicality. Render a final verdict with clear reasoning. Be decisive but acknowledge nuance."
+      "system_prompt": "You are the JUDGE in an adversarial debate. Your role is to evaluate arguments based on logic, cross-reference evidence, and practicality. Verify citations exist. Render a final verdict with clear reasoning grounded in evidence. Be decisive but acknowledge nuance."
     }
   },
   
@@ -88,6 +88,22 @@
     "verdict_reasoning": "string",
     "proposer_best_arguments": "list",
     "opposer_best_arguments": "list",
-    "key_tradeoffs": "list"
+    "key_tradeoffs": "list",
+    "citations": {
+      "type": "list",
+      "description": "Citations and references used by both sides"
+    },
+    "confidence_score": {
+      "type": "number",
+      "description": "Confidence in verdict based on evidence quality"
+    }
+  },
+
+  "config": {
+    "max_rounds": 4,
+    "allow_feedback_loops": true,
+    "agreement_threshold": 0.80,
+    "timeout_per_round_seconds": 120,
+    "run_cross_reference": true
   }
 }

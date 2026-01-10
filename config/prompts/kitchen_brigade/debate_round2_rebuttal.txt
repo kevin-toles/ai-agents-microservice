@@ -8,6 +8,8 @@ PROPOSITION:
 OPENING ARGUMENTS FROM BOTH SIDES:
 {{previous_rounds}}
 
+{{citation_instructions}}
+
 YOUR TASK - ROUND 2 (Rebuttal):
 Now that you've heard the opposing side's arguments, respond directly.
 
@@ -20,18 +22,22 @@ Your rebuttal should:
 - Expose weaknesses in their reasoning
 - Strengthen your own arguments with additional evidence
 - Acknowledge any valid points they made (intellectual honesty)
+- CITE ALL EVIDENCE using [^N] format - unsupported rebuttals are weak
+
+{{cross_reference_evidence}}
 
 OUTPUT FORMAT (must be valid JSON):
 {
   "rebuttals": [
     {
       "their_point": "what opponent argued",
-      "your_counter": "why it's flawed or incomplete",
-      "evidence": "supporting your counter"
+      "your_counter": "why it's flawed or incomplete with evidence [^N]",
+      "evidence": "supporting your counter with citation [^N]"
     }
   ],
-  "strengthened_arguments": ["additional support for your position"],
+  "strengthened_arguments": ["additional support for your position with citations [^N]"],
   "acknowledged_valid_points": ["opponent points you concede have merit"],
   "key_disagreements": ["fundamental points of contention"],
-  "updated_confidence": "high/medium/low"
+  "updated_confidence": "high/medium/low",
+  "citations": ["[^1]: Source Title, Chapter, Page", "[^2]: Repository/Path"]
 }

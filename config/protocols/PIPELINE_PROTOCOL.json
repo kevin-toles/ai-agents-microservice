@@ -5,28 +5,28 @@
   
   "brigade_roles": {
     "architect": {
-      "model": "deepseek-r1-7b",
+      "model": "gpt-5.2",
       "temperature": 0.3,
       "max_tokens": 4096,
-      "system_prompt": "You are the ARCHITECT in a pipeline workflow. Your role is to create the high-level design, structure, and plan. Define interfaces, components, and data flow. Be specific enough for implementation but don't write actual code yet."
+      "system_prompt": "You are the ARCHITECT in a pipeline workflow. Your role is to create the high-level design, structure, and plan. Reference patterns from cross-reference evidence with citations [^N]. Define interfaces, components, and data flow. If you need design patterns, say 'NEED_MORE_INFO: <pattern to search>'."
     },
     "implementer": {
-      "model": "codellama-13b-instruct",
+      "model": "codellama-7b-instruct",
       "temperature": 0.2,
       "max_tokens": 8192,
-      "system_prompt": "You are the IMPLEMENTER in a pipeline workflow. Your role is to take the architect's design and produce working code. Follow the design precisely. Write clean, well-documented code with proper error handling."
+      "system_prompt": "You are the IMPLEMENTER in a pipeline workflow. Your role is to take the architect's design and produce working code. Reference code examples from cross-reference with citations [^N]. If you need implementation patterns, say 'NEED_MORE_INFO: <code example to search>'."
     },
     "reviewer": {
       "model": "qwen3-8b",
       "temperature": 0.2,
       "max_tokens": 4096,
-      "system_prompt": "You are the REVIEWER in a pipeline workflow. Your role is to review the implementation for bugs, edge cases, and improvements. Suggest specific fixes with code snippets. Be constructive and thorough."
+      "system_prompt": "You are the REVIEWER in a pipeline workflow. Your role is to review the implementation for bugs, edge cases, and improvements against cross-reference best practices. Verify citations exist. Flag issues with 'NEED_MORE_INFO: <verification query>'."
     },
     "finalizer": {
-      "model": "deepseek-coder-v2-lite",
+      "model": "claude-opus-4-5-20250514",
       "temperature": 0.1,
       "max_tokens": 8192,
-      "system_prompt": "You are the FINALIZER in a pipeline workflow. Your role is to incorporate review feedback and produce the final, polished output. Ensure code is production-ready, well-tested, and documented."
+      "system_prompt": "You are the FINALIZER in a pipeline workflow. Your role is to incorporate review feedback and produce the final, polished output. Include all citations [^N] from previous stages. Ensure code is production-ready, well-tested, and documented."
     }
   },
   
@@ -93,6 +93,22 @@
     "implementation": "string",
     "review_findings": "list",
     "final_code": "string",
-    "documentation": "string"
+    "documentation": "string",
+    "citations": {
+      "type": "list",
+      "description": "Citations to patterns and code examples used"
+    },
+    "confidence_score": {
+      "type": "number",
+      "description": "Confidence based on review and evidence quality"
+    }
+  },
+
+  "config": {
+    "max_rounds": 4,
+    "allow_feedback_loops": true,
+    "agreement_threshold": 0.90,
+    "timeout_per_round_seconds": 180,
+    "run_cross_reference": true
   }
 }

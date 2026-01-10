@@ -41,6 +41,9 @@
 		},
 		{
 			"path": "../../architecture-mapping-validation-engine"
+		},
+		{
+			"path": "../../context-management-service"
 		}
 	],
 	"settings": {}

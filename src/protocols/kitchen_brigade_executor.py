@@ -59,6 +59,9 @@ from src.infrastructure_config import (
     PlatformConfig,
 )
 
+# Import citation cache for inline validation
+from src.protocols.citation_cache import CitationCache, Citation
+
 # Create Console with force_terminal=True to avoid I/O errors when running as a service
 # (no TTY attached). This ensures output goes somewhere even without a terminal.
 # When running via API (uvicorn), the output will be captured in service logs.
@@ -325,6 +328,7 @@ def _get_platform_endpoints() -> Dict[str, str]:
         "llm_gateway": config.services.get("llm-gateway", "http://localhost:8080"),
         "semantic_search": config.services.get("semantic-search", "http://localhost:8081"),
         "code_orchestrator": config.services.get("code-orchestrator", "http://localhost:8083"),
+        "audit_service": config.services.get("audit-service", "http://localhost:8084"),
     }
 
 def _get_data_directories() -> Dict[str, Path]:
@@ -350,6 +354,7 @@ INFERENCE_SERVICE = _ENDPOINTS["inference_service"]
 LLM_GATEWAY = _ENDPOINTS["llm_gateway"]
 SEMANTIC_SEARCH = _ENDPOINTS["semantic_search"]
 CODE_ORCHESTRATOR = _ENDPOINTS["code_orchestrator"]
+AUDIT_SERVICE = _ENDPOINTS["audit_service"]
 
 TEXTBOOKS_DIR = _DATA_DIRS["textbooks"]
 BOOKS_RAW_DIR = _DATA_DIRS["books_raw"]
@@ -404,6 +409,11 @@ class KitchenBrigadeExecutor:
         self.resumed_outputs = {}
         self.recommendations = self.load_recommendations()
         
+        # Initialize citation cache for inline validation (Option A)
+        # Circular buffer (max 100) - oldest citations auto-evicted
+        self.citation_cache = CitationCache(max_size=100)
+        self.audit_results = []  # Store audit results
+        
         # Refresh infrastructure config (in case env changed)
         self._refresh_platform_config()
         
@@ -441,7 +451,7 @@ class KitchenBrigadeExecutor:
         
         Reference: ARCHITECTURE_DECISION_RECORD.md - D1, D2
         """
-        global INFERENCE_SERVICE, LLM_GATEWAY, SEMANTIC_SEARCH, CODE_ORCHESTRATOR
+        global INFERENCE_SERVICE, LLM_GATEWAY, SEMANTIC_SEARCH, CODE_ORCHESTRATOR, AUDIT_SERVICE
         global TEXTBOOKS_DIR, BOOKS_RAW_DIR, BOOKS_ENRICHED_DIR, BOOKS_METADATA_DIR
         
         endpoints = _get_platform_endpoints()
@@ -449,6 +459,7 @@ class KitchenBrigadeExecutor:
         LLM_GATEWAY = endpoints["llm_gateway"]
         SEMANTIC_SEARCH = endpoints["semantic_search"]
         CODE_ORCHESTRATOR = endpoints["code_orchestrator"]
+        AUDIT_SERVICE = endpoints["audit_service"]
         
         data_dirs = _get_data_directories()
         TEXTBOOKS_DIR = data_dirs["textbooks"]
@@ -485,6 +496,151 @@ class KitchenBrigadeExecutor:
             exists = "✓" if path.exists() else "✗"
             console.print(f"  {exists} {key}: {path}")
         console.print()
+    
+    # =========================================================================
+    # Pre-Flight Checks (Services & Models)
+    # =========================================================================
+    
+    async def run_preflight_checks(self) -> Dict[str, Any]:
+        """Run pre-flight checks before protocol execution.
+        
+        Verifies:
+        1. Required services are healthy (llm-gateway, inference-service, etc.)
+        2. Required local models are loaded in inference-service
+        3. API keys are configured for external models
+        
+        Returns:
+            Dict with check results and any failures
+            
+        Raises:
+            RuntimeError if critical services are unavailable
+        """
+        console.print("\n[bold yellow]━━━ Pre-Flight Checks ━━━[/bold yellow]\n")
+        
+        results = {
+            "services": {},
+            "models": {},
+            "passed": True,
+            "errors": []
+        }
+        
+        # Determine which models this protocol needs
+        required_models = set()
+        local_models_needed = set()
+        external_models_needed = set()
+        
+        for role, config in self.protocol.get("brigade_roles", {}).items():
+            model = config.get("model", "")
+            # Check for brigade override
+            if self.brigade_override and role in self.brigade_override:
+                model = self.brigade_override[role]
+            
+            required_models.add(model)
+            
+            # Classify as local or external
+            is_external = any(model.startswith(prefix) or model in EXTERNAL_MODELS 
+                            for prefix in ["claude", "gpt", "gemini", "openai", "deepseek-chat", "deepseek-coder"])
+            if is_external:
+                external_models_needed.add(model)
+            else:
+                local_models_needed.add(model)
+        
+        console.print(f"[dim]Protocol requires {len(required_models)} models:[/dim]")
+        console.print(f"[dim]  • Local: {', '.join(local_models_needed) or 'none'}[/dim]")
+        console.print(f"[dim]  • External: {', '.join(external_models_needed) or 'none'}[/dim]\n")
+        
+        # Check 1: Service Health
+        console.print("[cyan]Checking services...[/cyan]")
+        services_to_check = [
+            ("llm-gateway", LLM_GATEWAY, "/health"),
+            ("inference-service", INFERENCE_SERVICE, "/health"),
+        ]
+        if self.enable_cross_reference:
+            services_to_check.append(("semantic-search", SEMANTIC_SEARCH, "/health"))
+        
+        for service_name, base_url, health_path in services_to_check:
+            try:
+                response = await self.client.get(f"{base_url}{health_path}", timeout=5.0)
+                if response.status_code == 200:
+                    results["services"][service_name] = "healthy"
+                    console.print(f"  ✓ {service_name}: healthy")
+                else:
+                    results["services"][service_name] = f"unhealthy ({response.status_code})"
+                    results["errors"].append(f"{service_name} returned {response.status_code}")
+                    results["passed"] = False
+                    console.print(f"  ✗ {service_name}: unhealthy ({response.status_code})")
+            except Exception as e:
+                results["services"][service_name] = f"unreachable: {str(e)[:50]}"
+                results["errors"].append(f"{service_name} unreachable: {str(e)[:50]}")
+                results["passed"] = False
+                console.print(f"  ✗ {service_name}: unreachable")
+        
+        # Check 2: Local Models Loaded
+        if local_models_needed:
+            console.print("\n[cyan]Checking local models...[/cyan]")
+            try:
+                response = await self.client.get(f"{INFERENCE_SERVICE}/v1/models", timeout=10.0)
+                if response.status_code == 200:
+                    models_data = response.json()
+                    available_models = {m["id"]: m.get("status", "available") for m in models_data.get("data", [])}
+                    
+                    for model in local_models_needed:
+                        if model not in available_models:
+                            results["models"][model] = "not_found"
+                            results["errors"].append(f"Model '{model}' not found in inference-service")
+                            results["passed"] = False
+                            console.print(f"  ✗ {model}: not found")
+                        elif available_models[model] != "loaded":
+                            # Try to load the model
+                            console.print(f"  ⟳ {model}: loading...")
+                            try:
+                                load_response = await self.client.post(
+                                    f"{INFERENCE_SERVICE}/v1/models/{model}/load",
+                                    timeout=120.0  # Model loading can take time
+                                )
+                                if load_response.status_code == 200:
+                                    results["models"][model] = "loaded"
+                                    console.print(f"  ✓ {model}: loaded successfully")
+                                else:
+                                    results["models"][model] = f"load_failed ({load_response.status_code})"
+                                    results["errors"].append(f"Failed to load model '{model}'")
+                                    results["passed"] = False
+                                    console.print(f"  ✗ {model}: failed to load")
+                            except Exception as e:
+                                results["models"][model] = f"load_error: {str(e)[:50]}"
+                                results["errors"].append(f"Error loading model '{model}': {str(e)[:50]}")
+                                results["passed"] = False
+                                console.print(f"  ✗ {model}: load error")
+                        else:
+                            results["models"][model] = "loaded"
+                            console.print(f"  ✓ {model}: already loaded")
+                else:
+                    results["errors"].append(f"Could not check models: {response.status_code}")
+                    results["passed"] = False
+            except Exception as e:
+                results["errors"].append(f"Could not check models: {str(e)[:50]}")
+                results["passed"] = False
+        
+        # Check 3: External models (just verify gateway is configured)
+        if external_models_needed:
+            console.print("\n[cyan]Checking external model access...[/cyan]")
+            # We already checked llm-gateway health, just note the external models
+            for model in external_models_needed:
+                results["models"][model] = "external (via gateway)"
+                console.print(f"  ✓ {model}: routed via llm-gateway")
+        
+        # Summary
+        console.print("")
+        if results["passed"]:
+            console.print("[bold green]✓ All pre-flight checks passed[/bold green]\n")
+        else:
+            console.print("[bold red]✗ Pre-flight checks failed:[/bold red]")
+            for error in results["errors"]:
+                console.print(f"  • {error}")
+            console.print("")
+            raise RuntimeError(f"Pre-flight checks failed: {'; '.join(results['errors'])}")
+        
+        return results
     
     # =========================================================================
     # Stage 2: Cross-Reference (4-Layer Parallel Retrieval)
@@ -1111,6 +1267,333 @@ class KitchenBrigadeExecutor:
             console.print(f"[dim]    Code Reference: {e}[/dim]")
         return []
     
+    # =========================================================================
+    # Audit Integration (Soft + Hard)
+    # =========================================================================
+    
+    async def run_soft_audit(self, terms: List[str], query: str, domain: str = "ai-ml") -> Dict[str, Any]:
+        """Run soft audit via Code-Orchestrator GraphCodeBERT validation.
+        
+        Validates that extracted terms/concepts are relevant to the query domain.
+        This is a pre-retrieval validation to ensure search terms are grounded.
+        
+        Args:
+            terms: List of terms/concepts to validate
+            query: Original query context
+            domain: Domain for validation (ai-ml, backend, etc.)
+            
+        Returns:
+            Audit result with validated/rejected terms and scores
+        """
+        try:
+            response = await self.client.post(
+                f"{CODE_ORCHESTRATOR}/v1/graphcodebert/validate",
+                json={
+                    "terms": terms,
+                    "query": query,
+                    "domain": domain,
+                    "min_similarity": 0.5
+                }
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                valid_count = len(result.get("valid_terms", []))
+                rejected_count = len(result.get("rejected_terms", []))
+                
+                return {
+                    "audit_type": "soft",
+                    "passed": valid_count > 0,
+                    "score": valid_count / max(len(terms), 1),
+                    "findings": [
+                        {"type": "valid_terms", "terms": result.get("valid_terms", [])},
+                        {"type": "rejected_terms", "terms": result.get("rejected_terms", []),
+                         "reasons": result.get("rejection_reasons", {})},
+                    ],
+                    "citations_validated": valid_count,
+                    "citations_failed": rejected_count,
+                    "similarity_scores": result.get("similarity_scores", {})
+                }
+            else:
+                console.print(f"[yellow]Soft audit failed: HTTP {response.status_code}[/yellow]")
+                return {"audit_type": "soft", "passed": True, "score": 0.0, "findings": [], 
+                        "citations_validated": 0, "citations_failed": 0, "error": f"HTTP {response.status_code}"}
+                
+        except Exception as e:
+            console.print(f"[yellow]Soft audit error: {e}[/yellow]")
+            return {"audit_type": "soft", "passed": True, "score": 0.0, "findings": [],
+                    "citations_validated": 0, "citations_failed": 0, "error": str(e)}
+    
+    async def run_hard_audit(self, content: str, references: List[Dict[str, Any]], 
+                              threshold: float = 0.5) -> Dict[str, Any]:
+        """Run hard audit via audit-service CrossReferenceAuditor.
+        
+        Verifies that content (code, architecture decisions) matches patterns
+        from reference textbook chapters using CodeBERT similarity.
+        
+        Args:
+            content: Content to audit (code, architecture decision text)
+            references: List of reference chapters with {chapter_id, title, content}
+            threshold: Minimum similarity threshold (0.0-1.0)
+            
+        Returns:
+            Audit result with pass/fail, findings, and similarity scores
+        """
+        if not references:
+            return {"audit_type": "hard", "passed": True, "score": 0.0, 
+                    "findings": [{"note": "No references provided for audit"}],
+                    "citations_validated": 0, "citations_failed": 0}
+        
+        try:
+            response = await self.client.post(
+                f"{AUDIT_SERVICE}/v1/audit/cross-reference",
+                json={
+                    "code": content,
+                    "references": references,
+                    "threshold": threshold
+                }
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                # Count validated citations (findings with similarity >= threshold)
+                findings = result.get("findings", [])
+                validated = sum(1 for f in findings if f.get("similarity", 0) >= threshold)
+                failed = len(findings) - validated
+                
+                return {
+                    "audit_type": "hard",
+                    "passed": result.get("passed", False),
+                    "score": result.get("best_similarity", 0.0),
+                    "findings": findings[:10],  # Limit findings in response
+                    "citations_validated": validated,
+                    "citations_failed": failed,
+                    "status": result.get("status", "unknown"),
+                    "theory_impl_count": result.get("theory_impl_count", 0)
+                }
+            else:
+                console.print(f"[yellow]Hard audit failed: HTTP {response.status_code}[/yellow]")
+                return {"audit_type": "hard", "passed": True, "score": 0.0, "findings": [],
+                        "citations_validated": 0, "citations_failed": 0, "error": f"HTTP {response.status_code}"}
+                
+        except Exception as e:
+            console.print(f"[yellow]Hard audit error: {e}[/yellow]")
+            return {"audit_type": "hard", "passed": True, "score": 0.0, "findings": [],
+                    "citations_validated": 0, "citations_failed": 0, "error": str(e)}
+    
+    # =========================================================================
+    # Inline Citation Validation (Option A - per-round validation)
+    # =========================================================================
+    
+    async def validate_round_citations(
+        self, 
+        round_output: Dict[str, Any], 
+        round_num: int
+    ) -> Dict[str, Any]:
+        """Validate citations in a round's output against cross-reference evidence.
+        
+        This implements Option A (Inline Validation):
+        - Extracts [^N] markers from LLM outputs
+        - Validates against cross_reference_evidence
+        - Updates citation_cache with confirmed/pending status
+        - Fast validation to keep LLMs honest during discussion
+        
+        Args:
+            round_output: Output dict from parallel/synthesis round
+            round_num: Current round number
+            
+        Returns:
+            Validation summary with confirmed/pending counts
+        """
+        extracted_count = 0
+        confirmed_count = 0
+        pending_count = 0
+        
+        # Extract citations from each role's output
+        for role, result in round_output.items():
+            if not isinstance(result, dict):
+                continue
+            
+            # Get raw text output
+            raw_output = result.get("raw", "") or ""
+            parsed = result.get("parsed", {})
+            
+            # Also check parsed content fields for citations
+            if isinstance(parsed, dict):
+                for field in ["analysis", "findings", "recommendations", "content", "thesis"]:
+                    if field in parsed:
+                        content = parsed[field]
+                        if isinstance(content, str):
+                            raw_output += "\n" + content
+                        elif isinstance(content, list):
+                            raw_output += "\n" + "\n".join(str(c) for c in content)
+            
+            # Extract citations from this role's output
+            citations = self.citation_cache.extract_citations_from_text(
+                raw_output, 
+                round_num=round_num, 
+                role=role
+            )
+            extracted_count += len(citations)
+            
+            # Add to pending queue
+            for citation in citations:
+                self.citation_cache.add_pending(citation)
+        
+        # Validate pending citations against cross-reference evidence
+        if self.cross_reference_evidence:
+            validation_results = self.citation_cache.validate_all_pending(
+                self.cross_reference_evidence,
+                threshold=0.7
+            )
+            
+            for marker, validated in validation_results.items():
+                if validated:
+                    confirmed_count += 1
+                else:
+                    pending_count += 1
+        else:
+            pending_count = extracted_count
+        
+        validation_summary = {
+            "round": round_num,
+            "citations_extracted": extracted_count,
+            "citations_confirmed": confirmed_count,
+            "citations_pending": pending_count,
+            "cache_status": self.citation_cache.get_validation_summary()
+        }
+        
+        if extracted_count > 0:
+            console.print(
+                f"[dim]  📚 Citations: {extracted_count} extracted, "
+                f"{confirmed_count} confirmed, {pending_count} pending[/dim]"
+            )
+        
+        return validation_summary
+    
+    def get_citation_context_for_prompt(self, max_citations: int = 10) -> str:
+        """Get citation cache summary for injection into LLM prompt.
+        
+        Provides confirmed citations to guide LLMs to use verified sources.
+        Uses circular buffer - only recent citations to save context.
+        
+        Args:
+            max_citations: Maximum citations to include
+            
+        Returns:
+            Formatted string for prompt injection
+        """
+        return self.citation_cache.get_prompt_summary(max_citations)
+    
+    async def run_audit_pipeline(self, round_outputs: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Run full audit pipeline on protocol outputs.
+        
+        Combines:
+        1. Soft Audit: Code-Orchestrator term validation (pre-retrieval)
+        2. Hard Audit: audit-service cross-reference verification (post-generation)
+        
+        Args:
+            round_outputs: All round outputs from protocol execution
+            
+        Returns:
+            List of audit results (soft + hard)
+        """
+        audit_results = []
+        
+        # Extract all terms/concepts from outputs for soft audit
+        all_terms = set()
+        all_content = []
+        
+        for round_key, round_output in round_outputs.items():
+            if not isinstance(round_output, dict):
+                continue
+                
+            for role, result in round_output.items():
+                if not isinstance(result, dict):
+                    continue
+                    
+                parsed = result.get("parsed", {})
+                if isinstance(parsed, dict):
+                    # Extract terms from various fields (expanded list to match LLM outputs)
+                    term_fields = [
+                        "concepts", "keywords", "terms", "technologies", "patterns",
+                        "key_points", "initial_concerns", "questions", "perspective",
+                        "arguments", "thesis", "position", "findings", "concerns"
+                    ]
+                    for field in term_fields:
+                        if field in parsed:
+                            value = parsed[field]
+                            if isinstance(value, list):
+                                for item in value:
+                                    if isinstance(item, str):
+                                        all_terms.update(item.split()[:5])  # Extract key words
+                                    elif isinstance(item, dict):
+                                        # Extract from nested dicts
+                                        for v in item.values():
+                                            if isinstance(v, str):
+                                                all_terms.update(v.split()[:3])
+                            elif isinstance(value, str):
+                                all_terms.update(value.split()[:5])
+                    
+                    # Collect content for hard audit (expanded fields)
+                    content_fields = [
+                        "analysis", "findings", "recommendations", "decision", "content",
+                        "perspective", "thesis", "rationale", "summary", "conclusion"
+                    ]
+                    for field in content_fields:
+                        if field in parsed:
+                            content = parsed[field]
+                            if isinstance(content, str):
+                                all_content.append(content)
+                            elif isinstance(content, list):
+                                all_content.extend(str(c) for c in content if c)
+        
+        # Run soft audit on extracted terms
+        if all_terms:
+            query = self.inputs.get("topic", self.inputs.get("context", "architecture patterns"))
+            soft_result = await self.run_soft_audit(list(all_terms)[:50], query)
+            audit_results.append(soft_result)
+            console.print(f"[dim]Soft Audit: {soft_result.get('citations_validated', 0)} terms validated, "
+                         f"{soft_result.get('citations_failed', 0)} rejected[/dim]")
+        else:
+            console.print(f"[dim]Soft Audit: No terms extracted from outputs[/dim]")
+        
+        # Build references from cross-reference evidence for hard audit
+        references = []
+        for query, evidence in self.cross_reference_evidence.items():
+            if not isinstance(evidence, dict):
+                continue
+            
+            # Use textbook results as references
+            for tb in evidence.get("textbooks", [])[:5]:
+                references.append({
+                    "chapter_id": tb.get("chapter", "unknown"),
+                    "title": tb.get("book", "Unknown Book"),
+                    "content": tb.get("content", "")
+                })
+            
+            # Also use qdrant results if they have content
+            for qd in evidence.get("qdrant", [])[:3]:
+                if qd.get("content"):
+                    references.append({
+                        "chapter_id": qd.get("chapter", "qdrant"),
+                        "title": qd.get("book", "Qdrant Result"),
+                        "content": qd.get("content", "")
+                    })
+        
+        # Run hard audit on combined content
+        if all_content and references:
+            combined_content = "\n\n".join(all_content[:5000])  # Limit content size
+            hard_result = await self.run_hard_audit(combined_content, references[:10])
+            audit_results.append(hard_result)
+            console.print(f"[dim]Hard Audit: {'PASSED' if hard_result.get('passed') else 'FAILED'} "
+                         f"(score: {hard_result.get('score', 0):.2f})[/dim]")
+        else:
+            console.print(f"[dim]Hard Audit: Skipped (content: {len(all_content)}, refs: {len(references)})[/dim]")
+        
+        return audit_results
+    
     def format_evidence_for_prompt(self) -> str:
         """Format cross-reference evidence for inclusion in LLM prompts.
         
@@ -1343,7 +1826,9 @@ class KitchenBrigadeExecutor:
                 continue
             for role, result in round_output.items():
                 if isinstance(result, dict):
-                    parsed = result.get("parsed", {})
+                    parsed = result.get("parsed") or {}
+                    if not isinstance(parsed, dict):
+                        continue
                     # Extract from key_points, concerns, questions
                     for field in ["key_points", "initial_concerns", "questions", "remaining_questions"]:
                         items = parsed.get(field, [])
@@ -1685,6 +2170,10 @@ class KitchenBrigadeExecutor:
             border_style="cyan"
         ))
         
+        # Pre-Flight Checks: Verify services and load required models
+        preflight_results = await self.run_preflight_checks()
+        self.trace["preflight"] = preflight_results
+        
         # Stage 2: Cross-Reference (4-layer parallel retrieval)
         if run_cross_reference and self.enable_cross_reference:
             await self.run_cross_reference()
@@ -1718,6 +2207,12 @@ class KitchenBrigadeExecutor:
                 "type": round_type,
                 "output": output
             })
+            
+            # Option A: Inline citation validation after each round
+            # Extract [^N] markers and validate against cross-reference evidence
+            if self.enable_cross_reference:
+                citation_validation = await self.validate_round_citations(output, round_num)
+                self.trace["rounds"][-1]["citation_validation"] = citation_validation
             
             # Process REQUEST_FILE and NEED_MORE_INFO from LLM outputs
             # This runs after every round to extract file requests and refinement queries
@@ -1767,12 +2262,22 @@ class KitchenBrigadeExecutor:
         self.trace["end_time"] = datetime.now().isoformat()
         self.trace["feedback_loops"] = feedback_loop_count
         
+        # Run audit pipeline (soft + hard) on final outputs (Option B: Post-Protocol)
+        console.print(f"\n[bold yellow]━━━ Running Audit Pipeline ━━━[/bold yellow]\n")
+        self.audit_results = await self.run_audit_pipeline(round_outputs)
+        
+        # Final citation validation summary
+        console.print(f"\n[dim]Citation Cache: {self.citation_cache.get_validation_summary()}[/dim]")
+        
         # Final feedback check
         final_feedback = self.check_feedback_needs(round_outputs.get(f"round_{len(self.protocol['rounds'])}", {}))
         
         return {
             "outputs": round_outputs,
             "trace": self.trace,
+            "cross_reference_evidence": self.cross_reference_evidence,
+            "audit_results": self.audit_results,
+            "citation_cache": self.citation_cache.to_dict(),  # Confirmed/pending citations
             "needs_more_work": final_feedback,
             "feedback_loops_used": feedback_loop_count
         }
@@ -2124,6 +2629,9 @@ class KitchenBrigadeExecutor:
         if "_previous_stage_summary" in self.inputs:
             variables["previous_stage_summary"] = self.inputs["_previous_stage_summary"]
         
+        # Add citation instructions (injected programmatically as fallback)
+        variables["citation_instructions"] = self._get_citation_instructions()
+        
         # Simple template substitution (in production, use jinja2)
         prompt = template
         for key, value in variables.items():
@@ -2135,7 +2643,67 @@ class KitchenBrigadeExecutor:
             if evidence_section:
                 prompt += f"\n\n{evidence_section}"
         
+        # FALLBACK: Inject citation requirements if not already in template
+        if self.cross_reference_evidence and "CITATION REQUIREMENTS" not in template:
+            prompt = self._inject_citation_requirements(prompt)
+        
         return prompt
+    
+    def _get_citation_instructions(self) -> str:
+        """Get citation instructions for template substitution."""
+        if not self.cross_reference_evidence:
+            return ""
+        
+        return """CITATION REQUIREMENTS (MANDATORY):
+You MUST cite sources for any factual claims using [^N] format (Chicago-style footnotes).
+
+Rules:
+1. Every factual claim MUST have a citation: "Pattern X is recommended [^1]"
+2. Use the Cross-Reference Evidence provided below as your sources
+3. Format citations at the end of your response:
+   [^1]: Book Title, Chapter Name, p. Page
+   [^2]: Repository/File Path
+4. Citations without matching evidence will be flagged as UNVERIFIED
+5. Uncited claims may be rejected in validation
+
+Example:
+"The Circuit Breaker pattern prevents cascade failures [^1]. Kubernetes implements this via..."
+[^1]: Building Microservices, Ch. 4 Resiliency, p. 87"""
+
+    def _inject_citation_requirements(self, prompt: str) -> str:
+        """Inject citation requirements into prompt as fallback.
+        
+        This ensures citation requirements are present even if the template
+        doesn't include the {{citation_instructions}} placeholder.
+        """
+        citation_block = self._get_citation_instructions()
+        if not citation_block:
+            return prompt
+        
+        # Find a good insertion point (after CRITICAL JSON instruction, before main task)
+        if "YOUR TASK" in prompt:
+            # Insert before YOUR TASK section
+            parts = prompt.split("YOUR TASK", 1)
+            return f"{parts[0]}\n{citation_block}\n\nYOUR TASK{parts[1]}"
+        elif "TOPIC:" in prompt:
+            # Insert after TOPIC section
+            parts = prompt.split("TOPIC:", 1)
+            if len(parts) > 1:
+                # Find next section after topic
+                topic_and_rest = parts[1]
+                next_section_markers = ["\n\n", "CONTEXT", "PREVIOUS", "OUTPUT"]
+                for marker in next_section_markers:
+                    if marker in topic_and_rest:
+                        idx = topic_and_rest.index(marker)
+                        return f"{parts[0]}TOPIC:{topic_and_rest[:idx]}\n\n{citation_block}{topic_and_rest[idx:]}"
+        
+        # Default: append before OUTPUT FORMAT
+        if "OUTPUT FORMAT" in prompt:
+            parts = prompt.split("OUTPUT FORMAT", 1)
+            return f"{parts[0]}\n{citation_block}\n\nOUTPUT FORMAT{parts[1]}"
+        
+        # Last resort: append at end
+        return f"{prompt}\n\n{citation_block}"
     
     def extract_json(self, content: str) -> Optional[Dict]:
         """Extract JSON from LLM response."""

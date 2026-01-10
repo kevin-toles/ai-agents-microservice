@@ -8,6 +8,8 @@ TASK:
 ARCHITECT'S DESIGN:
 {{previous_rounds}}
 
+{{citation_instructions}}
+
 YOUR TASK - ROUND 2 (Implementation):
 Implement the design provided by the architect.
 
@@ -18,23 +20,28 @@ Your implementation should:
 - Handle the edge cases mentioned
 - Include error handling as designed
 - Add appropriate comments and docstrings
+- Reference implementation patterns from Cross-Reference Evidence [^N]
 - Be production-ready quality
 
 Language: Use Python unless otherwise specified in inputs.
 
+{{cross_reference_evidence}}
+
 OUTPUT FORMAT (must be valid JSON):
 {
-  "implementation_summary": "brief description of what you implemented",
-  "code": "```python\n# Full implementation code here\n```",
+  "implementation_summary": "brief description with pattern references [^N]",
+  "code": "```python\n# Full implementation code here - include citations in docstrings [^N]\n```",
   "files_created": [
     {
       "filename": "name.py",
       "purpose": "what this file does"
     }
   ],
+  "patterns_applied": ["design patterns used with citations [^N]"],
   "design_deviations": ["any places you had to deviate from design and why"],
   "dependencies": ["external packages needed"],
   "usage_example": "```python\n# How to use this code\n```",
   "notes_for_reviewer": ["things the reviewer should pay attention to"],
-  "confidence_level": "high/medium/low"
+  "confidence_level": "high/medium/low",
+  "citations": ["[^1]: Source Title, Chapter, Page", "[^2]: Repository/Path"]
 }

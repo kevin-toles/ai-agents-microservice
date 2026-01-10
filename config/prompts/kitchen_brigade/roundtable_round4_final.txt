@@ -8,6 +8,8 @@ TOPIC:
 FULL DISCUSSION (Rounds 1, 2, and 3):
 {{previous_rounds}}
 
+{{citation_instructions}}
+
 YOUR TASK - ROUND 4 (Final Position):
 Provide your final, synthesized view on the topic.
 - Summarize your conclusions from the discussion
@@ -15,15 +17,19 @@ Provide your final, synthesized view on the topic.
 - Document remaining disagreements (if any)
 - Propose concrete next steps or action items
 - Acknowledge insights you gained from other participants
+- CITE ALL FACTUAL CLAIMS using [^N] format - uncited claims may be rejected
 
 This is your final statement - make it comprehensive and actionable.
 
+{{cross_reference_evidence}}
+
 OUTPUT FORMAT (must be valid JSON):
 {
-  "final_position": "your comprehensive final view",
+  "final_position": "your comprehensive final view with citations [^N]",
   "consensus_achieved": ["areas where the group aligned"],
   "remaining_disagreements": ["unresolved points - be honest"],
-  "action_items": ["concrete next steps you recommend"],
+  "action_items": ["concrete next steps you recommend with supporting evidence [^N]"],
   "key_learnings": ["what you learned from this discussion"],
-  "confidence_level": "high/medium/low - how confident in conclusions"
+  "confidence_level": "high/medium/low - how confident in conclusions",
+  "citations": ["[^1]: Source Title, Chapter, Page", "[^2]: Repository/Path"]
 }

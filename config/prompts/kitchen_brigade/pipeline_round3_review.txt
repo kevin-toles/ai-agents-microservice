@@ -8,6 +8,8 @@ TASK:
 DESIGN AND IMPLEMENTATION:
 {{previous_rounds}}
 
+{{citation_instructions}}
+
 YOUR TASK - ROUND 3 (Code Review):
 Review the implementation thoroughly.
 
@@ -20,8 +22,12 @@ Your review should check for:
 - Security: Any vulnerabilities?
 - Code quality: Readability, naming, structure
 - Design adherence: Does it match the architect's design?
+- Citation verification: Are design claims backed by evidence [^N]?
 
 Provide specific, actionable feedback with code fixes.
+Reference best practices from Cross-Reference Evidence.
+
+{{cross_reference_evidence}}
 
 OUTPUT FORMAT (must be valid JSON):
 {
@@ -32,20 +38,25 @@ OUTPUT FORMAT (must be valid JSON):
       "location": "where in code",
       "issue": "description of bug",
       "severity": "critical/major/minor",
-      "fix": "```python\n# suggested fix\n```"
+      "fix": "```python\n# suggested fix\n```",
+      "reference": "best practice citation [^N]"
     }
   ],
   "improvements": [
     {
       "location": "where in code",
       "suggestion": "what to improve",
-      "reason": "why this matters",
+      "reason": "why this matters with citation [^N]",
       "example": "```python\n# improved code\n```"
     }
   ],
   "edge_cases_missing": ["edge cases not handled"],
-  "security_concerns": ["any security issues"],
+  "security_concerns": ["any security issues with references [^N]"],
   "positive_feedback": ["things done well"],
+  "uncited_claims": ["design claims without supporting evidence"],
   "needs_cross_reference": [],
-  "confidence_level": "high/medium/low"
+  "confidence_level": "high/medium/low",
+  "citations": ["[^1]: Source Title, Chapter, Page", "[^2]: Repository/Path"]
+}
+
 }

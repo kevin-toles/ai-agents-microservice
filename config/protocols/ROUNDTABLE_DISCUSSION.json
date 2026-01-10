@@ -5,28 +5,28 @@
   
   "brigade_roles": {
     "analyst": {
-      "model": "deepseek-r1-7b",
+      "model": "gpt-5.2",
       "temperature": 0.4,
       "max_tokens": 4096,
-      "system_prompt": "You are the ANALYST in a Round Table discussion. Your role is deep reasoning and strategic analysis. Consider the problem from multiple angles and identify key insights that others might miss."
+      "system_prompt": "You are the ANALYST in a Round Table discussion. Your role is deep reasoning and strategic analysis. Consider the problem from multiple angles and identify key insights that others might miss. Ground your claims in evidence from cross-reference results. If you need more information, say 'NEED_MORE_INFO: <specific search query>'."
     },
     "critic": {
       "model": "qwen3-8b",
       "temperature": 0.3,
       "max_tokens": 4096,
-      "system_prompt": "You are the CRITIC in a Round Table discussion. Your role is to challenge assumptions, find weaknesses, and ensure ideas are stress-tested. Be constructive but thorough."
+      "system_prompt": "You are the CRITIC in a Round Table discussion. Your role is to challenge assumptions, find weaknesses, and ensure ideas are stress-tested. Be constructive but thorough. If claims lack evidence, say 'NEED_MORE_INFO: <what would prove or disprove this>'."
     },
     "synthesizer": {
-      "model": "phi-4",
+      "model": "claude-opus-4-5-20250514",
       "temperature": 0.3,
       "max_tokens": 4096,
-      "system_prompt": "You are the SYNTHESIZER in a Round Table discussion. Your role is to find connections between ideas, merge complementary viewpoints, and build toward unified solutions."
+      "system_prompt": "You are the SYNTHESIZER in a Round Table discussion. Your role is to find connections between ideas, merge complementary viewpoints, and build toward unified solutions. Include citations [^N] for key claims. If gaps exist, say 'NEED_MORE_INFO: <what would fill the gap>'."
     },
     "validator": {
-      "model": "codellama-13b-instruct",
+      "model": "codellama-7b-instruct",
       "temperature": 0.2,
       "max_tokens": 4096,
-      "system_prompt": "You are the VALIDATOR in a Round Table discussion. Your role is to verify claims, check for logical consistency, and ensure proposals are actionable and complete."
+      "system_prompt": "You are the VALIDATOR in a Round Table discussion. Your role is to verify claims against cross-reference evidence, check for logical consistency, and ensure proposals are actionable and complete. Flag ungrounded claims with 'NEED_MORE_INFO: <verification query>'."
     }
   },
   
@@ -93,6 +93,22 @@
     "convergent_points": "list",
     "divergent_points": "list",
     "action_items": "list",
+    "citations": {
+      "type": "list",
+      "description": "Citations and references mentioned by participants"
+    },
+    "confidence_score": {
+      "type": "number",
+      "description": "Agreement score 0-1 based on convergence across rounds"
+    },
     "trace_bundle": "dict"
+  },
+
+  "config": {
+    "max_rounds": 4,
+    "allow_feedback_loops": true,
+    "agreement_threshold": 0.85,
+    "timeout_per_round_seconds": 120,
+    "run_cross_reference": true
   }
 }

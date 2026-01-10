@@ -8,6 +8,8 @@ PROPOSITION:
 FULL DEBATE (Opening Arguments + Rebuttals):
 {{previous_rounds}}
 
+{{citation_instructions}}
+
 YOUR TASK - ROUND 3 (Moderator Summary):
 As the neutral moderator, summarize this debate fairly and completely.
 
@@ -18,7 +20,10 @@ Your summary should:
 - Identify key points of disagreement
 - Note which arguments were most/least effectively supported
 - Highlight any logical fallacies or weak reasoning on either side
+- FLAG any claims made WITHOUT citations as potentially unverified
 - DO NOT express your own opinion or take sides
+
+{{cross_reference_evidence}}
 
 OUTPUT FORMAT (must be valid JSON):
 {
@@ -26,15 +31,18 @@ OUTPUT FORMAT (must be valid JSON):
   "proposer_summary": {
     "strongest_arguments": ["their best points"],
     "weakest_arguments": ["their least convincing points"],
-    "key_evidence": ["evidence they presented"]
+    "key_evidence": ["evidence they presented with citations"],
+    "uncited_claims": ["claims made without supporting citations"]
   },
   "opposer_summary": {
     "strongest_arguments": ["their best points"],
     "weakest_arguments": ["their least convincing points"],
-    "key_evidence": ["evidence they presented"]
+    "key_evidence": ["evidence they presented with citations"],
+    "uncited_claims": ["claims made without supporting citations"]
   },
   "points_of_agreement": ["where both sides align"],
   "core_disagreements": ["fundamental points of contention"],
   "unaddressed_issues": ["important aspects neither side covered"],
+  "citation_quality": "assessment of how well each side cited sources",
   "debate_quality_notes": "observations on argument quality"
 }

@@ -5,28 +5,28 @@
   
   "brigade_roles": {
     "architect": {
-      "model": "deepseek-r1-7b",
+      "model": "gpt-5.2",
       "temperature": 0.4,
       "max_tokens": 6144,
-      "system_prompt": "You are the ARCHITECT. Break down high-level goals into logical phases and major deliverables."
+      "system_prompt": "You are the ARCHITECT. Break down high-level goals into logical phases and major deliverables. Reference similar projects from cross-reference evidence with citations [^N]. If you need domain examples, say 'NEED_MORE_INFO: <pattern or example to search>'."
     },
     "engineer": {
-      "model": "codellama-13b-instruct",
+      "model": "codellama-7b-instruct",
       "temperature": 0.5,
       "max_tokens": 6144,
-      "system_prompt": "You are the ENGINEER. Break down deliverables into specific technical tasks with dependencies."
+      "system_prompt": "You are the ENGINEER. Break down deliverables into specific technical tasks with dependencies. Reference code patterns from cross-reference with citations [^N]. If you need implementation examples, say 'NEED_MORE_INFO: <code pattern to search>'."
     },
     "estimator": {
       "model": "qwen3-8b",
       "temperature": 0.3,
       "max_tokens": 4096,
-      "system_prompt": "You are the ESTIMATOR. Provide realistic effort estimates and identify risks."
+      "system_prompt": "You are the ESTIMATOR. Provide realistic effort estimates based on similar projects from cross-reference evidence. Cite sources [^N] for estimates. If you need comparable project data, say 'NEED_MORE_INFO: <estimation reference to search>'."
     },
     "reviewer": {
-      "model": "deepseek-coder-v2-lite",
+      "model": "claude-opus-4-5-20250514",
       "temperature": 0.3,
       "max_tokens": 4096,
-      "system_prompt": "You are the REVIEWER. Check for missing tasks, circular dependencies, and completeness."
+      "system_prompt": "You are the REVIEWER. Check for missing tasks, circular dependencies, and completeness. Verify citations exist in cross-reference evidence. Flag ungrounded estimates with 'NEED_MORE_INFO: <verification query>'."
     }
   },
   
@@ -77,6 +77,22 @@
     "tasks": "list",
     "dependencies": "dict",
     "effort_estimates": "dict",
-    "risks": "list"
+    "risks": "list",
+    "citations": {
+      "type": "list",
+      "description": "References to similar projects and patterns used for estimates"
+    },
+    "confidence_score": {
+      "type": "number",
+      "description": "Confidence in WBS based on evidence quality"
+    }
+  },
+
+  "config": {
+    "max_rounds": 4,
+    "allow_feedback_loops": true,
+    "agreement_threshold": 0.85,
+    "timeout_per_round_seconds": 180,
+    "run_cross_reference": true
   }
 }

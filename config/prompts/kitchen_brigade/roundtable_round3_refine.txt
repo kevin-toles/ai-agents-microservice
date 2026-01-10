@@ -8,6 +8,8 @@ TOPIC:
 DISCUSSION SO FAR (Rounds 1 and 2):
 {{previous_rounds}}
 
+{{citation_instructions}}
+
 YOUR TASK - ROUND 3 (Refinement):
 Based on the full discussion so far, refine your position.
 - Incorporate valuable insights from other participants
@@ -15,14 +17,18 @@ Based on the full discussion so far, refine your position.
 - Propose solutions to points of contention
 - Start moving toward actionable conclusions
 - Identify what still needs resolution
+- CITE YOUR SOURCES using [^N] format for factual claims and recommendations
 
 This is the refinement phase - aim for clarity and practical outcomes.
 
+{{cross_reference_evidence}}
+
 OUTPUT FORMAT (must be valid JSON):
 {
-  "refined_position": "your refined, nuanced position after discussion",
+  "refined_position": "your refined, nuanced position after discussion (cite sources [^N])",
   "incorporated_insights": ["insights from others you've adopted"],
   "addressed_criticisms": ["how you've addressed critiques of your views"],
-  "proposed_resolutions": ["solutions to contentious points"],
-  "remaining_questions": ["what still needs to be resolved"]
+  "proposed_resolutions": ["solutions to contentious points with evidence [^N]"],
+  "remaining_questions": ["what still needs to be resolved"],
+  "citations": ["[^1]: Source Title, Chapter, Page", "[^2]: Repository/Path"]
 }

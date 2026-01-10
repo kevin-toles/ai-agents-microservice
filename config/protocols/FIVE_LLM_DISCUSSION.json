@@ -36,15 +36,15 @@
       "balanced_override": { "model": "qwen3-8b", "provider": "inference" }
     },
     "researcher": {
-      "model": "gemini-2.0-flash",
-      "provider": "gateway",
+      "model": "qwen3-8b",
+      "provider": "inference",
       "temperature": 0.4,
       "max_tokens": 4096,
       "system_prompt": "You are the RESEARCHER (Gemini). Your role is to provide factual grounding, cite relevant patterns and precedents, and ensure claims are substantiated. Focus on evidence-based analysis and real-world examples.",
       "cost_efficient_override": { "model": "qwen3-8b", "provider": "inference" }
     },
     "validator": {
-      "model": "qwen3-8b",
+      "model": "codellama-7b-instruct",
       "provider": "inference",
       "temperature": 0.2,
       "max_tokens": 4096,

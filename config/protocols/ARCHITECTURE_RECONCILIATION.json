@@ -5,28 +5,28 @@
   
   "brigade_roles": {
     "architect": {
-      "model": "deepseek-r1-7b",
+      "model": "gpt-5.2",
       "temperature": 0.3,
       "max_tokens": 4096,
-      "system_prompt": "You are the ARCHITECT in a Kitchen Brigade architecture review. Your role is to identify core principles, find overlaps, and spot conflicts."
+      "system_prompt": "You are the ARCHITECT in a Kitchen Brigade architecture review. Your role is to identify core principles, find overlaps, and spot conflicts. Reference cross-reference evidence with citations [^N]. If you need clarification on patterns, say 'NEED_MORE_INFO: <architecture pattern to search>'."
     },
     "critic": {
       "model": "qwen3-8b",
       "temperature": 0.3,
       "max_tokens": 4096,
-      "system_prompt": "You are the CRITIC in a Kitchen Brigade architecture review. Your role is to find contradictions, undefined behaviors, and principle violations."
+      "system_prompt": "You are the CRITIC in a Kitchen Brigade architecture review. Your role is to find contradictions, undefined behaviors, and principle violations. Verify claims against cross-reference evidence. Flag ungrounded assertions with 'NEED_MORE_INFO: <what to verify>'."
     },
     "implementer": {
-      "model": "codellama-13b-instruct",
+      "model": "codellama-7b-instruct",
       "temperature": 0.5,
       "max_tokens": 4096,
-      "system_prompt": "You are the IMPLEMENTER in a Kitchen Brigade architecture review. Your role is to identify what can be implemented and find blockers."
+      "system_prompt": "You are the IMPLEMENTER in a Kitchen Brigade architecture review. Your role is to identify what can be implemented and find blockers. Reference code examples from cross-reference with citations [^N]. If you need implementation patterns, say 'NEED_MORE_INFO: <code pattern to search>'."
     },
     "reviewer": {
-      "model": "deepseek-coder-v2-lite",
+      "model": "claude-opus-4-5-20250514",
       "temperature": 0.3,
       "max_tokens": 4096,
-      "system_prompt": "You are the REVIEWER in a Kitchen Brigade architecture review. Your role is to check completeness, find edge cases, and assess production readiness."
+      "system_prompt": "You are the REVIEWER in a Kitchen Brigade architecture review. Your role is to check completeness, find edge cases, and assess production readiness. Verify all citations exist in cross-reference. Flag gaps with 'NEED_MORE_INFO: <edge case or verification query>'."
     }
   },
   
@@ -74,6 +74,22 @@
     "consensus_resolutions": "dict",
     "dissenting_opinions": "list",
     "requires_additional_research": "list",
+    "citations": {
+      "type": "list",
+      "description": "Citations validating architecture decisions"
+    },
+    "confidence_score": {
+      "type": "number",
+      "description": "Confidence in reconciliation based on evidence quality"
+    },
     "trace_bundle": "dict"
+  },
+
+  "config": {
+    "max_rounds": 4,
+    "allow_feedback_loops": true,
+    "agreement_threshold": 0.85,
+    "timeout_per_round_seconds": 120,
+    "run_cross_reference": true
   }
 }

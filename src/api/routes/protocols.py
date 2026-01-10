@@ -142,6 +142,56 @@ class ProtocolRunRequest(BaseModel):
     )
 
 
+class CrossReferenceEvidence(BaseModel):
+    """Cross-reference evidence from Stage 2 retrieval."""
+    
+    query: str = Field(..., description="Query that was searched")
+    qdrant: list[dict[str, Any]] = Field(default_factory=list, description="Qdrant hybrid search results")
+    neo4j: list[dict[str, Any]] = Field(default_factory=list, description="Neo4j graph query results")
+    textbooks: list[dict[str, Any]] = Field(default_factory=list, description="Textbook JSON search results")
+    code_orchestrator: list[dict[str, Any]] = Field(default_factory=list, description="Code-Orchestrator ML results")
+    code_reference: list[dict[str, Any]] = Field(default_factory=list, description="External repo implementations")
+
+
+class AuditResult(BaseModel):
+    """Audit validation result from soft/hard audit."""
+    
+    audit_type: str = Field(..., description="Type: 'soft' (Code-Orchestrator) or 'hard' (audit-service)")
+    passed: bool = Field(..., description="Whether audit passed")
+    score: float = Field(default=0.0, description="Audit confidence score")
+    findings: list[dict[str, Any]] = Field(default_factory=list, description="Audit findings")
+    citations_validated: int = Field(default=0, description="Number of citations validated")
+    citations_failed: int = Field(default=0, description="Number of citations that failed validation")
+
+
+class CitationEntry(BaseModel):
+    """Single citation extracted from LLM output."""
+    
+    marker: str = Field(..., description="Citation marker (e.g., '[^1]')")
+    source_type: str = Field(..., description="Type: 'book', 'code', 'textbook', 'web'")
+    source_id: str = Field(..., description="Source identifier (book title, repo name)")
+    chapter: str | None = Field(default=None, description="Chapter reference")
+    page: int | None = Field(default=None, description="Page number")
+    content_claim: str = Field(default="", description="Content claim (truncated)")
+    relevance_score: float = Field(default=0.0, description="Similarity score (0-1)")
+    confirmed: bool = Field(default=False, description="Whether citation was validated")
+    confirmed_by: str = Field(default="", description="Validation source")
+    round_num: int = Field(default=0, description="Round where citation appeared")
+    role: str = Field(default="", description="LLM role that generated citation")
+
+
+class CitationCacheSummary(BaseModel):
+    """Summary of citation cache state."""
+    
+    session_id: str = Field(..., description="Session ID for this cache")
+    confirmed: list[CitationEntry] = Field(default_factory=list, description="Confirmed citations")
+    pending: list[CitationEntry] = Field(default_factory=list, description="Pending citations")
+    summary: dict[str, int] = Field(
+        default_factory=lambda: {"confirmed_count": 0, "pending_count": 0, "total_markers_seen": 0},
+        description="Count summary"
+    )
+
+
 class ProtocolRunResponse(BaseModel):
     """Response from protocol execution."""
     
@@ -149,6 +199,18 @@ class ProtocolRunResponse(BaseModel):
     protocol_id: str = Field(..., description="Protocol that was executed")
     status: str = Field(..., description="Execution status: completed, partial, failed")
     outputs: dict[str, Any] = Field(default_factory=dict, description="Round outputs")
+    cross_reference_evidence: dict[str, CrossReferenceEvidence] | None = Field(
+        default=None,
+        description="Cross-reference evidence from Stage 2 retrieval (keyed by query)"
+    )
+    audit_results: list[AuditResult] | None = Field(
+        default=None,
+        description="Audit validation results (soft + hard audits)"
+    )
+    citation_cache: CitationCacheSummary | None = Field(
+        default=None,
+        description="Citation cache with confirmed/pending citations (Option A inline validation)"
+    )
     trace_id: str = Field(..., description="Trace ID for debugging")
     feedback_loops_used: int = Field(default=0, description="Feedback loops consumed")
     needs_more_work: list[dict[str, Any]] | None = Field(
@@ -375,6 +437,54 @@ async def run_protocol(
         # Generate trace ID from trace data
         trace_id = result.get("trace", {}).get("start_time", execution_id)
         
+        # Extract cross-reference evidence for response
+        xref_evidence = result.get("cross_reference_evidence")
+        formatted_xref = None
+        if xref_evidence:
+            formatted_xref = {
+                query: CrossReferenceEvidence(
+                    query=query,
+                    qdrant=evidence.get("qdrant", []),
+                    neo4j=evidence.get("neo4j", []),
+                    textbooks=evidence.get("textbooks", []),
+                    code_orchestrator=evidence.get("code_orchestrator", []),
+                    code_reference=evidence.get("code_reference", []),
+                )
+                for query, evidence in xref_evidence.items()
+                if isinstance(evidence, dict)  # Skip non-dict entries like "file_requests"
+            }
+        
+        # Extract audit results
+        audit_results = result.get("audit_results")
+        formatted_audits = None
+        if audit_results:
+            formatted_audits = [
+                AuditResult(
+                    audit_type=ar.get("audit_type", "unknown"),
+                    passed=ar.get("passed", False),
+                    score=ar.get("score", 0.0),
+                    findings=ar.get("findings", []),
+                    citations_validated=ar.get("citations_validated", 0),
+                    citations_failed=ar.get("citations_failed", 0),
+                )
+                for ar in audit_results
+            ]
+        
+        # Extract citation cache data
+        citation_cache_data = result.get("citation_cache")
+        formatted_citation_cache = None
+        if citation_cache_data:
+            formatted_citation_cache = CitationCacheSummary(
+                session_id=citation_cache_data.get("session_id", ""),
+                confirmed=[
+                    CitationEntry(**c) for c in citation_cache_data.get("confirmed", [])
+                ],
+                pending=[
+                    CitationEntry(**c) for c in citation_cache_data.get("pending", [])
+                ],
+                summary=citation_cache_data.get("summary", {}),
+            )
+        
         logger.info(
             f"Protocol {protocol_id} executed - execution_id={execution_id}, "
             f"time_ms={execution_time_ms}, feedback_loops={result.get('feedback_loops_used', 0)}"
@@ -385,6 +495,9 @@ async def run_protocol(
             protocol_id=protocol_id,
             status="completed",
             outputs=result.get("outputs", {}),
+            cross_reference_evidence=formatted_xref,
+            audit_results=formatted_audits,
+            citation_cache=formatted_citation_cache,
             trace_id=trace_id,
             feedback_loops_used=result.get("feedback_loops_used", 0),
             needs_more_work=result.get("needs_more_work"),

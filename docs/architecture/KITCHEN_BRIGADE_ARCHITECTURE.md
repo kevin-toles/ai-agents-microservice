@@ -149,24 +149,37 @@ This pipeline was demonstrated in our conversation — what I did IS what the ag
                                     │
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  STAGE 2: cross_reference (ParallelAgent composition)                       │
-│  ────────────────────────────────────────────────────                       │
+│  STAGE 2: cross_reference_full (Parallel 5-Source Search)                   │
+│  ─────────────────────────────────────────────────────────                  │
 │                                                                             │
-│   ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐            │
-│   │  QDRANT         │  │  NEO4J          │  │  TEXTBOOKS      │            │
-│   │  (vectors)      │  │  (graph)        │  │  (JSON files)   │            │
-│   │                 │  │                 │  │                 │            │
-│   │  Semantic       │  │  "What relates  │  │  "AI Agents In  │            │
-│   │  similarity     │  │  to sub-agent?" │  │  Action" Ch.5   │            │
-│   └────────┬────────┘  └────────┬────────┘  └────────┬────────┘            │
-│            │                    │                    │                      │
-│            └────────────────────┼────────────────────┘                      │
-│                                 │                                           │
-│                     asyncio.gather (parallel)                               │
-│                                 │                                           │
-│                                 ▼                                           │
+│   ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
+│   │  QDRANT     │ │  NEO4J      │ │  TEXTBOOKS  │ │  CODE       │          │
+│   │  (chapters) │ │  (graph)    │ │  (JSON)     │ │  ORCHESTR.  │          │
+│   │             │ │             │ │             │ │             │          │
+│   │  Textbook   │ │  "What      │ │  "AI Agents │ │  ML-based   │          │
+│   │  chapters   │ │  relates?"  │ │  In Action" │ │  code       │          │
+│   └──────┬──────┘ └──────┬──────┘ └──────┬──────┘ └──────┬──────┘          │
+│          │               │               │               │                  │
+│   ┌──────┴───────────────┴───────────────┴───────────────┴───────┐         │
+│   │                                                              │         │
+│   │  ┌─────────────────────────────────────────────────────┐     │         │
+│   │  │  CODE_CHUNKS (Qdrant collection)                    │     │         │
+│   │  │  ─────────────────────────────────                  │     │         │
+│   │  │  Actual GitHub code snippets with:                  │     │         │
+│   │  │  • content (source code)                            │     │         │
+│   │  │  • repo_url, file_path, start_line, end_line        │     │         │
+│   │  │  • domain, concepts, patterns                       │     │         │
+│   │  │  → Citable as [^N] with GitHub permalink            │     │         │
+│   │  └──────────────────────────────────┬──────────────────┘     │         │
+│   │                                     │                        │         │
+│   └─────────────────────────────────────┼────────────────────────┘         │
+│                                         │                                   │
+│                          Promise.all (5 parallel)                           │
+│                                         │                                   │
+│                                         ▼                                   │
 │   ┌─────────────────────────────────────────────────────────────────┐      │
-│   │  Results: [qdrant_hits, neo4j_relations, textbook_excerpts]     │      │
+│   │  Results: [qdrant_hits, neo4j_relations, textbook_excerpts,     │      │
+│   │            code_orchestrator_results, code_chunks]              │      │
 │   └─────────────────────────────────────────────────────────────────┘      │
 └─────────────────────────────────────────────────────────────────────────────┘
                                     │
