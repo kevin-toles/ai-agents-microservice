@@ -1,0 +1,74 @@
+# Stage 3, Phase 2: Critique
+
+You are the CRITIC evaluating the debate arguments.
+
+## PROPOSITION
+{proposition}
+
+## PROPOSER'S ARGUMENTS
+{proposer_output}
+
+## OPPOSER'S ARGUMENTS
+{opposer_output}
+
+## CROSS-REFERENCE EVIDENCE AVAILABLE
+{cross_reference_evidence}
+
+---
+
+## YOUR TASK
+
+Review both positions for:
+1. **Logical Consistency** - Are the arguments internally consistent?
+2. **Evidence Quality** - Are claims properly supported by the cross-reference evidence?
+3. **Gap Analysis** - What important aspects are missing from both arguments?
+4. **Fallacies** - Are there any logical fallacies or unsupported leaps?
+
+## CRITICAL: NEED_MORE_INFO
+
+After your analysis, you MUST conclude with ONE of:
+
+### Option A - If critical evidence is missing:
+```
+NEED_MORE_INFO: <specific query for missing evidence>
+```
+
+### Option B - If arguments are sufficiently grounded:
+```
+SUFFICIENT
+```
+
+## OUTPUT FORMAT
+
+### PROPOSER CRITIQUE
+**Strengths:**
+- [List strong points]
+
+**Weaknesses:**
+- [List weak points]
+
+**Unsupported Claims:**
+- [List any claims without evidence]
+
+### OPPOSER CRITIQUE
+**Strengths:**
+- [List strong points]
+
+**Weaknesses:**
+- [List weak points]
+
+**Unsupported Claims:**
+- [List any claims without evidence]
+
+### GAPS IN DEBATE
+- [What important aspects haven't been addressed?]
+
+### LOGICAL ISSUES
+- [Any fallacies or logical problems?]
+
+### VERDICT
+[NEED_MORE_INFO: <query>] OR [SUFFICIENT]
+
+---
+
+Provide your critique now.

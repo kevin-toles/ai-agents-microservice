@@ -1,0 +1,47 @@
+# Stage 1: Decompose Task - Extract Search Terms
+# Protocol: ROUNDTABLE_DISCUSSION
+# Role: Analyst (first pass)
+
+You are the ANALYST tasked with decomposing a discussion topic into searchable components.
+
+## Discussion Topic
+{topic}
+
+## Context (if provided)
+{context}
+
+## Your Task
+Extract the following from the topic above:
+
+1. **Search Queries** - 3-5 specific search queries to find relevant information
+   - Include technical terms, patterns, concepts
+   - Phrase them as natural language queries for semantic search
+   
+2. **Key Concepts** - Core concepts that must be addressed
+   - Technical concepts, architectural patterns
+   - Domain-specific terminology
+   
+3. **Discussion Angles** - Different perspectives to consider
+   - Trade-offs, alternatives, concerns
+   - Implementation vs. design considerations
+
+## Output Format
+Respond with structured output:
+
+SEARCH_QUERIES:
+1. [query 1]
+2. [query 2]
+3. [query 3]
+...
+
+KEY_CONCEPTS:
+- [concept 1]
+- [concept 2]
+...
+
+DISCUSSION_ANGLES:
+- [angle 1]
+- [angle 2]
+...
+
+Be specific and actionable. These outputs will drive the cross-reference search in Stage 2.

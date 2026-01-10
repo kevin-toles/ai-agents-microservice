@@ -31,6 +31,7 @@ from src.api.routes.functions import router as functions_router
 from src.api.routes.health import router as health_router
 from src.api.routes.health import set_service_start_time
 from src.api.routes.pipelines import router as pipelines_router
+from src.api.routes.protocols import router as protocols_router
 from src.api.routes.well_known import router as well_known_router
 from src.api.routes.a2a import router as a2a_router
 from src.core.clients.content_adapter import SemanticSearchContentAdapter
@@ -305,6 +306,7 @@ def create_app() -> FastAPI:
     # Include routers (WBS-AGT18)
     app.include_router(functions_router)
     app.include_router(pipelines_router)
+    app.include_router(protocols_router)
     app.include_router(health_router)
 
     # A2A Protocol Integration (WBS-PI2, WBS-PI3)

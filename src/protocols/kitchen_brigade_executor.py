@@ -1708,7 +1708,9 @@ class KitchenBrigadeExecutor:
         
         # Route to correct endpoint
         endpoint = self.get_endpoint_for_model(model)
-        is_external = endpoint == LLM_GATEWAY
+        # Determine if external by model name, not endpoint URL comparison
+        # This works even when LLM_GATEWAY and INFERENCE_SERVICE are same URL in hybrid mode
+        is_external = model in EXTERNAL_MODELS
         
         # Build prompt from template with variable substitution
         prompt = self.build_prompt(prompt_template, role, prev_outputs)

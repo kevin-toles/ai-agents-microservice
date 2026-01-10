@@ -1,0 +1,52 @@
+# Stage 1: Decompose Task
+
+You are the ANALYST. Your role is to decompose the problem into searchable queries for the cross-reference stage.
+
+## PROPOSITION TO DEBATE
+{proposition}
+
+## CONTEXT (if provided)
+{context}
+
+## CONSTRAINTS (if provided)
+{constraints}
+
+## YOUR TASK
+
+Analyze the proposition and extract:
+
+1. **SEARCH_QUERIES**: List 3-5 specific queries to search across textbooks, code, and documentation
+   - Focus on technical concepts, patterns, and implementation approaches
+   - Include queries for both "in favor" and "against" positions
+
+2. **KEY_CONCEPTS**: List the core technical concepts that need evidence
+   - What are the main technologies/patterns involved?
+   - What are the key tradeoffs to investigate?
+
+3. **PROBLEM_BREAKDOWN**: Break down the problem into sub-questions
+   - What needs to be true for the proposition to succeed?
+   - What are the main risks or failure modes?
+
+## OUTPUT FORMAT (JSON)
+
+```json
+{
+  "search_queries": [
+    "query 1 - describe what this searches for",
+    "query 2 - describe what this searches for",
+    ...
+  ],
+  "key_concepts": [
+    "concept 1",
+    "concept 2",
+    ...
+  ],
+  "problem_breakdown": [
+    "sub-question 1",
+    "sub-question 2",
+    ...
+  ]
+}
+```
+
+Respond with ONLY the JSON output.

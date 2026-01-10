@@ -1,0 +1,47 @@
+{
+  "stage": "STAGE 2: CROSS_REFERENCE",
+  "timestamp": "2026-01-06T12:00:00Z",
+  "queries_executed": 5,
+  "evidence": {
+    "service_discovery": {
+      "query": "service discovery topology configuration microservices deployment modes",
+      "sources": [
+        {"book": "Microservices for the Enterprise", "chapter": "Microservices Governance", "score": 0.412},
+        {"book": "Docker Networking and Service Delivery", "chapter": "Segment 5", "score": 0.405},
+        {"book": "Spring Microservices", "chapter": "Build scalable microservices", "score": 0.405}
+      ]
+    },
+    "fail_fast_patterns": {
+      "query": "fail fast validation explicit error handling configuration",
+      "sources": [
+        {"book": "The DevOps Handbook", "chapter": "Segment 22", "score": 0.348},
+        {"book": "Building Secure and Reliable Systems", "chapter": "Segment 25", "score": 0.341},
+        {"book": "PHP Microservices", "chapter": "Segment 19", "score": 0.325}
+      ]
+    },
+    "env_var_standards": {
+      "query": "environment variables configuration management standardization naming conventions",
+      "sources": [
+        {"book": "Code Complete", "chapter": "Segment 15", "score": 0.413},
+        {"book": "Kubernetes Patterns", "chapter": "Segment 21", "score": 0.399},
+        {"book": "Deploying to OpenShift", "chapter": "Segment 7", "score": 0.387}
+      ]
+    },
+    "multi_agent_patterns": {
+      "query": "multi-agent LLM discussion consensus orchestration pipeline",
+      "sources": [
+        {"book": "Software Architecture", "chapter": "Segment 32", "score": 0.392},
+        {"book": "Software Architecture", "chapter": "Segment 34", "score": 0.374},
+        {"book": "AI Assisted Programming", "chapter": "Segment 37", "score": 0.360}
+      ]
+    },
+    "contract_testing": {
+      "query": "contract testing API integration testing consumer driven contracts",
+      "sources": [
+        {"book": "Microservices Patterns", "chapter": "Segment 31", "score": 0.527},
+        {"book": "Microservices Patterns", "chapter": "Segment 33", "score": 0.444},
+        {"book": "Microservice APIs Using Python Flask FastAPI", "chapter": "Segment 32", "score": 0.393}
+      ]
+    }
+  }
+}

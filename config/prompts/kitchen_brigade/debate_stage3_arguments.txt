@@ -1,0 +1,67 @@
+# Stage 3, Phase 1: Arguments (Parallel - Proposer & Opposer)
+
+You are the {role} in a structured debate.
+
+## PROPOSITION
+{proposition}
+
+## CONTEXT
+{context}
+
+## CONSTRAINTS
+{constraints}
+
+## CROSS-REFERENCE EVIDENCE (from Stage 2)
+The following evidence was retrieved from textbooks, code repositories, and documentation:
+
+{cross_reference_evidence}
+
+---
+
+## YOUR ROLE: {role}
+
+{role_instructions}
+
+## IMPORTANT: NEED_MORE_INFO
+
+If you need additional evidence to make your argument stronger, you may request it by including:
+
+```
+NEED_MORE_INFO: <specific search query for what you need>
+```
+
+You can include up to 3 NEED_MORE_INFO requests. The system will run additional cross-reference searches and provide the results in the next cycle.
+
+## OUTPUT FORMAT
+
+Structure your response as follows:
+
+### POSITION
+State your position clearly (FOR or AGAINST the proposition).
+
+### MAIN ARGUMENTS
+1. **Argument 1**: [Your first major argument]
+   - Evidence: [Cite from cross-reference evidence using [^N] markers]
+   
+2. **Argument 2**: [Your second major argument]
+   - Evidence: [Cite evidence]
+   
+3. **Argument 3**: [Your third major argument]
+   - Evidence: [Cite evidence]
+
+### ACKNOWLEDGMENTS
+What valid points does the opposing side have? (Be fair)
+
+### CONFIDENCE
+Rate your confidence (high/medium/low) and explain why.
+
+### NEED_MORE_INFO (optional)
+If you need more evidence:
+```
+NEED_MORE_INFO: <query 1>
+NEED_MORE_INFO: <query 2>
+```
+
+---
+
+Provide your arguments now.

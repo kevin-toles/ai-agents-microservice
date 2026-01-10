@@ -1,0 +1,30 @@
+# Review and Reconcile Workflow
+#
+# Two-stage workflow for document/architecture reconciliation:
+# 1. Design Review: Structured analysis with synthesis phases
+# 2. Round Table: Build consensus through open discussion
+
+name: "Review → Reconcile"
+description: "Two-stage workflow: structured review followed by consensus building"
+
+inter_stage_feedback: true
+max_feedback_loops_per_stage: 3
+
+stages:
+  - name: "Stage 1: Structured Review"
+    protocol_id: "ARCHITECTURE_RECONCILIATION"
+    description: "Formal review with architect synthesis"
+    inputs:
+      focus: "Identify conflicts and issues"
+    pass_outputs: true
+    
+  - name: "Stage 2: Consensus Building"
+    protocol_id: "ROUNDTABLE_DISCUSSION"
+    description: "Open discussion to resolve conflicts"
+    inputs:
+      focus: "Build consensus on resolution of issues from Stage 1"
+    pass_outputs: true
+
+# Expected flow:
+# 1. Design Review finds conflicts, architect proposes resolutions
+# 2. Round Table discusses resolutions, all participants refine until consensus

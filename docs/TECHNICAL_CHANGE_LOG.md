@@ -18,6 +18,156 @@ This document tracks all implementation changes, their rationale, and git commit
 
 ---
 
+## 2026-01-07
+
+### CL-022: Neo4j ↔ Qdrant Bridge Available for Cross-Reference Stage
+
+| Field | Value |
+|-------|-------|
+| **Date/Time** | 2026-01-07 |
+| **WBS Item** | Kitchen Brigade Stage 2 |
+| **Change Type** | Documentation, Enhancement Planning |
+| **Summary** | Documents the new Neo4j ↔ Qdrant bridge available for Kitchen Brigade Stage 2 cross-reference evidence collection. The bridge enables concept-to-code navigation. |
+| **Files Changed** | Documentation only (implementation pending) |
+| **Rationale** | Kitchen Brigade Stage 2 cross-reference can now leverage the bridge for better code evidence |
+| **Git Commit** | N/A (documentation) |
+
+**Bridge Integration for Stage 2:**
+
+The Kitchen Brigade Stage 2 cross-reference currently collects evidence from:
+- Qdrant (vector similarity)
+- Neo4j (graph relationships)
+- Textbooks (academic reference)
+- Code-Orchestrator (code patterns)
+
+With the new bridge, Neo4j queries can now traverse:
+```cypher
+// Find code repos related to a concept
+MATCH (c:Concept {name: $concept})
+OPTIONAL MATCH (c)<-[:SAME_AS]-(cc:CodeConcept)-[:FOUND_IN]->(d:CodeDomain)
+RETURN d.name as domain, collect(cc.name) as code_concepts
+```
+
+**New Node Types Available:**
+
+| Node | Use in Stage 2 |
+|------|----------------|
+| `Topic` | Query expansion via BERTopic clusters |
+| `CodeDomain` | Filter code evidence by domain |
+| `CodeConcept` | Bridge textbook concepts to code |
+| `SIMILAR_TO` | Find related chapters automatically |
+
+**Planned Enhancement:**
+
+```python
+# Stage 2 cross-reference enhancement
+async def _collect_code_evidence(self, concept: str) -> list[Evidence]:
+    # Current: Direct Qdrant search
+    # With bridge: Neo4j concept → CodeDomain → filtered Qdrant search
+    
+    # 1. Find relevant domains via bridge
+    domains = await self.neo4j.query("""
+        MATCH (c:Concept)-[:SAME_AS]-(cc:CodeConcept)-[:FOUND_IN]->(d:CodeDomain)
+        WHERE c.name CONTAINS $concept
+        RETURN DISTINCT d.name as domain
+    """, concept=concept)
+    
+    # 2. Search Qdrant with domain filter
+    return await self.qdrant.search(
+        query=concept,
+        collection="code_chunks",
+        filter={"domain": {"$in": domains}}
+    )
+```
+
+**Cross-Reference:**
+- ai-platform-data/TECHNICAL_CHANGE_LOG.md: CL-021
+- Platform-Wide/Active/TECHNICAL_CHANGE_LOG.md: CL-014
+
+---
+
+### CL-021: Kitchen Brigade Infrastructure Configuration & Workflow Composer
+
+| Field | Value |
+|-------|-------|
+| **Date/Time** | 2026-01-07 |
+| **WBS Item** | WBS-KB (Kitchen Brigade), WBS-INFRA (Infrastructure) |
+| **Change Type** | Feature, Architecture |
+| **Summary** | Implemented infrastructure-aware configuration system and workflow composer for multi-stage protocol chaining. Added Stage 2 cross-reference evidence collection, resume capability, and dynamic endpoint resolution. |
+| **Files Changed** | See detailed list below |
+| **Rationale** | Kitchen Brigade protocols needed to work across multiple deployment modes (docker/hybrid/native) without manual configuration changes. Stage 2 cross-reference adds evidence from Qdrant, Neo4j, Textbooks, and Code-Orchestrator. |
+| **Git Commit** | `d570fc4` (feature/integration branch) |
+
+**New Files:**
+
+| File | Purpose |
+|------|---------|
+| `src/infrastructure_config.py` | Dynamic endpoint resolution based on `INFRASTRUCTURE_MODE` env var |
+| `src/protocols/workflow_composer.py` | Multi-stage protocol chaining (e.g., "round_table → debate → pipeline") |
+| `config/protocols/ARCHITECTURE_RECONCILIATION.json` | Protocol definition |
+| `config/protocols/DEBATE_PROTOCOL.json` | Protocol definition |
+| `config/protocols/PIPELINE_PROTOCOL.json` | Protocol definition |
+| `config/protocols/ROUNDTABLE_DISCUSSION.json` | Protocol definition |
+| `config/protocols/WBS_GENERATION.json` | Protocol definition |
+| `config/prompts/kitchen_brigade/*.txt` | 16 prompt templates for different rounds/protocols |
+
+**Modified Files:**
+
+| File | Changes |
+|------|---------|
+| `src/protocols/kitchen_brigade_executor.py` | Added `_refresh_platform_config()`, `_display_infrastructure_status()`, Stage 2 cross-reference, resume from trace |
+| `config/brigade_recommendations.yaml` | Added tier configurations (local_only, balanced, premium) |
+
+**Infrastructure Mode System:**
+
+| Mode | Service URLs | Database URLs | Use Case |
+|------|--------------|---------------|----------|
+| **docker** | Docker DNS (`llm-gateway:8080`) | Docker DNS | Full containerized |
+| **hybrid** | localhost (`localhost:8080`) | Docker DNS or localhost | Dev: DBs in Docker, Python native |
+| **native** | localhost (`localhost:8080`) | localhost | Fully native |
+
+**Key Classes:**
+
+```python
+# src/infrastructure_config.py
+@dataclass
+class PlatformConfig:
+    infrastructure_mode: str
+    llm_gateway_url: str
+    semantic_search_url: str
+    code_orchestrator_url: str
+    audit_service_url: str
+    qdrant_url: str
+    neo4j_uri: str
+    neo4j_user: str
+    neo4j_password: str
+    redis_url: str
+    inference_service_url: str
+    data_paths: Dict[str, Path]
+```
+
+**Stage 2 Cross-Reference Sources:**
+
+| Source | Endpoint | Evidence Type |
+|--------|----------|---------------|
+| Qdrant | `semantic_search_url` | Vector similarity results |
+| Neo4j | `neo4j_uri` | Graph relationships |
+| Textbooks | `data_paths["textbooks"]` | Academic reference |
+| Code-Orchestrator | `code_orchestrator_url` | Code patterns |
+
+**Documentation Updates:**
+
+| Document | Updates |
+|----------|---------|
+| `docs/architecture/ARCHITECTURE.md` | Added infrastructure modes, Protocol Executor section |
+| `docs/architecture/AGENT_FUNCTIONS_ARCHITECTURE.md` | Version 1.3.0, implementation status table |
+| `docs/architecture/INTER_AI_ORCHESTRATION.md` | Implementation status, executor usage |
+| `docs/architecture/KITCHEN_BRIGADE_ARCHITECTURE.md` | Version 2.1, infrastructure modes |
+| `docs/guides/MODEL_LIBRARY.md` | Version 1.1.0, Brigade Tier System |
+| `docs/KITCHEN_BRIGADE_AGENT_GUIDE.md` | Version 2.1, CLI examples with infrastructure mode |
+
+---
+
 ## 2026-01-03
 
 ### CL-020: Feature Flag Rename - mcp_toolbox_qdrant → mcp_semantic_search

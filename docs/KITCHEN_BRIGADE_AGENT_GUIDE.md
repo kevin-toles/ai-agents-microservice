@@ -1,8 +1,18 @@
 # Kitchen Brigade Protocol - Agent Interaction Guide
 
+**Version:** 2.1  
+**Updated:** 2026-01-07  
+**Status:** Production Ready
+
 ## Overview
 
 This document defines how AI agents (like GitHub Copilot, Claude, etc.) should interact with users when initiating Kitchen Brigade multi-model protocols.
+
+### January 2026 Updates
+- Infrastructure-aware configuration via `INFRASTRUCTURE_MODE` environment variable
+- Stage 2 cross-reference evidence collection (`--enable-cross-reference`)
+- Resume capability with `--resume-from` trace files
+- Workflow Composer for multi-stage protocol chaining
 
 ## Core Principle: Ask, Don't Assume
 
@@ -171,7 +181,8 @@ python -m src.protocols.kitchen_brigade_executor \
   --input topic="How should we structure the API gateway?" \
   --interactive
 
-# Direct execution with tier
+# Direct execution with tier and infrastructure mode
+export INFRASTRUCTURE_MODE=hybrid
 python -m src.protocols.kitchen_brigade_executor \
   --protocol ARCHITECTURE_RECONCILIATION \
   --input 'documents=["doc1.md", "doc2.md"]' \
@@ -182,7 +193,39 @@ python -m src.protocols.kitchen_brigade_executor \
   --protocol ROUNDTABLE_DISCUSSION \
   --input topic="Code review strategy" \
   --brigade '{"analyst": "claude-opus-4.5", "critic": "qwen3-8b"}'
+
+# With Stage 2 cross-reference evidence collection
+python -m src.protocols.kitchen_brigade_executor \
+  --protocol ARCHITECTURE_RECONCILIATION \
+  --enable-cross-reference \
+  --input 'documents=["ADR.md", "ROUNDTABLE_FINDINGS.md"]'
+
+# Resume from a previous trace
+python -m src.protocols.kitchen_brigade_executor \
+  --protocol ARCHITECTURE_RECONCILIATION \
+  --resume-from trace_ARCHITECTURE_RECONCILIATION_20260107_100256.json
 ```
+
+---
+
+## Infrastructure Modes
+
+Set the deployment mode for service endpoint resolution:
+
+```bash
+# Explicit mode (recommended)
+export INFRASTRUCTURE_MODE=hybrid  # docker | hybrid | native
+
+# The executor auto-detects if not set:
+# - Running in Docker container → docker mode
+# - Otherwise → hybrid mode (default)
+```
+
+| Mode | Service URLs | Database URLs | Use Case |
+|------|--------------|---------------|----------|
+| **docker** | Docker DNS (`llm-gateway:8080`) | Docker DNS | Full containerized |
+| **hybrid** | localhost (`localhost:8080`) | Docker DNS or localhost | Dev: DBs in Docker |
+| **native** | localhost (`localhost:8080`) | localhost | Fully native |
 
 ---
 
@@ -191,6 +234,7 @@ python -m src.protocols.kitchen_brigade_executor \
 - `config/protocols/` - Protocol definitions (JSON)
 - `config/brigade_recommendations.yaml` - Scenario-to-preset mappings
 - `config/prompts/kitchen_brigade/` - Prompt templates
+- `src/infrastructure_config.py` - Dynamic endpoint resolution
 
 ---
 

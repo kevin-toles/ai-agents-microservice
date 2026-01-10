@@ -1,0 +1,47 @@
+{
+	"folders": [
+		{
+			"path": "../../ai-platform-vscode-extension"
+		},
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../ai-agents-mcp-server"
+		},
+		{
+			"path": "../../platform-cli"
+		},
+		{
+			"path": "../../Platform Documentation"
+		},
+		{
+			"path": "../../ai-models"
+		},
+		{
+			"path": "../../ai-platform-data"
+		},
+		{
+			"path": "../../audit-service"
+		},
+		{
+			"path": "../../Code-Orchestrator-Service"
+		},
+		{
+			"path": "../../inference-service"
+		},
+		{
+			"path": "../../llm-gateway"
+		},
+		{
+			"path": "../../semantic-search-service"
+		},
+		{
+			"path": "../../textbooks"
+		},
+		{
+			"path": "../../architecture-mapping-validation-engine"
+		}
+	],
+	"settings": {}
+}

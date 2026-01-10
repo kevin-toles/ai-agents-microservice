@@ -7,7 +7,35 @@ The AI Agents service is a **microservice** that exposes specialized AI agents v
 **This service is the core of the Unified Agent Platform** - supporting both batch processing (llm-document-enhancer) and interactive use cases (VS Code Copilot, IDE extensions).
 
 **PCON Status**: PCON-1 through PCON-8 Complete (January 1, 2026)  
-**Neo4j Client**: Single consolidated `Neo4jClient` in `src/clients/neo4j_client.py`
+**Neo4j Client**: Single consolidated `Neo4jClient` in `src/clients/neo4j_client.py`  
+**Infrastructure Config**: Dynamic endpoint resolution via `src/infrastructure_config.py` (January 7, 2026)  
+**Kitchen Brigade Protocols**: Multi-LLM execution via `src/protocols/kitchen_brigade_executor.py`
+
+---
+
+## Infrastructure Modes
+
+The platform supports three deployment modes for flexible development and production environments:
+
+| Mode | Description | Service URLs | Database URLs |
+|------|-------------|--------------|---------------|
+| **docker** | All services in Docker containers | Docker DNS names (e.g., `llm-gateway:8080`) | Docker DNS (e.g., `ai-platform-neo4j:7687`) |
+| **hybrid** | Infrastructure in Docker, Python services native | `localhost:<port>` | Docker DNS or localhost |
+| **native** | All services running natively | `localhost:<port>` | `localhost:<port>` |
+
+**Configuration**: Set `INFRASTRUCTURE_MODE` environment variable or let the system auto-detect.
+
+```bash
+# Explicit mode declaration (recommended)
+export INFRASTRUCTURE_MODE=hybrid
+python -m uvicorn src.main:app --host 0.0.0.0 --port 8082
+
+# Auto-detection (fallback)
+# If running inside Docker → docker mode
+# Otherwise → hybrid mode (default for development)
+```
+
+Reference: [ARCHITECTURE_DECISION_RECORD.md](../../Platform%20Documentation/ARCHITECTURE_DECISION_RECORD.md) - D1, D2
 
 ## Architecture Type
 
@@ -97,7 +125,60 @@ In the Kitchen Brigade architecture, **ai-agents** serves as the **Expeditor** -
 | **Code-Orchestrator-Service** | Sous Chef | **SMART** | Extracts keywords, validates, ranks | Store content, execute searches |
 | **Semantic Search Service** | Cookbook | **DUMB** | Takes keywords, queries DBs, returns all | Generate keywords, filter results |
 | **LLM Gateway** | Router | Routing only | Routes LLM requests, manages sessions | Make decisions about content |
+| **inference-service** | Line Cook | **Inference** | Hosts local LLMs (GGUF via llama.cpp) | Orchestration, routing |
+| **audit-service** | Auditor | **Validation** | Citation tracking, footnote generation | Make decisions |
 | **Qdrant/Neo4j** | Pantry | Storage | Store embeddings and relationships | Nothing else |
+
+---
+
+## Kitchen Brigade Protocol Executor
+
+The `KitchenBrigadeExecutor` enables multi-LLM discussion protocols with infrastructure-aware endpoint resolution:
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                     KITCHEN BRIGADE PROTOCOL EXECUTOR                         │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  PROTOCOLS:                                                                  │
+│  ├── ROUNDTABLE_DISCUSSION    (All LLMs every round)                        │
+│  ├── ARCHITECTURE_RECONCILIATION  (Parallel → Synthesis → Consensus)        │
+│  ├── DEBATE_PROTOCOL          (Adversarial with moderator)                  │
+│  ├── PIPELINE_PROTOCOL        (Sequential handoff)                          │
+│  └── WBS_GENERATION           (Work breakdown structure)                    │
+│                                                                              │
+│  INFRASTRUCTURE MODES:                                                       │
+│  ├── docker   → Services: Docker DNS names (llm-gateway:8080)               │
+│  ├── hybrid   → Services: localhost (localhost:8080)                        │
+│  └── native   → Services: localhost (localhost:8080)                        │
+│                                                                              │
+│  BRIGADE TIERS:                                                             │
+│  ├── local_only   → Zero cost (deepseek-r1-7b, qwen3-8b, phi-4)            │
+│  ├── balanced     → Mix local + external (Claude, GPT + local)              │
+│  └── premium      → All external (Claude Opus, GPT-5.2, Gemini)             │
+│                                                                              │
+│  CROSS-REFERENCE (Stage 2):                                                 │
+│  ├── Qdrant (vectors) via semantic-search-service                           │
+│  ├── Neo4j (graph) via semantic-search-service                              │
+│  ├── Textbooks (JSON files) direct access                                   │
+│  └── Code-Orchestrator (ML Stack) keywords + embeddings                     │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+**CLI Usage**:
+```bash
+# Run with infrastructure mode
+export INFRASTRUCTURE_MODE=hybrid
+python -m src.protocols.kitchen_brigade_executor \
+  --protocol ARCHITECTURE_RECONCILIATION \
+  --input 'documents=["ADR.md", "ROUNDTABLE.md"]'
+
+# Interactive mode (prompts for all options)
+python -m src.protocols.kitchen_brigade_executor --interactive
+```
+
+**Implementation**: [kitchen_brigade_executor.py](../../src/protocols/kitchen_brigade_executor.py)
 
 ---
 

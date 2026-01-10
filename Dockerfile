@@ -34,8 +34,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /root/.local/bin /usr/local/bin
 
-# Copy application code
+# Copy application code and config
 COPY src/ ./src/
+COPY config/ ./config/
 
 # Create non-root user for security
 RUN useradd -m -u 1000 appuser

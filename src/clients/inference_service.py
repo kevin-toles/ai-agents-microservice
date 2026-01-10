@@ -112,6 +112,16 @@ class ModelInfo:
 
 
 # =============================================================================
+# Context Validation Constants
+# =============================================================================
+
+# Chars per token estimate for pre-validation
+CHARS_PER_TOKEN_ESTIMATE = 4
+# Default output reserve (tokens reserved for model response)
+DEFAULT_OUTPUT_RESERVE = 2048
+
+
+# =============================================================================
 # Model Resolver
 # =============================================================================
 
@@ -413,6 +423,121 @@ class InferenceServiceClient:
         # Default: resolve with no preference (returns any loaded model)
         return resolver.resolve()
 
+    def _estimate_tokens(self, text: str) -> int:
+        """Estimate token count for text.
+        
+        Args:
+            text: Text to estimate tokens for.
+            
+        Returns:
+            Estimated token count.
+        """
+        return max(1, len(text) // CHARS_PER_TOKEN_ESTIMATE)
+
+    def _get_model_context_length(self, model_id: str) -> int:
+        """Get context length for a model.
+        
+        Args:
+            model_id: Model identifier.
+            
+        Returns:
+            Context length in tokens (default 4096 if unknown).
+        """
+        if self._resolver is None:
+            return 4096  # Conservative default
+        
+        for model in self._resolver.get_loaded_models():
+            if model.model_id == model_id:
+                return model.context_length or 4096
+        
+        return 4096
+
+    def _truncate_messages_for_context(
+        self,
+        messages: list[ChatMessage],
+        model_id: str,
+        max_tokens: int,
+    ) -> tuple[list[ChatMessage], bool]:
+        """Truncate messages to fit within model context window.
+        
+        Strategy: Preserve system message and last user message, truncate middle.
+        
+        Args:
+            messages: Original messages.
+            model_id: Target model ID.
+            max_tokens: Max tokens requested for output.
+            
+        Returns:
+            Tuple of (truncated messages, was_truncated flag).
+        """
+        context_length = self._get_model_context_length(model_id)
+        available_input = context_length - max_tokens - DEFAULT_OUTPUT_RESERVE
+        
+        # Estimate current usage
+        total_text = "\n".join(f"{m.role}: {m.content}" for m in messages)
+        current_tokens = self._estimate_tokens(total_text)
+        
+        if current_tokens <= available_input:
+            return messages, False
+        
+        logger.warning(
+            "Context exceeds model limit, truncating client-side: %d > %d (model: %s)",
+            current_tokens,
+            available_input,
+            model_id,
+        )
+        
+        # Can't truncate less than 2 messages
+        if len(messages) <= 2:
+            # Truncate content of last message
+            truncated = list(messages)
+            last_msg = truncated[-1]
+            overage_tokens = current_tokens - available_input
+            chars_to_cut = overage_tokens * CHARS_PER_TOKEN_ESTIMATE
+            if last_msg.content and len(last_msg.content) > chars_to_cut:
+                new_content = last_msg.content[:-chars_to_cut] + "\n\n[...truncated for model context limits...]"
+                truncated[-1] = ChatMessage(role=last_msg.role, content=new_content)
+                return truncated, True
+            return messages, False
+        
+        # Preserve: system (first if present) + last message
+        result: list[ChatMessage] = []
+        
+        # Keep system message if present
+        if messages[0].role == "system":
+            result.append(messages[0])
+            remaining = messages[1:]
+        else:
+            remaining = list(messages)
+        
+        # Always keep last message
+        last_message = remaining[-1]
+        middle_messages = remaining[:-1]
+        
+        # Build from end until we hit budget
+        kept_middle: list[ChatMessage] = []
+        for msg in reversed(middle_messages):
+            test_messages = result + [msg] + kept_middle + [last_message]
+            test_text = "\n".join(f"{m.role}: {m.content}" for m in test_messages)
+            if self._estimate_tokens(test_text) <= available_input:
+                kept_middle.insert(0, msg)
+            else:
+                break
+        
+        # Add truncation notice if we dropped messages
+        if len(kept_middle) < len(middle_messages):
+            dropped_count = len(middle_messages) - len(kept_middle)
+            notice = ChatMessage(
+                role="system",
+                content=f"[Note: {dropped_count} earlier messages truncated to fit context window]"
+            )
+            result.append(notice)
+        
+        result.extend(kept_middle)
+        result.append(last_message)
+        
+        return result, True
+
     async def complete(
         self,
         messages: list[dict[str, str]],
@@ -421,6 +546,7 @@ class InferenceServiceClient:
         system_prompt: str | None = None,
         max_tokens: int = 4096,
         temperature: float = 0.7,
+        auto_truncate: bool = True,
     ) -> str:
         """Generate chat completion.
 
@@ -436,6 +562,7 @@ class InferenceServiceClient:
             system_prompt: Optional system prompt to prepend
             max_tokens: Maximum tokens to generate (default: 4096)
             temperature: Sampling temperature (default: 0.7)
+            auto_truncate: Auto-truncate if context exceeds model limit (default: True)
 
         Returns:
             Generated completion text
@@ -463,6 +590,17 @@ class InferenceServiceClient:
                 role=msg.get("role", "user"),
                 content=msg.get("content", ""),
             ))
+
+        # Client-side context validation (defense in depth with server-side)
+        if auto_truncate:
+            chat_messages, was_truncated = self._truncate_messages_for_context(
+                chat_messages, resolved_model, max_tokens
+            )
+            if was_truncated:
+                logger.info(
+                    "Messages truncated client-side for model %s",
+                    resolved_model,
+                )
 
         # Build request
         request = ChatCompletionRequest(

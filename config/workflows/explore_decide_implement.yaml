@@ -1,0 +1,39 @@
+# Explore → Decide → Implement Workflow
+# 
+# A three-stage workflow for tackling complex problems:
+# 1. Round Table: Explore all options with diverse perspectives
+# 2. Debate: Argue for/against top options to make a decision
+# 3. Pipeline: Implement the chosen solution
+
+name: "Explore → Decide → Implement"
+description: "Three-stage workflow: brainstorm options, debate merits, then implement the winner"
+
+inter_stage_feedback: true
+max_feedback_loops_per_stage: 2
+
+stages:
+  - name: "Stage 1: Exploration"
+    protocol_id: "ROUNDTABLE_DISCUSSION"
+    description: "Gather diverse perspectives and generate options"
+    inputs:
+      focus: "Generate multiple approaches/options"
+    pass_outputs: true
+    
+  - name: "Stage 2: Decision"
+    protocol_id: "DEBATE_PROTOCOL"
+    description: "Debate the top options to reach a decision"
+    inputs:
+      focus: "Evaluate tradeoffs between top options from exploration"
+    pass_outputs: true
+    
+  - name: "Stage 3: Implementation"
+    protocol_id: "PIPELINE_PROTOCOL"
+    description: "Implement the chosen solution"
+    inputs:
+      focus: "Build the solution selected in debate"
+    pass_outputs: true
+
+# Expected flow:
+# 1. Round Table generates Options A, B, C with analysis
+# 2. Debate argues for/against top 2 options, judge picks winner
+# 3. Pipeline designs and implements the winning option

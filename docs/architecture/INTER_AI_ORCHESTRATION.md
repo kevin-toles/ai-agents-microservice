@@ -6,6 +6,38 @@ This document defines the architecture for **Inter-AI Conversation Orchestration
 
 **Design Philosophy**: ai-agents acts as the **moderator/orchestrator** that facilitates conversations between AI participants. No AI talks directly to another - all communication is mediated.
 
+**Implementation Status (January 7, 2026)**:
+- ✅ `KitchenBrigadeExecutor` - Multi-LLM protocol execution
+- ✅ `WorkflowComposer` - Multi-stage protocol chaining
+- ✅ `infrastructure_config.py` - Dynamic endpoint resolution
+- ✅ 5 Protocol definitions (ROUNDTABLE, ARCHITECTURE_RECONCILIATION, DEBATE, PIPELINE, WBS_GENERATION)
+- ✅ 16 Prompt templates for different rounds/protocols
+- ✅ Brigade tier system (local_only, balanced, premium)
+
+---
+
+## Kitchen Brigade Protocol Executor
+
+The core implementation is `src/protocols/kitchen_brigade_executor.py`:
+
+```python
+from src.protocols.kitchen_brigade_executor import KitchenBrigadeExecutor
+
+# Run a protocol with infrastructure-aware configuration
+executor = KitchenBrigadeExecutor(
+    protocol_id="ARCHITECTURE_RECONCILIATION",
+    inputs={"documents": ["ADR.md", "ROUNDTABLE.md"]},
+    enable_cross_reference=True,  # Stage 2 evidence retrieval
+    show_infra_status=True,       # Display endpoint configuration
+)
+result = await executor.run()
+```
+
+**Infrastructure Modes**: The executor automatically resolves service endpoints based on `INFRASTRUCTURE_MODE`:
+- `docker`: Uses Docker DNS names (e.g., `llm-gateway:8080`)
+- `hybrid`: Uses localhost (e.g., `localhost:8080`)
+- `native`: Uses localhost (e.g., `localhost:8080`)
+
 ---
 
 ## Architecture Diagram

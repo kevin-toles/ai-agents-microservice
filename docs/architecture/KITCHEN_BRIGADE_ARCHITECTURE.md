@@ -2,9 +2,23 @@
 
 ## Complete Agent-Service Integration for LLM-Powered Code Understanding
 
-**Version:** 2.0  
-**Last Updated:** 2025-12-31  
+**Version:** 2.1  
+**Last Updated:** 2026-01-07  
 **Status:** Living Document
+
+---
+
+## Implementation Status (January 7, 2026)
+
+| Component | Location | Status |
+|-----------|----------|--------|
+| **Infrastructure Config** | `src/infrastructure_config.py` | ✅ Complete |
+| **Protocol Executor** | `src/protocols/kitchen_brigade_executor.py` | ✅ Complete |
+| **Workflow Composer** | `src/protocols/workflow_composer.py` | ✅ Complete |
+| **Protocol Definitions** | `config/protocols/*.json` | ✅ 5 protocols |
+| **Prompt Templates** | `config/prompts/kitchen_brigade/*.txt` | ✅ 16 templates |
+| **Brigade Recommendations** | `config/brigade_recommendations.yaml` | ✅ Complete |
+| **Agent Guide** | `docs/KITCHEN_BRIGADE_AGENT_GUIDE.md` | ✅ Complete |
 
 ---
 
@@ -12,13 +26,14 @@
 
 1. [Executive Summary](#executive-summary)
 2. [Core Principles](#core-principles)
-3. [The 8 Agent Functions](#the-8-agent-functions)
-4. [Cross-Reference Pipeline (Iterative)](#cross-reference-pipeline-iterative)
-5. [Agent → Tool/Service Mapping](#agent--toolservice-mapping)
-6. [Output Flow Architecture](#output-flow-architecture)
-7. [Protected Configurations](#protected-configurations)
-8. [Complete Flow Example](#complete-flow-example)
-9. [Kitchen Brigade Metaphor](#kitchen-brigade-metaphor)
+3. [Infrastructure Modes](#infrastructure-modes)
+4. [The 8 Agent Functions](#the-8-agent-functions)
+5. [Cross-Reference Pipeline (Iterative)](#cross-reference-pipeline-iterative)
+6. [Agent → Tool/Service Mapping](#agent--toolservice-mapping)
+7. [Output Flow Architecture](#output-flow-architecture)
+8. [Protected Configurations](#protected-configurations)
+9. [Complete Flow Example](#complete-flow-example)
+10. [Kitchen Brigade Metaphor](#kitchen-brigade-metaphor)
 
 ---
 
@@ -28,10 +43,34 @@ The Kitchen Brigade architecture orchestrates 8 agent functions that interact wi
 
 **Key Innovation:** The cross-reference process is **iterative and multi-loop** — LLMs actively discuss, request additional information, and refine their understanding through multiple cycles before producing a grounded, validated response.
 
+**January 2026 Updates:**
+- Infrastructure-aware endpoint resolution via `infrastructure_config.py`
+- Multi-LLM protocol executor with Stage 2 cross-reference integration
+- Workflow composer for chaining multiple protocols
+- Brigade tier system (local_only, balanced, premium)
+
 ### Core Use Case
 > "Design a scalable LLM-powered code understanding system for a 20M-line monorepo"
 > 
 > Focus: multi-stage chunking, embeddings + hierarchical retrieval, indexing strategies, incremental refresh pipeline, grounding LLM outputs, hallucination-hardening
+
+---
+
+## Infrastructure Modes
+
+The protocol executor dynamically resolves service endpoints based on deployment mode:
+
+| Mode | Set Via | Service URLs | Use Case |
+|------|---------|--------------|----------|
+| **docker** | `INFRASTRUCTURE_MODE=docker` | Docker DNS (e.g., `llm-gateway:8080`) | Full containerized deployment |
+| **hybrid** | `INFRASTRUCTURE_MODE=hybrid` | localhost (e.g., `localhost:8080`) | Development: DBs in Docker, services native |
+| **native** | `INFRASTRUCTURE_MODE=native` | localhost (e.g., `localhost:8080`) | Fully native development |
+
+**Configuration Source**: `src/infrastructure_config.py` implements `PlatformConfig` dataclass with:
+- Service URLs (llm-gateway, semantic-search, code-orchestrator, inference-service, audit-service)
+- Database URLs (Qdrant, Neo4j, Redis)
+- Data paths (textbooks, books_enriched, books_metadata)
+- Credentials (Neo4j user/password)
 
 ---
 
@@ -508,11 +547,15 @@ Step 3: Final response to VS Code
 │  │ ╔════════════════════════════════════════════════════════════════╗   │  │
 │  │ ║ STAGE 2: ParallelAgent(cross_reference × 5)                    ║   │  │
 │  │ ║                                                                ║   │  │
-│  │ ║ For each subtask, runs 3-layer parallel retrieval:             ║   │  │
-│  │ ║ • Qdrant (vectors)                                             ║   │  │
-│  │ ║ • Neo4j (graph)                                                ║   │  │
-│  │ ║ • Textbooks (JSON)                                             ║   │  │
-│  │ ║ • Code-Orchestrator (CodeT5+, GraphCodeBERT)                   ║   │  │
+│  │ ║ For each subtask, runs 4-layer parallel retrieval:             ║   │  │
+│  │ ║ • Qdrant (vectors) - semantic similarity search                ║   │  │
+│  │ ║ • Neo4j (graph) - relationship traversal                       ║   │  │
+│  │ ║ • Textbooks (JSON) - reference material lookup                 ║   │  │
+│  │ ║ • Code-Orchestrator (Full ML Stack):                           ║   │  │
+│  │ ║   - SBERT: NL→semantic embeddings, similar chapters            ║   │  │
+│  │ ║   - CodeT5+: keyword extraction from code                      ║   │  │
+│  │ ║   - GraphCodeBERT: term validation, false positive filtering   ║   │  │
+│  │ ║   - CodeBERT: NL↔Code ranking, relevance scoring               ║   │  │
 │  │ ╚════════════════════════════════════════════════════════════════╝   │  │
 │  │                         │                                            │  │
 │  │                         ▼                                            │  │

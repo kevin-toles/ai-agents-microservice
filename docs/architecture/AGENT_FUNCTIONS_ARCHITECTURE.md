@@ -1,14 +1,23 @@
 # Agent Functions Architecture
 
-> **Version:** 1.2.0  
+> **Version:** 1.3.0  
 > **Created:** 2025-12-29  
-> **Updated:** 2025-12-29  
-> **Status:** Design Phase  
+> **Updated:** 2026-01-07  
+> **Status:** Implementation Phase  
 > **Reference:** [ARCHITECTURE.md](ARCHITECTURE.md), [inference-service/MODEL_LIBRARY.md](../../inference-service/docs/MODEL_LIBRARY.md), [ADK_MIGRATION_GUIDE.md](ADK_MIGRATION_GUIDE.md), [PROTOCOL_INTEGRATION_ARCHITECTURE.md](PROTOCOL_INTEGRATION_ARCHITECTURE.md)
 
 ## Overview
 
 This document defines the **Agent Function** architecture for the AI Platform. Agent functions are **stateless executors over cached artifacts**—not chat personas or conversational agents.
+
+### Recent Updates (January 7, 2026)
+
+| Feature | Description | Reference |
+|---------|-------------|-----------|
+| **Infrastructure Config** | Dynamic endpoint resolution based on INFRASTRUCTURE_MODE | `src/infrastructure_config.py` |
+| **Kitchen Brigade Executor** | Multi-LLM protocol execution with Stage 2 cross-reference | `src/protocols/kitchen_brigade_executor.py` |
+| **Workflow Composer** | Multi-stage protocol chaining (e.g., "round_table → debate → pipeline") | `src/protocols/workflow_composer.py` |
+| **Brigade Tier System** | Local-only, balanced, and premium model configurations | `config/brigade_recommendations.yaml` |
 
 ### Design Philosophy
 

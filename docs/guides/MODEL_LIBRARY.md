@@ -1,12 +1,56 @@
 # Model Library and Configuration Guide
 
-> **Version:** 1.0.0  
+> **Version:** 1.1.0  
 > **Created:** 2025-12-28  
-> **Reference:** [ARCHITECTURE.md](ARCHITECTURE.md), [WBS.md](WBS.md)
+> **Updated:** 2026-01-07  
+> **Reference:** [ARCHITECTURE.md](ARCHITECTURE.md), [WBS.md](WBS.md), [KITCHEN_BRIGADE_AGENT_GUIDE.md](../KITCHEN_BRIGADE_AGENT_GUIDE.md)
 
 ## Overview
 
 This document describes all available models, their characteristics, environment variables for loading them, and the configuration presets that combine them for different orchestration modes.
+
+**January 2026 Updates:**
+- Added Brigade Tier System for Kitchen Brigade protocols
+- Infrastructure mode integration (docker/hybrid/native)
+- Protocol-aware model selection recommendations
+
+---
+
+## Brigade Tier System
+
+The Kitchen Brigade Protocol Executor supports three model tiers:
+
+### Local Only (Zero Cost)
+Best for: Regular usage, cost-sensitive, privacy-focused
+
+```yaml
+analyst: deepseek-r1-7b
+critic: qwen3-8b
+synthesizer: phi-4
+validator: codellama-13b-instruct
+```
+
+### Balanced (Mixed Local + External)
+Best for: Important tasks, good quality/cost balance
+
+```yaml
+analyst: claude-sonnet-4.5  # External - strong reasoning
+critic: qwen3-8b            # Local - fast feedback
+synthesizer: gpt-5-mini     # External - good synthesis
+validator: codellama-13b    # Local - code validation
+```
+
+### Premium (All External)
+Best for: Critical decisions, maximum quality
+
+```yaml
+analyst: claude-opus-4.5
+critic: gpt-5.2-pro
+synthesizer: gemini-1.5-pro
+validator: claude-sonnet-4.5
+```
+
+**Configuration File**: `config/brigade_recommendations.yaml`
 
 ---
 
@@ -27,7 +71,6 @@ This document describes all available models, their characteristics, environment
 ```bash
 # Single model (simplest)
 export INFERENCE_CONFIG=S1
-export INFERENCE_MODELS_DIR="/Volumes/NO NAME/LLMs/models"
 python -m uvicorn src.main:app --host 0.0.0.0 --port 8085
 
 # Dual model critique (recommended for Mac 16GB)
@@ -197,7 +240,6 @@ All inference-service settings use the `INFERENCE_` prefix.
 # Mac 16GB - Dual model critique mode
 export INFERENCE_PORT=8085
 export INFERENCE_HOST=0.0.0.0
-export INFERENCE_MODELS_DIR="/Volumes/NO NAME/LLMs/models"
 export INFERENCE_GPU_LAYERS=-1
 export INFERENCE_CONFIG=D4
 export INFERENCE_ORCHESTRATION_MODE=critique

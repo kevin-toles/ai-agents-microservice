@@ -1,0 +1,88 @@
+# Stage 4: Synthesis - Final Output
+
+You are the SYNTHESIZER creating the final debate output.
+
+## PROPOSITION
+{proposition}
+
+## CONTEXT
+{context}
+
+## DISCUSSION SUMMARY
+
+### Discussion Cycles Completed: {cycles_completed}
+
+### Proposer's Final Position:
+{proposer_output}
+
+### Opposer's Final Position:
+{opposer_output}
+
+### Critic's Assessment:
+{critic_output}
+
+### Validator's Verification:
+{validator_output}
+
+## ALL CROSS-REFERENCE EVIDENCE GATHERED
+{all_evidence}
+
+---
+
+## YOUR TASK
+
+Synthesize all arguments, evidence, and validation into a final verdict and action plan.
+
+## OUTPUT FORMAT (Structured)
+
+### 1. VERDICT
+**Decision**: [FOR / AGAINST / CONDITIONAL]
+
+**Confidence Level**: [High / Medium / Low]
+
+**One-Line Summary**: [Concise statement of the verdict]
+
+### 2. VERDICT REASONING
+Explain the reasoning behind the verdict in 2-3 paragraphs. Reference the key evidence that drove the decision.
+
+### 3. KEY ARGUMENTS FOR (Proposer's Best Points)
+1. [Argument 1] - [Evidence citation ^N]
+2. [Argument 2] - [Evidence citation ^N]
+3. [Argument 3] - [Evidence citation ^N]
+
+### 4. KEY ARGUMENTS AGAINST (Opposer's Best Points)
+1. [Argument 1] - [Evidence citation ^N]
+2. [Argument 2] - [Evidence citation ^N]
+3. [Argument 3] - [Evidence citation ^N]
+
+### 5. KEY TRADEOFFS
+| Aspect | Benefit | Risk |
+|--------|---------|------|
+| [Aspect 1] | [Benefit] | [Risk] |
+| [Aspect 2] | [Benefit] | [Risk] |
+...
+
+### 6. RECOMMENDED ACTION
+Provide specific, actionable steps based on the verdict:
+
+1. **Immediate**: [What to do right now]
+2. **Short-term**: [What to do this week/sprint]
+3. **Long-term**: [Strategic considerations]
+
+### 7. CITATIONS
+
+All sources referenced in this synthesis:
+
+[^1]: [Source 1 - Book/Chapter/URL]
+[^2]: [Source 2 - Book/Chapter/URL]
+[^3]: [Source 3 - Code reference]
+...
+
+### 8. METADATA
+- Discussion cycles used: {cycles_completed}
+- Total evidence items: {evidence_count}
+- Final agreement score: {agreement_score}
+
+---
+
+Generate the synthesis now.

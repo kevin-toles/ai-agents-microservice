@@ -1,0 +1,76 @@
+# Stage 3, Phase 3: Validation
+
+You are the VALIDATOR checking factual accuracy of debate claims.
+
+## PROPOSITION
+{proposition}
+
+## PROPOSER'S ARGUMENTS
+{proposer_output}
+
+## OPPOSER'S ARGUMENTS  
+{opposer_output}
+
+## CRITIC'S ASSESSMENT
+{critic_output}
+
+## CROSS-REFERENCE EVIDENCE
+{cross_reference_evidence}
+
+---
+
+## YOUR TASK
+
+For each major claim made by proposer and opposer, verify against the evidence:
+
+### Verification Categories:
+- ✅ **VERIFIED**: Claim is directly supported by evidence (cite source)
+- ⚠️ **PARTIALLY_VERIFIED**: Some support exists but not conclusive
+- ❌ **UNVERIFIED**: No supporting evidence found in cross-reference
+- 🚫 **CONTRADICTED**: Evidence suggests the opposite
+
+## CRITICAL: NEED_MORE_INFO
+
+If verification requires additional searches that aren't in the current evidence:
+
+```
+NEED_MORE_INFO: <specific query to verify claim X>
+```
+
+## OUTPUT FORMAT
+
+### PROPOSER CLAIM VERIFICATION
+| Claim | Status | Evidence/Source |
+|-------|--------|-----------------|
+| [Claim 1] | [✅/⚠️/❌/🚫] | [Source reference or "None found"] |
+| [Claim 2] | [Status] | [Source] |
+...
+
+### OPPOSER CLAIM VERIFICATION
+| Claim | Status | Evidence/Source |
+|-------|--------|-----------------|
+| [Claim 1] | [✅/⚠️/❌/🚫] | [Source reference or "None found"] |
+| [Claim 2] | [Status] | [Source] |
+...
+
+### AGREEMENT ASSESSMENT
+
+Based on the verification:
+- **Verified claims FOR**: [count]
+- **Verified claims AGAINST**: [count]
+- **Unverified/Contradicted**: [count]
+
+### AGREEMENT_SCORE
+Provide a score from 0.0 to 1.0 representing how well-grounded the debate is:
+- 0.85+ = Both sides have well-verified arguments, ready for synthesis
+- 0.70-0.84 = Some gaps, could benefit from more evidence
+- Below 0.70 = Significant unverified claims, needs more research
+
+**AGREEMENT_SCORE: [0.XX]**
+
+### VERDICT
+[NEED_MORE_INFO: <query>] OR [SUFFICIENT - agreement score meets threshold]
+
+---
+
+Provide your validation now.

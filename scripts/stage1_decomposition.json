@@ -1,0 +1,127 @@
+{
+  "stage": "STAGE 1: DECOMPOSE_TASK",
+  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "input_task": "Fix platform infrastructure gaps preventing proper multi-LLM pipeline execution",
+  "problems_identified": [
+    {
+      "id": "P1",
+      "problem": "No working service mesh - hardcoded localhost URLs",
+      "taxonomy_mapping": ["Building Microservices", "Microservice Architecture", "Architecture Patterns with Python"],
+      "severity": "HIGH"
+    },
+    {
+      "id": "P2", 
+      "problem": "Env var chaos - inconsistent naming across services",
+      "taxonomy_mapping": ["Architecture Patterns with Python", "Building Microservices"],
+      "severity": "HIGH"
+    },
+    {
+      "id": "P3",
+      "problem": "Docker port mapping inconsistencies",
+      "taxonomy_mapping": ["Building Microservices", "Microservice Architecture"],
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "P4",
+      "problem": "Silent fallbacks mask failures",
+      "taxonomy_mapping": ["Architecture Patterns with Python"],
+      "severity": "HIGH"
+    },
+    {
+      "id": "P5",
+      "problem": "No contract tests between services",
+      "taxonomy_mapping": ["Building Microservices", "Microservice Architecture"],
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "P6",
+      "problem": "Integration tests skipped due to service unavailability",
+      "taxonomy_mapping": ["Architecture Patterns with Python"],
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "P7",
+      "problem": "No unified startup command for 3 deployment modes",
+      "taxonomy_mapping": ["Microservice Architecture", "Building Microservices"],
+      "severity": "HIGH"
+    },
+    {
+      "id": "P8",
+      "problem": "Scripts bypass platform modules (LLMDiscussionLoop, PipelineOrchestrator)",
+      "taxonomy_mapping": ["AI Agents and Applications", "AI Agents In Action", "Building LLM Powered Applications"],
+      "severity": "HIGH"
+    }
+  ],
+  "subtasks": [
+    {
+      "id": "ST1",
+      "title": "Create unified topology.yaml",
+      "description": "Define all service endpoints for docker/hybrid/native modes",
+      "dependencies": [],
+      "addresses_problems": ["P1", "P7"],
+      "llm_assignment": "research"
+    },
+    {
+      "id": "ST2",
+      "title": "Implement shared config library",
+      "description": "Python package that reads topology and provides endpoints",
+      "dependencies": ["ST1"],
+      "addresses_problems": ["P1", "P2"],
+      "llm_assignment": "research"
+    },
+    {
+      "id": "ST3",
+      "title": "Standardize environment variable names",
+      "description": "Create canonical env var naming convention across all services",
+      "dependencies": [],
+      "addresses_problems": ["P2"],
+      "llm_assignment": "research"
+    },
+    {
+      "id": "ST4",
+      "title": "Fix Docker port mappings",
+      "description": "Audit and fix all docker-compose port bindings",
+      "dependencies": ["ST1"],
+      "addresses_problems": ["P3"],
+      "llm_assignment": "research"
+    },
+    {
+      "id": "ST5",
+      "title": "Implement fail-fast validation",
+      "description": "Replace silent fallbacks with explicit errors",
+      "dependencies": ["ST2"],
+      "addresses_problems": ["P4"],
+      "llm_assignment": "research"
+    },
+    {
+      "id": "ST6",
+      "title": "Create platform CLI",
+      "description": "Unified platform up --mode=<MODE> command",
+      "dependencies": ["ST1", "ST2"],
+      "addresses_problems": ["P7"],
+      "llm_assignment": "research"
+    },
+    {
+      "id": "ST7",
+      "title": "Integrate existing platform modules",
+      "description": "Wire LLMDiscussionLoop, PipelineOrchestrator into main API",
+      "dependencies": ["ST5"],
+      "addresses_problems": ["P8"],
+      "llm_assignment": "discussion"
+    },
+    {
+      "id": "ST8",
+      "title": "Add contract tests",
+      "description": "Create Pact or similar contract tests between services",
+      "dependencies": ["ST2"],
+      "addresses_problems": ["P5", "P6"],
+      "llm_assignment": "research"
+    }
+  ],
+  "execution_graph": {
+    "parallel_group_1": ["ST1", "ST3"],
+    "parallel_group_2": ["ST2", "ST4"],
+    "parallel_group_3": ["ST5", "ST6"],
+    "sequential": ["ST7", "ST8"]
+  }
+}

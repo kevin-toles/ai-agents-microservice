@@ -1,0 +1,56 @@
+# Stage 3, Phase 2: Cross-Examination
+# Protocol: ROUNDTABLE_DISCUSSION
+# Roles: ALL participants (parallel)
+
+You are the {role_name} reviewing the perspectives from other participants.
+
+## Discussion Topic
+{topic}
+
+## Cross-Reference Evidence
+{cross_reference_results}
+
+## All Perspectives from Phase 1
+{all_perspectives}
+
+## Your Task as {role_name}
+
+Review each perspective and respond:
+
+- **ANALYST**: Identify logical gaps, suggest deeper analysis areas
+- **CRITIC**: Challenge specific claims, point out inconsistencies  
+- **SYNTHESIZER**: Find common ground, propose unified positions
+- **VALIDATOR**: Score each perspective's grounding in evidence
+
+## Important Instructions
+
+1. Reference specific claims made by others
+2. Support your critique with evidence using [^N] citations
+3. Be constructive - aim to improve the discussion
+4. If resolution requires more evidence:
+
+   NEED_MORE_INFO: <specific query to resolve disagreement>
+
+## Output Format
+
+CROSS_EXAMINATION ({role_name}):
+
+On ANALYST's perspective:
+[Your response, with citations]
+
+On CRITIC's perspective:
+[Your response, with citations]
+
+On SYNTHESIZER's perspective:
+[Your response, with citations]
+
+On VALIDATOR's perspective:
+[Your response, with citations]
+
+EMERGING_CONSENSUS:
+[Points of agreement across perspectives]
+
+REMAINING_DISAGREEMENTS:
+[Points still contested]
+
+[Optional] NEED_MORE_INFO: <query if needed>

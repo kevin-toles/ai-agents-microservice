@@ -4,8 +4,12 @@
 # Maps task scenarios to recommended LLM configurations.
 # Agents use this to make intelligent recommendations or auto-select.
 # =============================================================================
+#
+# UPDATED: 2026-01-09 - Cost-efficient configurations for discussion protocols
+# Priority: Cost efficiency > latency > maximum capability
+# =============================================================================
 
-version: "1.0.0"
+version: "1.1.0"
 
 # =============================================================================
 # ENDPOINTS
@@ -13,6 +17,251 @@ version: "1.0.0"
 endpoints:
   local: "http://localhost:8085"      # inference-service (Metal GPU)
   gateway: "http://localhost:8080"    # llm-gateway (routes to external APIs)
+
+# =============================================================================
+# LLM DISCUSSION LOOP CONFIGURATIONS
+# =============================================================================
+# Protocol-specific model assignments optimized for different priorities.
+# Each protocol type has cost_efficient, balanced, and premium tiers.
+# =============================================================================
+
+discussion_loop_configs:
+  # ---------------------------------------------------------------------------
+  # ROUNDTABLE_DISCUSSION - Open collaborative discussion
+  # All LLMs participate every round, good for exploration/brainstorming
+  # ---------------------------------------------------------------------------
+  roundtable_discussion:
+    cost_efficient:  # $0.00 per run
+      analyst: qwen3-8b           # Strong general analysis, 8K context
+      critic: qwen2.5-7b          # Good at finding issues
+      synthesizer: qwen3-8b       # Coherent synthesis
+      validator: codellama-7b-instruct  # Code-aware validation
+      estimated_cost: "$0.00"
+      avg_latency: "5-10s per round"
+      notes: "All local models, zero API cost"
+      
+    balanced:  # ~$0.05-0.15 per run
+      analyst: gemini-2.0-flash   # Fast, 1M context, factual grounding
+      critic: qwen3-8b            # Local, fast feedback loop
+      synthesizer: qwen3-8b       # Local synthesis (cost control)
+      validator: qwen3-8b         # Local validation (deterministic)
+      estimated_cost: "$0.05-0.15"
+      avg_latency: "3-7s per round"
+      notes: "1 external + 3 local, good quality/cost balance"
+      
+    premium:  # ~$0.50-2.00 per run
+      analyst: claude-opus-4-5-20250514  # Best reasoning
+      critic: gpt-5.2                     # Strong critique
+      synthesizer: deepseek-reasoner      # Chain-of-thought synthesis
+      validator: gemini-2.0-flash         # Fast, factual validation
+      estimated_cost: "$0.50-2.00"
+      avg_latency: "2-5s per round"
+      notes: "All premium external, maximum quality"
+
+  # ---------------------------------------------------------------------------
+  # DEBATE_PROTOCOL - Adversarial discussion for decision making
+  # Proposer vs Opposer with Moderator and Judge
+  # ---------------------------------------------------------------------------
+  debate_protocol:
+    cost_efficient:  # $0.00 per run
+      proposer: qwen3-8b          # Builds arguments well
+      opposer: qwen2.5-7b         # Different model = different perspective
+      moderator: qwen3-8b         # Neutral facilitation
+      judge: codellama-7b-instruct  # Objective evaluation
+      estimated_cost: "$0.00"
+      avg_latency: "5-10s per round"
+      notes: "Different local models create genuine diversity"
+      
+    balanced:  # ~$0.10-0.30 per run
+      proposer: gemini-2.0-flash  # Strong arguments, fast
+      opposer: qwen3-8b           # Local counter-arguments
+      moderator: qwen3-8b         # Local moderation
+      judge: gemini-2.0-flash     # External objectivity for final ruling
+      estimated_cost: "$0.10-0.30"
+      avg_latency: "3-7s per round"
+      notes: "External bookends (proposer + judge), local middle"
+      
+    premium:  # ~$1.00-3.00 per run
+      proposer: gpt-5.2           # Creative arguments
+      opposer: claude-opus-4-5-20250514  # Thorough critique
+      moderator: gemini-2.0-flash         # Neutral, fast
+      judge: deepseek-reasoner            # Chain-of-thought reasoning
+      estimated_cost: "$1.00-3.00"
+      avg_latency: "2-5s per round"
+      notes: "Multi-provider diversity for genuine debate"
+
+  # ---------------------------------------------------------------------------
+  # ARCHITECTURE_RECONCILIATION - Document/architecture conflict resolution
+  # ---------------------------------------------------------------------------
+  architecture_reconciliation:
+    cost_efficient:  # $0.00 per run
+      architect: qwen3-8b         # Architectural vision
+      critic: qwen2.5-7b          # Technical critique
+      implementer: codellama-7b-instruct  # Implementation feasibility
+      reviewer: qwen3-8b          # Final review
+      estimated_cost: "$0.00"
+      avg_latency: "5-10s per round"
+      notes: "Full local stack"
+      
+    balanced:  # ~$0.10-0.30 per run
+      architect: gemini-2.0-flash # 1M context for large docs
+      critic: qwen3-8b            # Local critique
+      implementer: codellama-7b-instruct  # Code feasibility
+      reviewer: gemini-2.0-flash  # Final validation with full context
+      estimated_cost: "$0.10-0.30"
+      avg_latency: "3-7s per round"
+      notes: "Gemini for context-heavy roles"
+      
+    premium:  # ~$1.00-3.00 per run
+      architect: claude-opus-4-5-20250514  # Deep architectural reasoning
+      critic: gpt-5.2                       # Thorough analysis
+      implementer: deepseek-reasoner        # Implementation strategy
+      reviewer: claude-opus-4-5-20250514   # Final validation
+      estimated_cost: "$1.00-3.00"
+      avg_latency: "2-5s per round"
+      notes: "Maximum reasoning capability"
+
+  # ---------------------------------------------------------------------------
+  # FIVE_LLM_DISCUSSION - Extended multi-LLM exploration (5 participants)
+  # 5 rounds: Initial → Cross-Exam → Deep Dive → Convergence → Synthesis
+  # ---------------------------------------------------------------------------
+  five_llm_discussion:
+    cost_efficient:  # $0.00 per run (requires 2+ local models loaded)
+      analyst: qwen3-8b
+      critic: qwen2.5-7b
+      synthesizer: qwen3-8b
+      researcher: qwen3-8b        # Re-use analyst for research
+      validator: codellama-7b-instruct
+      estimated_cost: "$0.00"
+      avg_latency: "8-15s per round"
+      notes: "Local only - requires multi-model loading capability"
+      
+    balanced:  # ~$0.20-0.50 per run
+      analyst: gpt-5.2            # Strong initial analysis
+      critic: qwen3-8b            # Local critique (fast)
+      synthesizer: qwen3-8b       # Local synthesis (cost)
+      researcher: gemini-2.0-flash  # 1M context for research
+      validator: qwen3-8b         # Local validation
+      estimated_cost: "$0.20-0.50"
+      avg_latency: "4-8s per round"
+      notes: "2 external + 3 local, optimal for most use cases"
+      
+    premium:  # ~$2.00-5.00 per run
+      analyst: gpt-5.2
+      critic: claude-opus-4-5-20250514
+      synthesizer: deepseek-reasoner
+      researcher: gemini-2.0-flash
+      validator: qwen3-8b         # Keep validator local for cost
+      estimated_cost: "$2.00-5.00"
+      avg_latency: "3-6s per round"
+      notes: "4 external + 1 local validator"
+
+# =============================================================================
+# MODEL SELECTION RATIONALE (for agent reference)
+# =============================================================================
+model_selection_rationale:
+  qwen3-8b:
+    strengths:
+      - "Strong instruction following"
+      - "8192 context (fixed)"
+      - "Fast local inference (~7s)"
+      - "Good for validator, moderator, synthesizer roles"
+    weaknesses:
+      - "Context limit can be restrictive for large documents"
+      - "Less creative than premium models"
+    best_roles: [validator, moderator, synthesizer, critic]
+    cost: "$0.00"
+    
+  gemini-2.0-flash:
+    strengths:
+      - "1M token context window"
+      - "Very fast (2-3s latency)"
+      - "Strong factual grounding"
+      - "Low cost (~$0.075/1M input tokens)"
+    weaknesses:
+      - "Less nuanced reasoning than Opus/GPT-5.2"
+      - "Occasional hallucinations on niche topics"
+    best_roles: [researcher, analyst, reviewer]
+    cost: "~$0.075/1M tokens"
+    
+  claude-opus-4-5-20250514:
+    strengths:
+      - "Best-in-class reasoning"
+      - "200K context"
+      - "Excellent at nuanced critique"
+      - "Strong safety alignment"
+    weaknesses:
+      - "High cost (~$15/1M input, $75/1M output)"
+      - "Slower than flash models"
+    best_roles: [analyst, critic, architect]
+    cost: "~$15-75/1M tokens"
+    
+  gpt-5.2:
+    strengths:
+      - "Strong general capability"
+      - "Creative and comprehensive"
+      - "Good instruction following"
+    weaknesses:
+      - "High cost"
+      - "Sometimes verbose"
+    best_roles: [proposer, analyst]
+    cost: "~$10-30/1M tokens"
+    
+  deepseek-reasoner:
+    strengths:
+      - "Chain-of-thought reasoning"
+      - "Shows working/thinking process"
+      - "Good at synthesis and final judgments"
+    weaknesses:
+      - "Slower due to reasoning steps"
+      - "External API dependency"
+    best_roles: [synthesizer, judge]
+    cost: "~$0.55/1M input tokens"
+    
+  codellama-7b-instruct:
+    strengths:
+      - "Code-focused training"
+      - "Good for technical validation"
+      - "Local inference"
+    weaknesses:
+      - "Limited general reasoning"
+      - "7K context"
+    best_roles: [implementer, validator]
+    cost: "$0.00"
+    
+  qwen2.5-7b:
+    strengths:
+      - "Good code generation"
+      - "32K context"
+      - "Different training data than qwen3 (diversity)"
+    weaknesses:
+      - "Slightly older model"
+    best_roles: [critic, opposer]
+    cost: "$0.00"
+
+# =============================================================================
+# QUICK SELECTION GUIDE
+# =============================================================================
+quick_selection:
+  # For users who just want to pick quickly
+  cost_priority:
+    use: "cost_efficient tier in all protocols"
+    models_needed: [qwen3-8b, qwen2.5-7b, codellama-7b-instruct]
+    total_cost: "$0.00"
+    hardware_req: "16GB RAM, can swap models"
+    
+  quality_priority:
+    use: "premium tier in all protocols"
+    env_vars_needed: [OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY]
+    total_cost: "$1-5 per discussion"
+    hardware_req: "Internet connection + API keys"
+    
+  balanced_default:
+    use: "balanced tier (RECOMMENDED)"
+    models_needed: [qwen3-8b]
+    env_vars_needed: [GOOGLE_API_KEY]  # gemini-2.0-flash only
+    total_cost: "$0.05-0.30 per discussion"
+    notes: "Best cost/quality ratio for most tasks"
 
 # =============================================================================
 # AVAILABLE MODELS
@@ -31,7 +280,7 @@ models:
         size_gb: 4.7
     
     code:
-      - id: codellama-13b-instruct
+      - id: codellama-7b-instruct
         strengths: [code-generation, debugging, refactoring]
         size_gb: 7.4
       - id: deepseek-coder-v2-lite
@@ -141,7 +390,7 @@ scenarios:
         models:
           architect: gemini-2.0-flash
           critic: deepseek-r1-7b
-          implementer: codellama-13b-instruct
+          implementer: codellama-7b-instruct
           reviewer: qwen3-8b
         estimated_cost: "$0.10-0.30 per run"
         quality: "high"
@@ -150,7 +399,7 @@ scenarios:
         models:
           architect: deepseek-r1-7b
           critic: qwen3-8b
-          implementer: codellama-13b-instruct
+          implementer: codellama-7b-instruct
           reviewer: deepseek-coder-v2-lite
         estimated_cost: "$0.00"
         quality: "good"
@@ -164,7 +413,7 @@ scenarios:
         name: "Premium Code Review"
         models:
           architect: claude-opus-4.5
-          critic: codellama-13b-instruct
+          critic: codellama-7b-instruct
           implementer: deepseek-coder-v2-lite
           reviewer: gpt-5.2
         estimated_cost: "$0.30-1.00 per run"
@@ -173,7 +422,7 @@ scenarios:
         name: "Local Code Specialists"
         models:
           architect: deepseek-r1-7b
-          critic: codellama-13b-instruct
+          critic: codellama-7b-instruct
           implementer: qwen2.5-coder-7b
           reviewer: deepseek-coder-v2-lite
         estimated_cost: "$0.00"
@@ -199,7 +448,7 @@ scenarios:
           planner: phi-4
           technical: deepseek-r1-7b
           pragmatist: qwen3-8b
-          critic: codellama-13b-instruct
+          critic: codellama-7b-instruct
         estimated_cost: "$0.00"
         quality: "good"
     default: local_only
@@ -223,7 +472,7 @@ scenarios:
           analyst: deepseek-r1-7b
           critic: qwen3-8b
           synthesizer: phi-4
-          validator: codellama-13b-instruct
+          validator: codellama-7b-instruct
         estimated_cost: "$0.00"
         quality: "good"
     default: local_only
