@@ -20,6 +20,7 @@ Anti-Patterns Avoided:
 from __future__ import annotations
 
 import logging
+import os
 import time
 from typing import Any
 
@@ -503,12 +504,17 @@ async def run_pipeline(
 # Global inference client (should be injected via dependency injection in production)
 _inference_client = None
 
+# ALLOW_MOCK_INFERENCE=true permits fallback to mock (for CI/testing only)
+_ALLOW_MOCK = os.getenv("ALLOW_MOCK_INFERENCE", "false").lower() in ("true", "1", "yes")
+
+logger = logging.getLogger(__name__)
+
 
 def get_inference_client():
     """Get or create inference client.
 
     In production, this should use proper dependency injection.
-    For now, creates a simple async mock for testing.
+    Set ALLOW_MOCK_INFERENCE=true for testing without real inference service.
     """
     global _inference_client
     if _inference_client is None:
@@ -516,14 +522,24 @@ def get_inference_client():
         try:
             from src.clients.inference import InferenceClient
             _inference_client = InferenceClient()
-        except ImportError:
-            # Fallback mock for testing
-            from unittest.mock import AsyncMock, MagicMock
-            _inference_client = AsyncMock()
-            _inference_client.generate.return_value = MagicMock(
-                text="Summary placeholder",
-                tokens_used=50,
-            )
+        except ImportError as e:
+            if _ALLOW_MOCK:
+                logger.warning(
+                    "InferenceClient not available, using mock. "
+                    "Set ALLOW_MOCK_INFERENCE=false in production."
+                )
+                from unittest.mock import AsyncMock, MagicMock
+                _inference_client = AsyncMock()
+                _inference_client.generate.return_value = MagicMock(
+                    text="Summary placeholder",
+                    tokens_used=50,
+                )
+            else:
+                raise ImportError(
+                    f"InferenceClient required for summarization pipeline. "
+                    f"Ensure src.clients.inference is available. "
+                    f"Or set ALLOW_MOCK_INFERENCE=true for testing."
+                ) from e
     return _inference_client
 
 
